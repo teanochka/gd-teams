@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps({
     title: String,
-    description: String,
+    date: String,
     imageUrl: String,
 })
 </script>
@@ -9,26 +9,14 @@ const props = defineProps({
 <template>
     <RouterLink to="/project">
         <BCard
-        title="Card Title"
-        img-src="https://picsum.photos/id/25/600/300"
-        img-alt="Image"
-        img-top
-        tag="article"
-        style="max-width: 20rem"
+            :title="props.title"
+            :img-src="props.imageUrl"
+            img-alt="Image"
+            img-top
         >
-        <BCardText>
-            Some quick example text to build on the card title and make up the bulk of the card's content.
-        </BCardText>
-</BCard>
+            <BCardText>
+                {{ props.date }}
+            </BCardText>
+        </BCard>
     </RouterLink>
 </template>
-
-<script lang="ts">
-export default {
-    props: {
-        title: String,
-        description: String,
-        imageUrl: String,
-    },
-}
-</script>

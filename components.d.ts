@@ -20,6 +20,7 @@ declare module 'vue' {
     IconTooling: typeof import('./src/components/icons/IconTooling.vue')['default']
     ProjectCard: typeof import('./src/components/ProjectCard.vue')['default']
     Projects: typeof import('./src/components/pages/projects.vue')['default']
+    ProjectsHeader: typeof import('./src/components/ProjectsHeader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Workspace: typeof import('./src/components/pages/workspace.vue')['default']

@@ -1,0 +1,4 @@
+<template>
+    <ProjectsHeader />
+    <slot />
+</template>
