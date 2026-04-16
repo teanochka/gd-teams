@@ -11,8 +11,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    BCard: typeof import('bootstrap-vue-next/components/BCard')['BCard']
-    BCardText: typeof import('bootstrap-vue-next/components/BCard')['BCardText']
+    BAlert: typeof import('bootstrap-vue-next/components/BAlert')['BAlert']
+    BBadge: typeof import('bootstrap-vue-next/components/BBadge')['BBadge']
+    BButton: typeof import('bootstrap-vue-next/components/BButton')['BButton']
+    BFormInput: typeof import('bootstrap-vue-next/components/BFormInput')['BFormInput']
+    BInputGroup: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroup']
+    BInputGroupText: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroupText']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
     IconEcosystem: typeof import('./src/components/icons/IconEcosystem.vue')['default']
@@ -21,6 +25,7 @@ declare module 'vue' {
     ProjectCard: typeof import('./src/components/ProjectCard.vue')['default']
     Projects: typeof import('./src/components/pages/projects.vue')['default']
     ProjectsHeader: typeof import('./src/components/ProjectsHeader.vue')['default']
+    ProjectsSidebar: typeof import('./src/components/ProjectsSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Workspace: typeof import('./src/components/pages/workspace.vue')['default']
