@@ -1,4 +1,4 @@
-import { cloneProject, mockProjects, mockTeams } from '@/api/mockData'
+import { apiRequest } from '@/api/http'
 import type { Project, Team } from '@/types/domain'
 
 type ProjectsResponse = {
@@ -6,27 +6,15 @@ type ProjectsResponse = {
   teams: Team[]
 }
 
-const wait = async () => {
-  await new Promise((resolve) => window.setTimeout(resolve, 120))
-}
-
 export const getProjects = async (): Promise<ProjectsResponse> => {
-  await wait()
+  const [projects, teams] = await Promise.all([
+    apiRequest<Project[]>('/projects'),
+    apiRequest<Team[]>('/teams'),
+  ])
 
-  return {
-    projects: mockProjects.map(cloneProject),
-    teams: mockTeams.map((team) => ({ ...team })),
-  }
+  return { projects, teams }
 }
 
 export const getProject = async (projectId: string): Promise<Project> => {
-  await wait()
-
-  const project = mockProjects.find((item) => item.id === projectId)
-
-  if (!project) {
-    throw new Error('Project not found')
-  }
-
-  return cloneProject(project)
+  return apiRequest<Project>(`/projects/${projectId}`)
 }

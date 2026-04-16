@@ -32,7 +32,7 @@ npm install
 ### Compile and Hot-Reload for Development
 
 ```sh
-npm run dev
+npm run dev:all
 ```
 
 ### Type-Check, Compile and Minify for Production

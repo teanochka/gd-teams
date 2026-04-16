@@ -1,223 +1,192 @@
-import {
-  buildFolderTree,
-  cloneNode,
-  cloneProject,
-  cloneTag,
-  mockNodes,
-  mockProjects,
-  mockTags,
-} from '@/api/mockData'
+import { apiRequest } from '@/api/http'
 import type {
   Breadcrumb,
   CreateNodePayload,
   FolderContentResponse,
+  FolderTreeNode,
   Node,
   NodeId,
+  NodeType,
+  Project,
   ProjectId,
+  Tag,
 } from '@/types/domain'
 
-const wait = async () => {
-  await new Promise((resolve) => window.setTimeout(resolve, 120))
+type RawNode = Omit<Node, 'tags'> & {
+  tagIds: string[]
+  icon?: string | null
 }
 
-const findProject = (projectId: ProjectId) => {
-  const project = mockProjects.find((item) => item.id === projectId)
+const mapNode = (node: RawNode, tags: Tag[]): Node => ({
+  ...node,
+  icon: node.icon ?? undefined,
+  tags: tags.filter((tag) => node.tagIds.includes(tag.id)),
+})
 
-  if (!project) {
-    throw new Error('Project not found')
-  }
+const buildFolderTree = (
+  nodes: Node[],
+  parentId: NodeId | null,
+): FolderTreeNode[] => {
+  return nodes
+    .filter((node) => node.parentId === parentId && node.type === 'folder' && !node.isDeleted)
+    .map((node) => {
+      const children = buildFolderTree(nodes, node.id)
 
-  return project
+      return {
+        id: node.id,
+        name: node.title,
+        ...(children.length ? { children } : {}),
+      }
+    })
 }
 
-const findNode = (nodeId: NodeId) => {
-  const node = mockNodes.find((item) => item.id === nodeId)
-
-  if (!node) {
-    throw new Error('Node not found')
-  }
-
-  return node
-}
-
-const resolveFolderId = (projectId: ProjectId, folderId?: NodeId | null) => {
-  const project = findProject(projectId)
-
-  return folderId && folderId !== 'root' ? folderId : project.rootFolderId
-}
-
-const buildBreadcrumbs = (folder: Node): Breadcrumb[] => {
+const buildBreadcrumbs = (folder: Node, nodes: Node[]): Breadcrumb[] => {
   const breadcrumbs: Breadcrumb[] = []
   let current: Node | undefined = folder
 
   while (current) {
     breadcrumbs.unshift({ id: current.id, title: current.title })
-    current = current.parentId ? mockNodes.find((node) => node.id === current?.parentId) : undefined
+    current = current.parentId ? nodes.find((node) => node.id === current?.parentId) : undefined
   }
 
   return breadcrumbs
 }
 
+const resolveFolderId = (project: Project, folderId?: NodeId | null) => {
+  return folderId && folderId !== 'root' ? folderId : project.rootFolderId
+}
+
+const createNodeId = (type: NodeType) => `${type}-${Date.now()}`
+
 export const getFolderContent = async (
   projectId: ProjectId,
   folderId?: NodeId | null,
 ): Promise<FolderContentResponse> => {
-  await wait()
+  const project = await apiRequest<Project>(`/projects/${projectId}`)
+  const resolvedFolderId = resolveFolderId(project, folderId)
 
-  const project = findProject(projectId)
-  const resolvedFolderId = resolveFolderId(projectId, folderId)
-  const currentFolder = findNode(resolvedFolderId)
+  const [rawNodes, tags] = await Promise.all([
+    apiRequest<RawNode[]>('/nodes', { query: { projectId } }),
+    apiRequest<Tag[]>('/tags', { query: { projectId } }),
+  ])
 
-  if (currentFolder.projectId !== projectId || currentFolder.type !== 'folder') {
+  const projectNodes = rawNodes.map((node) => mapNode(node, tags))
+  const currentFolder = projectNodes.find((node) => node.id === resolvedFolderId)
+
+  if (!currentFolder || currentFolder.type !== 'folder') {
     throw new Error('Folder not found')
   }
 
-  const nodes = mockNodes.filter(
-    (node) => node.projectId === projectId && node.parentId === resolvedFolderId && !node.isDeleted,
+  const nodes = projectNodes.filter(
+    (node) => node.parentId === resolvedFolderId && !node.isDeleted,
   )
-  const tags = mockTags.filter((tag) => tag.projectId === projectId)
 
   return {
-    project: cloneProject(project),
-    currentFolder: cloneNode(currentFolder),
-    breadcrumbs: buildBreadcrumbs(currentFolder),
-    nodes: nodes.map(cloneNode),
-    foldersTree: buildFolderTree(projectId, project.rootFolderId),
-    tags: tags.map(cloneTag),
+    project,
+    currentFolder,
+    breadcrumbs: buildBreadcrumbs(currentFolder, projectNodes),
+    nodes,
+    foldersTree: buildFolderTree(projectNodes, project.rootFolderId),
+    tags,
   }
 }
 
 export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
-  await wait()
-
-  const parent = findNode(payload.parentId)
-
-  if (parent.type !== 'folder' || parent.projectId !== payload.projectId) {
-    throw new Error('Parent folder not found')
-  }
-
-  const title = payload.title.trim()
-
-  if (!title) {
-    throw new Error('Node title is required')
-  }
-
-  const hasSameTitle = mockNodes.some(
-    (node) =>
-      node.projectId === payload.projectId &&
-      node.parentId === payload.parentId &&
-      !node.isDeleted &&
-      node.title.toLowerCase() === title.toLowerCase(),
-  )
-
-  if (hasSameTitle) {
-    throw new Error('Node title already exists')
-  }
-
-  const tags = mockTags.filter((tag) => payload.tagIds?.includes(tag.id))
-  const node: Node = {
-    id: `${payload.type}-${Date.now()}`,
-    projectId: payload.projectId,
-    parentId: payload.parentId,
-    type: payload.type,
-    title,
-    icon: payload.icon,
-    tags,
-    isFavorite: false,
-    isDeleted: false,
-    createdAt: 'Только что',
-    createdBy: 'Вы',
-    updatedAt: 'Только что',
-    updatedBy: 'Вы',
-  }
-
-  mockNodes.push(node)
-
-  return cloneNode(node)
-}
-
-export const renameNode = async (nodeId: NodeId, title: string): Promise<Node> => {
-  await wait()
-
-  const node = findNode(nodeId)
-  const nextTitle = title.trim()
-
-  if (!nextTitle) {
-    throw new Error('Node title is required')
-  }
-
-  node.title = nextTitle
-  node.updatedAt = 'Только что'
-  node.updatedBy = 'Вы'
-
-  return cloneNode(node)
-}
-
-export const moveNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
-  await wait()
-
-  const parent = findNode(parentId)
-
-  if (parent.type !== 'folder') {
-    throw new Error('Target folder not found')
-  }
-
-  const movedNodes = nodeIds.map(findNode)
-
-  for (const node of movedNodes) {
-    if (node.id === parentId) {
-      throw new Error('Cannot move a folder into itself')
-    }
-
-    node.parentId = parentId
-    node.updatedAt = 'Только что'
-    node.updatedBy = 'Вы'
-  }
-
-  return movedNodes.map(cloneNode)
-}
-
-export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
-  await wait()
-
-  const parent = findNode(parentId)
-
-  if (parent.type !== 'folder') {
-    throw new Error('Target folder not found')
-  }
-
-  const copiedNodes = nodeIds.map((nodeId, index) => {
-    const source = findNode(nodeId)
-    const copy: Node = {
-      ...source,
-      id: `${source.id}-copy-${Date.now()}-${index}`,
-      parentId,
-      title: `${source.title} копия`,
+  const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: payload.projectId } })
+  const node = await apiRequest<RawNode>('/nodes', {
+    method: 'POST',
+    body: {
+      id: createNodeId(payload.type),
+      projectId: payload.projectId,
+      parentId: payload.parentId,
+      type: payload.type,
+      title: payload.title.trim(),
+      icon: payload.icon ?? null,
+      tagIds: payload.tagIds ?? [],
       isFavorite: false,
+      isDeleted: false,
       createdAt: 'Только что',
       createdBy: 'Вы',
       updatedAt: 'Только что',
       updatedBy: 'Вы',
-      tags: source.tags.map((tag) => ({ ...tag })),
-    }
-
-    mockNodes.push(copy)
-
-    return copy
+    },
   })
 
-  return copiedNodes.map(cloneNode)
+  return mapNode(node, tags)
+}
+
+export const renameNode = async (nodeId: NodeId, title: string): Promise<Node> => {
+  const node = await apiRequest<RawNode>(`/nodes/${nodeId}`, {
+    method: 'PATCH',
+    body: {
+      title: title.trim(),
+      updatedAt: 'Только что',
+      updatedBy: 'Вы',
+    },
+  })
+  const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: node.projectId } })
+
+  return mapNode(node, tags)
+}
+
+export const moveNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
+  const movedNodes = await Promise.all(
+    nodeIds.map((nodeId) =>
+      apiRequest<RawNode>(`/nodes/${nodeId}`, {
+        method: 'PATCH',
+        body: {
+          parentId,
+          updatedAt: 'Только что',
+          updatedBy: 'Вы',
+        },
+      }),
+    ),
+  )
+  const projectId = movedNodes[0]?.projectId
+  const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
+
+  return movedNodes.map((node) => mapNode(node, tags))
+}
+
+export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
+  const sourceNodes = await Promise.all(nodeIds.map((nodeId) => apiRequest<RawNode>(`/nodes/${nodeId}`)))
+  const copiedNodes = await Promise.all(
+    sourceNodes.map((source, index) =>
+      apiRequest<RawNode>('/nodes', {
+        method: 'POST',
+        body: {
+          ...source,
+          id: `${source.id}-copy-${Date.now()}-${index}`,
+          parentId,
+          title: `${source.title} копия`,
+          isFavorite: false,
+          createdAt: 'Только что',
+          createdBy: 'Вы',
+          updatedAt: 'Только что',
+          updatedBy: 'Вы',
+        },
+      }),
+    ),
+  )
+  const projectId = copiedNodes[0]?.projectId
+  const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
+
+  return copiedNodes.map((node) => mapNode(node, tags))
 }
 
 export const deleteNodes = async (nodeIds: NodeId[]): Promise<NodeId[]> => {
-  await wait()
-
-  for (const nodeId of nodeIds) {
-    const node = findNode(nodeId)
-    node.isDeleted = true
-    node.updatedAt = 'Только что'
-    node.updatedBy = 'Вы'
-  }
+  await Promise.all(
+    nodeIds.map((nodeId) =>
+      apiRequest<RawNode>(`/nodes/${nodeId}`, {
+        method: 'PATCH',
+        body: {
+          isDeleted: true,
+          updatedAt: 'Только что',
+          updatedBy: 'Вы',
+        },
+      }),
+    ),
+  )
 
   return [...nodeIds]
 }
