@@ -14,6 +14,9 @@ declare module 'vue' {
     BAlert: typeof import('bootstrap-vue-next/components/BAlert')['BAlert']
     BBadge: typeof import('bootstrap-vue-next/components/BBadge')['BBadge']
     BButton: typeof import('bootstrap-vue-next/components/BButton')['BButton']
+    BButtonGroup: typeof import('bootstrap-vue-next/components/BButton')['BButtonGroup']
+    BDropdown: typeof import('bootstrap-vue-next/components/BDropdown')['BDropdown']
+    BDropdownItem: typeof import('bootstrap-vue-next/components/BDropdown')['BDropdownItem']
     BFormInput: typeof import('bootstrap-vue-next/components/BFormInput')['BFormInput']
     BInputGroup: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroup']
     BInputGroupText: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroupText']
@@ -29,5 +32,8 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Workspace: typeof import('./src/components/pages/workspace.vue')['default']
+    WorkspaceHeader: typeof import('./src/components/WorkspaceHeader.vue')['default']
+    WorkspaceLeftSidebar: typeof import('./src/components/WorkspaceLeftSidebar.vue')['default']
+    WorkspaceRightSidebar: typeof import('./src/components/WorkspaceRightSidebar.vue')['default']
   }
 }
