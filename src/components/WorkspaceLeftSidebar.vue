@@ -23,6 +23,10 @@ defineProps<{
   tags: TagItem[]
 }>()
 
+const emit = defineEmits<{
+  (event: 'open-folder', id: string): void
+}>()
+
 const rootExpanded = ref(true)
 </script>
 
@@ -36,13 +40,19 @@ const rootExpanded = ref(true)
 
     <div v-if="rootExpanded" class="folder-tree">
       <div v-for="folder in folders" :key="folder.id" class="folder-group">
-        <button class="tree-item" type="button">
+        <button class="tree-item" type="button" @click="emit('open-folder', folder.id)">
           <IconFolder aria-hidden="true" />
           <span>{{ folder.name }}</span>
         </button>
 
         <div v-if="folder.children?.length" class="tree-children">
-          <button v-for="child in folder.children" :key="child.id" class="tree-item child" type="button">
+          <button
+            v-for="child in folder.children"
+            :key="child.id"
+            class="tree-item child"
+            type="button"
+            @click="emit('open-folder', child.id)"
+          >
             <IconFolder aria-hidden="true" />
             <span>{{ child.name }}</span>
           </button>

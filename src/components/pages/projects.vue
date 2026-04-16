@@ -1,156 +1,25 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import IconChevronRight from '~icons/carbon/chevron-right'
 import IconFolder from '~icons/carbon/folder'
 import ProjectCard from '@/components/ProjectCard.vue'
 import ProjectsSidebar from '@/components/ProjectsSidebar.vue'
+import { useProjectsPage } from '@/composables/useProjectsPage'
 
-type Project = {
-  id: string
-  title: string
-  description: string
-  updatedAt: string
-  owner: string
-  teamId: string
-  teamName: string
-  isFavorite: boolean
-  isDeleted: boolean
-  filesCount: number
-  imageUrl: string
-}
-
-const route = useRoute()
-const activeItem = ref('all')
-
-const teams = [
-  { id: 'team-gameplay', name: 'Команда геймплея', count: 3 },
-  { id: 'team-art', name: 'Команда арта', count: 2 },
-]
-
-const projects: Project[] = [
-  {
-    id: 'village-quest',
-    title: 'Village Quest',
-    description: 'Квесты, персонажи и логика поселения.',
-    updatedAt: 'Сегодня, 14:20',
-    owner: 'Анна',
-    teamId: 'team-gameplay',
-    teamName: 'Команда геймплея',
-    isFavorite: true,
-    isDeleted: false,
-    filesCount: 42,
-    imageUrl: 'https://picsum.photos/seed/village-quest/900/520',
-  },
-  {
-    id: 'combat-prototype',
-    title: 'Combat Prototype',
-    description: 'Документы по балансу, атакам и состояниям врагов.',
-    updatedAt: 'Вчера, 18:05',
-    owner: 'Марк',
-    teamId: 'team-gameplay',
-    teamName: 'Команда геймплея',
-    isFavorite: false,
-    isDeleted: false,
-    filesCount: 28,
-    imageUrl: 'https://picsum.photos/seed/combat-prototype/900/520',
-  },
-  {
-    id: 'ui-kit',
-    title: 'UI Kit',
-    description: 'Макеты экранов, компоненты интерфейса и состояния.',
-    updatedAt: '12 апреля, 09:40',
-    owner: 'Саша',
-    teamId: 'team-art',
-    teamName: 'Команда арта',
-    isFavorite: true,
-    isDeleted: false,
-    filesCount: 36,
-    imageUrl: 'https://picsum.photos/seed/ui-kit/900/520',
-  },
-  {
-    id: 'world-bible',
-    title: 'World Bible',
-    description: 'Лор, регионы, фракции и черновики сюжетных веток.',
-    updatedAt: '8 апреля, 16:10',
-    owner: 'Анна',
-    teamId: 'team-art',
-    teamName: 'Команда арта',
-    isFavorite: false,
-    isDeleted: false,
-    filesCount: 57,
-    imageUrl: 'https://picsum.photos/seed/world-bible/900/520',
-  },
-  {
-    id: 'old-arena',
-    title: 'Old Arena',
-    description: 'Архивный прототип арены для ранних тестов.',
-    updatedAt: '1 апреля, 11:15',
-    owner: 'Игорь',
-    teamId: 'team-gameplay',
-    teamName: 'Команда геймплея',
-    isFavorite: false,
-    isDeleted: true,
-    filesCount: 13,
-    imageUrl: 'https://picsum.photos/seed/old-arena/900/520',
-  },
-]
-
-const searchQuery = computed(() => {
-  const search = route.query.search
-
-  if (Array.isArray(search)) {
-    return search[0] ?? ''
-  }
-
-  return search ?? ''
-})
-
-const activeTitle = computed(() => {
-  if (activeItem.value === 'favorites') {
-    return 'Избранное'
-  }
-
-  if (activeItem.value === 'trash') {
-    return 'Корзина'
-  }
-
-  return teams.find((team) => team.id === activeItem.value)?.name ?? 'Все проекты'
-})
-
-const filteredProjects = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-
-  return projects.filter((project) => {
-    const matchesSection =
-      activeItem.value === 'all'
-        ? !project.isDeleted
-        : activeItem.value === 'favorites'
-          ? project.isFavorite && !project.isDeleted
-          : activeItem.value === 'trash'
-            ? project.isDeleted
-            : project.teamId === activeItem.value && !project.isDeleted
-
-    if (!matchesSection) {
-      return false
-    }
-
-    if (!query) {
-      return true
-    }
-
-    return [project.title, project.description, project.owner, project.teamName]
-      .join(' ')
-      .toLowerCase()
-      .includes(query)
-  })
-})
+const {
+  activeItem,
+  activeTitle,
+  error,
+  filteredProjects,
+  isLoading,
+  setActiveItem,
+  teams,
+} = useProjectsPage()
 </script>
 
 <template>
   <div class="projects-page">
     <div class="projects-shell">
-      <ProjectsSidebar :active-item="activeItem" :teams="teams" @select="activeItem = $event" />
+      <ProjectsSidebar :active-item="activeItem" :teams="teams" @select="setActiveItem" />
 
       <main class="projects-main">
         <section class="projects-toolbar" aria-labelledby="projects-title">
@@ -172,7 +41,19 @@ const filteredProjects = computed(() => {
           </div>
         </section>
 
-        <section v-if="filteredProjects.length" class="projects-grid" aria-label="Список проектов">
+        <section v-if="isLoading" class="empty-state" aria-live="polite">
+          <IconFolder aria-hidden="true" />
+          <h2>Загружаем проекты</h2>
+          <p>Собираем список проектов и команд.</p>
+        </section>
+
+        <section v-else-if="error" class="empty-state" aria-live="polite">
+          <IconFolder aria-hidden="true" />
+          <h2>Не удалось загрузить проекты</h2>
+          <p>{{ error }}</p>
+        </section>
+
+        <section v-else-if="filteredProjects.length" class="projects-grid" aria-label="Список проектов">
           <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project" />
         </section>
 

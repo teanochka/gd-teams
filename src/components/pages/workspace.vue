@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import IconAdd from '~icons/carbon/add'
+import IconCheckmark from '~icons/carbon/checkmark'
 import IconChevronDown from '~icons/carbon/chevron-down'
 import IconCopy from '~icons/carbon/copy'
 import IconCut from '~icons/carbon/cut'
@@ -12,144 +12,62 @@ import IconList from '~icons/carbon/list'
 import IconPaintBrush from '~icons/carbon/paint-brush'
 import IconPaste from '~icons/carbon/paste'
 import IconSortAscending from '~icons/carbon/sort-ascending'
-import IconTag from '~icons/carbon/tag'
 import IconTemplate from '~icons/carbon/template'
 import IconTrashCan from '~icons/carbon/trash-can'
 import IconView from '~icons/carbon/view'
+import WorkspaceCard from '@/components/WorkspaceCard.vue'
 import WorkspaceHeader from '@/components/WorkspaceHeader.vue'
 import WorkspaceLeftSidebar from '@/components/WorkspaceLeftSidebar.vue'
+import WorkspaceListItem from '@/components/WorkspaceListItem.vue'
 import WorkspaceRightSidebar from '@/components/WorkspaceRightSidebar.vue'
+import { useWorkspacePage } from '@/composables/useWorkspacePage'
 
-type WorkspaceItemType = 'folder' | 'document' | 'canvas' | 'template'
-
-type WorkspaceItem = {
-  id: string
-  name: string
-  type: WorkspaceItemType
-  tags: string[]
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
-}
-
-const projectName = 'Village Quest'
-const breadcrumbs = ['Village Quest', 'Документы', 'Системы']
-const selectedId = ref<string | null>(null)
-const clipboardHasContent = ref(true)
-
-const folders = [
-  {
-    id: 'docs',
-    name: 'Документы',
-    children: [
-      { id: 'systems', name: 'Системы' },
-      { id: 'quests', name: 'Квесты' },
-    ],
-  },
-  {
-    id: 'art',
-    name: 'Арт',
-    children: [
-      { id: 'characters', name: 'Персонажи' },
-      { id: 'locations', name: 'Локации' },
-    ],
-  },
-  { id: 'prototypes', name: 'Прототипы' },
-]
-
-const tags = [
-  { id: 'core', name: 'core' },
-  { id: 'draft', name: 'draft' },
-  { id: 'art', name: 'art' },
-  { id: 'balance', name: 'balance' },
-]
-
-const currentDirectory: WorkspaceItem = {
-  id: 'systems',
-  name: 'Системы',
-  type: 'folder',
-  tags: ['core', 'balance'],
-  createdAt: '10 апреля 2026',
-  createdBy: 'Анна',
-  updatedAt: 'Сегодня, 14:20',
-  updatedBy: 'Марк',
-}
-
-const items: WorkspaceItem[] = [
-  {
-    id: 'combat-folder',
-    name: 'Боевая система',
-    type: 'folder',
-    tags: ['core', 'balance'],
-    createdAt: '11 апреля 2026',
-    createdBy: 'Анна',
-    updatedAt: 'Сегодня, 13:42',
-    updatedBy: 'Марк',
-  },
-  {
-    id: 'dialogue-doc',
-    name: 'Диалоги жителей',
-    type: 'document',
-    tags: ['draft'],
-    createdAt: '12 апреля 2026',
-    createdBy: 'Саша',
-    updatedAt: 'Вчера, 18:05',
-    updatedBy: 'Анна',
-  },
-  {
-    id: 'world-map',
-    name: 'Карта поселения',
-    type: 'canvas',
-    tags: ['art'],
-    createdAt: '13 апреля 2026',
-    createdBy: 'Игорь',
-    updatedAt: 'Вчера, 12:30',
-    updatedBy: 'Игорь',
-  },
-  {
-    id: 'quest-template',
-    name: 'Шаблон квеста',
-    type: 'template',
-    tags: ['draft'],
-    createdAt: '14 апреля 2026',
-    createdBy: 'Анна',
-    updatedAt: '14 апреля, 16:10',
-    updatedBy: 'Анна',
-  },
-  {
-    id: 'economy-doc',
-    name: 'Экономика деревни',
-    type: 'document',
-    tags: ['balance'],
-    createdAt: '15 апреля 2026',
-    createdBy: 'Марк',
-    updatedAt: 'Сегодня, 09:15',
-    updatedBy: 'Марк',
-  },
-]
-
-const selectedItem = computed(() => items.find((item) => item.id === selectedId.value) ?? null)
-const hasSelection = computed(() => selectedItem.value !== null)
-
-const typeLabels: Record<WorkspaceItemType, string> = {
-  folder: 'Папка',
-  document: 'Документ',
-  canvas: 'Холст',
-  template: 'Шаблон',
-}
-
-const selectItem = (id: string) => {
-  selectedId.value = selectedId.value === id ? null : id
-}
+const {
+  breadcrumbLabels,
+  clipboardHasContent,
+  copySelected,
+  currentDirectory,
+  cutSelected,
+  deleteSelected,
+  error,
+  folders,
+  hasSelection,
+  isLoading,
+  items,
+  openFolder,
+  openItem,
+  pasteClipboard,
+  projectName,
+  reloadCurrentFolder,
+  searchQuery,
+  selectedId,
+  selectedItem,
+  selectItem,
+  setSortField,
+  setViewMode,
+  tags,
+  toggleSortOrder,
+  typeLabels,
+  viewMode,
+  viewModeLabel,
+} = useWorkspacePage()
 </script>
 
 <template>
   <div class="workspace-page">
-    <WorkspaceHeader :breadcrumbs="breadcrumbs" />
+    <WorkspaceHeader
+      v-model="searchQuery"
+      :breadcrumbs="breadcrumbLabels"
+      @reload="reloadCurrentFolder"
+    />
 
     <div class="workspace-shell">
-      <WorkspaceLeftSidebar :project-name="projectName" :folders="folders" :tags="tags" />
+      <WorkspaceLeftSidebar
+        :project-name="projectName"
+        :folders="folders"
+        :tags="tags"
+        @open-folder="openFolder"
+      />
 
       <main class="workspace-main">
         <section class="workspace-toolbar" aria-label="Инструменты файлового менеджера">
@@ -177,19 +95,19 @@ const selectItem = (id: string) => {
           </BDropdown>
 
           <div class="tool-group" aria-label="Действия">
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Вырезать">
+            <BButton variant="light" :disabled="!hasSelection" aria-label="Вырезать" @click="cutSelected">
               <IconCut aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Копировать">
+            <BButton variant="light" :disabled="!hasSelection" aria-label="Копировать" @click="copySelected">
               <IconCopy aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!clipboardHasContent" aria-label="Вставить">
+            <BButton variant="light" :disabled="!clipboardHasContent" aria-label="Вставить" @click="pasteClipboard">
               <IconPaste aria-hidden="true" />
             </BButton>
             <BButton variant="light" :disabled="!hasSelection" aria-label="Переименовать">
               <IconEdit aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Удалить">
+            <BButton variant="light" :disabled="!hasSelection" aria-label="Удалить" @click="deleteSelected">
               <IconTrashCan aria-hidden="true" />
             </BButton>
           </div>
@@ -198,61 +116,72 @@ const selectItem = (id: string) => {
             <template #button-content>
               <IconSortAscending aria-hidden="true" />
               <span>Сортировать</span>
-              <IconChevronDown aria-hidden="true" />
+              <IconChevronDown aria-hidden="true" @click.stop="toggleSortOrder" />
             </template>
-            <BDropdownItem>По имени</BDropdownItem>
-            <BDropdownItem>По дате создания</BDropdownItem>
-            <BDropdownItem>По дате изменения</BDropdownItem>
-            <BDropdownItem>По типу</BDropdownItem>
+            <BDropdownItem @click="setSortField('title')">По имени</BDropdownItem>
+            <BDropdownItem @click="setSortField('createdAt')">По дате создания</BDropdownItem>
+            <BDropdownItem @click="setSortField('updatedAt')">По дате изменения</BDropdownItem>
+            <BDropdownItem @click="setSortField('type')">По типу</BDropdownItem>
           </BDropdown>
 
-          <BDropdown variant="outline-dark" class="toolbar-dropdown">
+          <BDropdown variant="outline-dark" class="toolbar-dropdown view-dropdown">
             <template #button-content>
               <IconView aria-hidden="true" />
-              <span>Вид</span>
+              <span>{{ viewModeLabel }}</span>
               <IconChevronDown aria-hidden="true" />
             </template>
-            <BDropdownItem>
+            <BDropdownItem @click="setViewMode('grid')">
               <IconGrid aria-hidden="true" />
               Значки
+              <IconCheckmark v-if="viewMode === 'grid'" class="dropdown-check" aria-hidden="true" />
             </BDropdownItem>
-            <BDropdownItem>
+            <BDropdownItem @click="setViewMode('list')">
               <IconList aria-hidden="true" />
               Список
+              <IconCheckmark v-if="viewMode === 'list'" class="dropdown-check" aria-hidden="true" />
             </BDropdownItem>
           </BDropdown>
         </section>
 
-        <section class="content-list" aria-label="Содержимое папки">
-          <button
+        <section v-if="isLoading" class="workspace-state" aria-live="polite">
+          <IconFolder aria-hidden="true" />
+          <h2>Загружаем папку</h2>
+          <p>Получаем содержимое текущей директории.</p>
+        </section>
+
+        <section v-else-if="error" class="workspace-state" aria-live="polite">
+          <IconFolder aria-hidden="true" />
+          <h2>Не удалось открыть папку</h2>
+          <p>{{ error }}</p>
+        </section>
+
+        <section v-else-if="!items.length" class="workspace-state" aria-live="polite">
+          <IconFolder aria-hidden="true" />
+          <h2>Здесь пока пусто</h2>
+          <p>Создайте папку, документ или холст.</p>
+        </section>
+
+        <section v-else class="workspace-content" :class="viewMode" aria-label="Содержимое папки">
+          <WorkspaceCard
+            v-if="viewMode === 'grid'"
             v-for="item in items"
             :key="item.id"
-            class="content-item"
-            :class="{ selected: selectedId === item.id }"
-            type="button"
-            @click="selectItem(item.id)"
-          >
-            <span class="item-icon" :class="item.type">
-              <IconFolder v-if="item.type === 'folder'" aria-hidden="true" />
-              <IconDocument v-else-if="item.type === 'document'" aria-hidden="true" />
-              <IconPaintBrush v-else-if="item.type === 'canvas'" aria-hidden="true" />
-              <IconTemplate v-else aria-hidden="true" />
-            </span>
+            :item="item"
+            :selected="selectedId === item.id"
+            @open="openItem"
+            @select="selectItem"
+          />
 
-            <span class="item-main">
-              <strong>{{ item.name }}</strong>
-              <span>{{ typeLabels[item.type] }}</span>
-            </span>
-
-            <span class="item-tags">
-              <BBadge v-for="tag in item.tags" :key="tag" variant="light">
-                <IconTag aria-hidden="true" />
-                {{ tag }}
-              </BBadge>
-            </span>
-
-            <span class="item-date">{{ item.updatedAt }}</span>
-          </button>
+          <WorkspaceListItem
+            v-else
+            v-for="item in items"
+            :key="item.id"
+            :item="item"
+            :selected="selectedId === item.id"
+            :type-label="typeLabels[item.type]"
+            @open="openItem"
+            @select="selectItem"
+          />
         </section>
       </main>
 
@@ -315,6 +244,10 @@ const selectItem = (id: string) => {
   min-height: 34px;
 }
 
+.dropdown-check {
+  margin-left: auto;
+}
+
 .tool-group {
   display: flex;
   align-items: center;
@@ -342,101 +275,46 @@ const selectItem = (id: string) => {
   opacity: 1;
 }
 
-.content-list {
+.workspace-state {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  padding: 44px;
+  border: 1px dashed #cfcfcf;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #606060;
+  text-align: center;
+}
+
+.workspace-state svg {
+  width: 46px;
+  height: 46px;
+  margin-bottom: 10px;
+  color: #2a2a2a;
+}
+
+.workspace-state h2 {
+  margin: 0 0 6px;
+  color: #191919;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.workspace-state p {
+  margin: 0;
+}
+
+.workspace-content.list {
   display: grid;
   gap: 8px;
 }
 
-.content-item {
+.workspace-content.grid {
   display: grid;
-  grid-template-columns: 42px minmax(170px, 1.2fr) minmax(120px, 1fr) minmax(120px, auto);
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 62px;
-  padding: 10px 12px;
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #222222;
-  font: inherit;
-  text-align: left;
-}
-
-.content-item:hover {
-  border-color: #b7b7b7;
-  background: #fafafa;
-}
-
-.content-item.selected {
-  border-color: #1f1f1f;
-  background: #f1f1f1;
-  box-shadow: inset 0 0 0 1px #1f1f1f;
-}
-
-.item-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid #d4d4d4;
-  border-radius: 8px;
-  background: #f7f7f7;
-  color: #191919;
-}
-
-.item-icon svg {
-  width: 23px;
-  height: 23px;
-}
-
-.item-main {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.item-main strong {
-  min-width: 0;
-  overflow: hidden;
-  color: #161616;
-  font-size: 15px;
-  font-weight: 750;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.item-main span,
-.item-date {
-  color: #707070;
-  font-size: 13px;
-}
-
-.item-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-width: 0;
-}
-
-.item-tags :deep(.badge) {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid #d8d8d8;
-  color: #343434;
-  font-weight: 650;
-}
-
-.item-tags svg {
-  width: 12px;
-  height: 12px;
-}
-
-.item-date {
-  justify-self: end;
-  white-space: nowrap;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  align-items: start;
+  gap: 14px;
 }
 
 @media (max-width: 1180px) {
@@ -461,15 +339,9 @@ const selectItem = (id: string) => {
   }
 }
 
-@media (max-width: 720px) {
-  .content-item {
-    grid-template-columns: 42px minmax(0, 1fr);
-  }
-
-  .item-tags,
-  .item-date {
-    grid-column: 2;
-    justify-self: start;
+@media (max-width: 560px) {
+  .workspace-content.grid {
+    grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
   }
 }
 </style>

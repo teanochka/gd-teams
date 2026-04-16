@@ -5,8 +5,15 @@ import workspace from './components/pages/workspace.vue'
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/projects' },
   { path: '/projects', name: 'projects', component: projects, meta: { layout: 'projects' } },
-  { path: '/projects/:id', name: 'workspace', component: workspace },
-  { path: '/folder/:id', name: 'folder', component: workspace },
+  {
+    path: '/projects/:id',
+    redirect: (to) => ({ name: 'project', params: { projectId: to.params.id } }),
+  },
+  { path: '/project/:projectId', name: 'project', component: workspace },
+  { path: '/project/:projectId/folder/:folderId', name: 'project-folder', component: workspace },
+  { path: '/project/:projectId/document/:documentId', name: 'project-document', component: workspace },
+  { path: '/project/:projectId/canvas/:canvasId', name: 'project-canvas', component: workspace },
+  { path: '/project/:projectId/template/:templateId', name: 'project-template', component: workspace },
 ]
 
 const router = createRouter({

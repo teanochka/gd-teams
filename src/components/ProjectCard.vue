@@ -24,7 +24,7 @@ defineProps<{
   <article class="project-card">
     <RouterLink
       class="project-link"
-      :to="{ name: 'workspace', params: { id: project.id } }"
+      :to="{ name: 'project', params: { projectId: project.id } }"
       :aria-label="project.title"
     >
       <div class="project-banner">

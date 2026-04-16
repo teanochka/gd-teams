@@ -32,8 +32,10 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Workspace: typeof import('./src/components/pages/workspace.vue')['default']
+    WorkspaceCard: typeof import('./src/components/WorkspaceCard.vue')['default']
     WorkspaceHeader: typeof import('./src/components/WorkspaceHeader.vue')['default']
     WorkspaceLeftSidebar: typeof import('./src/components/WorkspaceLeftSidebar.vue')['default']
+    WorkspaceListItem: typeof import('./src/components/WorkspaceListItem.vue')['default']
     WorkspaceRightSidebar: typeof import('./src/components/WorkspaceRightSidebar.vue')['default']
   }
 }

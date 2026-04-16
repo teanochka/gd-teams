@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import IconArrowLeft from '~icons/carbon/arrow-left'
 import IconArrowRight from '~icons/carbon/arrow-right'
 import IconArrowUp from '~icons/carbon/arrow-up'
@@ -9,21 +10,28 @@ import IconSearch from '~icons/carbon/search'
 defineProps<{
   breadcrumbs: string[]
 }>()
+
+const emit = defineEmits<{
+  (event: 'reload'): void
+}>()
+
+const search = defineModel<string>({ default: '' })
+const router = useRouter()
 </script>
 
 <template>
   <header class="workspace-header">
     <BButtonGroup class="navigation-buttons" aria-label="Навигация">
-      <BButton variant="light" aria-label="Назад">
+      <BButton variant="light" aria-label="Назад" @click="router.back()">
         <IconArrowLeft aria-hidden="true" />
       </BButton>
-      <BButton variant="light" aria-label="Вперед">
+      <BButton variant="light" aria-label="Вперед" @click="router.forward()">
         <IconArrowRight aria-hidden="true" />
       </BButton>
       <BButton variant="light" aria-label="Вверх">
         <IconArrowUp aria-hidden="true" />
       </BButton>
-      <BButton variant="light" aria-label="Перезагрузить">
+      <BButton variant="light" aria-label="Перезагрузить" @click="emit('reload')">
         <IconRenew aria-hidden="true" />
       </BButton>
     </BButtonGroup>
@@ -39,7 +47,12 @@ defineProps<{
       <BInputGroupText>
         <IconSearch aria-hidden="true" />
       </BInputGroupText>
-      <BFormInput type="search" placeholder="Поиск в текущей папке" aria-label="Поиск в текущей папке" />
+      <BFormInput
+        v-model="search"
+        type="search"
+        placeholder="Поиск в текущей папке"
+        aria-label="Поиск в текущей папке"
+      />
     </BInputGroup>
   </header>
 </template>
