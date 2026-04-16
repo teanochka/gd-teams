@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import ProjectsPage from '@/components/pages/projects.vue'
+import Layouts from '@/layouts/index.vue'
 import { BApp } from 'bootstrap-vue-next'
 </script>
 
 <template>
   <BApp>
-    <ProjectsPage />
+    <Layouts />
   </BApp>
 </template>
