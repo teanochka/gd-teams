@@ -17,6 +17,7 @@ export type Project = {
   id: ProjectId
   title: string
   description: string
+  createdAt: string
   updatedAt: string
   owner: string
   teamId: TeamId
@@ -83,4 +84,12 @@ export type CreateNodePayload = {
   title: string
   icon?: string
   tagIds?: string[]
+}
+
+export type CreateProjectPayload = {
+  title: string
+  description: string
+  imageUrl?: string
+  teamId?: TeamId
+  newTeamName?: string
 }

@@ -26,6 +26,7 @@ declare module 'vue' {
     IconSupport: typeof import('./src/components/icons/IconSupport.vue')['default']
     IconTooling: typeof import('./src/components/icons/IconTooling.vue')['default']
     ProjectCard: typeof import('./src/components/ProjectCard.vue')['default']
+    ProjectCreate: typeof import('./src/components/pages/project-create.vue')['default']
     Projects: typeof import('./src/components/pages/projects.vue')['default']
     ProjectsHeader: typeof import('./src/components/ProjectsHeader.vue')['default']
     ProjectsSidebar: typeof import('./src/components/ProjectsSidebar.vue')['default']

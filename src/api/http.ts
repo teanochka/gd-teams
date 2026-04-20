@@ -28,8 +28,23 @@ export const apiRequest = async <T>(path: string, options: RequestOptions = {}):
   })
 
   if (!response.ok) {
-    const errorBody = (await response.json().catch(() => null)) as { message?: string } | null
-    throw new Error(errorBody?.message ?? `Request failed: ${response.status}`)
+    const errorText = await response.text().catch(() => '')
+    const errorBody = errorText
+      ? (() => {
+          try {
+            return JSON.parse(errorText) as { message?: string; error?: string }
+          } catch {
+            return null
+          }
+        })()
+      : null
+    const message =
+      errorBody?.message ||
+      errorBody?.error ||
+      errorText.trim() ||
+      `Request failed: ${response.status}`
+
+    throw new Error(message)
   }
 
   return response.json() as Promise<T>

@@ -8,6 +8,7 @@ import IconPaintBrush from '~icons/carbon/paint-brush'
 import IconTag from '~icons/carbon/tag'
 import IconTemplate from '~icons/carbon/template'
 import IconUserAvatar from '~icons/carbon/user-avatar'
+import { formatDateTime } from '@/utils/formatDate'
 
 type WorkspaceItemType = 'folder' | 'document' | 'canvas' | 'template'
 
@@ -79,11 +80,11 @@ const typeLabel = computed(() => {
       <dl>
         <div>
           <dt>Создано</dt>
-          <dd>{{ details.createdAt }}</dd>
+          <dd>{{ formatDateTime(details.createdAt) }}</dd>
         </div>
         <div>
           <dt>Изменено</dt>
-          <dd>{{ details.updatedAt }}</dd>
+          <dd>{{ formatDateTime(details.updatedAt) }}</dd>
         </div>
       </dl>
     </section>

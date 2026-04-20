@@ -4,6 +4,7 @@ import IconFolder from '~icons/carbon/folder'
 import IconPaintBrush from '~icons/carbon/paint-brush'
 import IconTag from '~icons/carbon/tag'
 import IconTemplate from '~icons/carbon/template'
+import { formatDateTime } from '@/utils/formatDate'
 
 type WorkspaceItemType = 'folder' | 'document' | 'canvas' | 'template'
 
@@ -57,7 +58,7 @@ const emit = defineEmits<{
       </BBadge>
     </span>
 
-    <span class="item-date">{{ item.updatedAt }}</span>
+    <span class="item-date">{{ formatDateTime(item.updatedAt) }}</span>
   </button>
 </template>
 

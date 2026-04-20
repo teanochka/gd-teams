@@ -2,6 +2,7 @@
 import IconOverflowMenuHorizontal from '~icons/carbon/overflow-menu-horizontal'
 import IconStar from '~icons/carbon/star'
 import IconTime from '~icons/carbon/time'
+import { formatDateTime } from '@/utils/formatDate'
 
 type ProjectCardData = {
   id: string
@@ -42,7 +43,7 @@ defineProps<{
         <div class="project-footer">
           <span class="project-date">
             <IconTime aria-hidden="true" />
-            {{ project.updatedAt }}
+            {{ formatDateTime(project.updatedAt) }}
           </span>
           <span>{{ project.filesCount }} файлов</span>
         </div>

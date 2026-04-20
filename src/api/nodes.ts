@@ -23,10 +23,7 @@ const mapNode = (node: RawNode, tags: Tag[]): Node => ({
   tags: tags.filter((tag) => node.tagIds.includes(tag.id)),
 })
 
-const buildFolderTree = (
-  nodes: Node[],
-  parentId: NodeId | null,
-): FolderTreeNode[] => {
+const buildFolderTree = (nodes: Node[], parentId: NodeId | null): FolderTreeNode[] => {
   return nodes
     .filter((node) => node.parentId === parentId && node.type === 'folder' && !node.isDeleted)
     .map((node) => {
@@ -58,6 +55,8 @@ const resolveFolderId = (project: Project, folderId?: NodeId | null) => {
 
 const createNodeId = (type: NodeType) => `${type}-${Date.now()}`
 
+const getCurrentDate = () => new Date().toISOString()
+
 export const getFolderContent = async (
   projectId: ProjectId,
   folderId?: NodeId | null,
@@ -77,9 +76,7 @@ export const getFolderContent = async (
     throw new Error('Folder not found')
   }
 
-  const nodes = projectNodes.filter(
-    (node) => node.parentId === resolvedFolderId && !node.isDeleted,
-  )
+  const nodes = projectNodes.filter((node) => node.parentId === resolvedFolderId && !node.isDeleted)
 
   return {
     project,
@@ -93,6 +90,7 @@ export const getFolderContent = async (
 
 export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
   const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: payload.projectId } })
+  const savedAt = getCurrentDate()
   const node = await apiRequest<RawNode>('/nodes', {
     method: 'POST',
     body: {
@@ -105,9 +103,9 @@ export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
       tagIds: payload.tagIds ?? [],
       isFavorite: false,
       isDeleted: false,
-      createdAt: 'Только что',
+      createdAt: savedAt,
       createdBy: 'Вы',
-      updatedAt: 'Только что',
+      updatedAt: savedAt,
       updatedBy: 'Вы',
     },
   })
@@ -116,11 +114,12 @@ export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
 }
 
 export const renameNode = async (nodeId: NodeId, title: string): Promise<Node> => {
+  const savedAt = getCurrentDate()
   const node = await apiRequest<RawNode>(`/nodes/${nodeId}`, {
     method: 'PATCH',
     body: {
       title: title.trim(),
-      updatedAt: 'Только что',
+      updatedAt: savedAt,
       updatedBy: 'Вы',
     },
   })
@@ -130,13 +129,14 @@ export const renameNode = async (nodeId: NodeId, title: string): Promise<Node> =
 }
 
 export const moveNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
+  const savedAt = getCurrentDate()
   const movedNodes = await Promise.all(
     nodeIds.map((nodeId) =>
       apiRequest<RawNode>(`/nodes/${nodeId}`, {
         method: 'PATCH',
         body: {
           parentId,
-          updatedAt: 'Только что',
+          updatedAt: savedAt,
           updatedBy: 'Вы',
         },
       }),
@@ -149,7 +149,10 @@ export const moveNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<No
 }
 
 export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
-  const sourceNodes = await Promise.all(nodeIds.map((nodeId) => apiRequest<RawNode>(`/nodes/${nodeId}`)))
+  const sourceNodes = await Promise.all(
+    nodeIds.map((nodeId) => apiRequest<RawNode>(`/nodes/${nodeId}`)),
+  )
+  const savedAt = getCurrentDate()
   const copiedNodes = await Promise.all(
     sourceNodes.map((source, index) =>
       apiRequest<RawNode>('/nodes', {
@@ -160,9 +163,9 @@ export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<No
           parentId,
           title: `${source.title} копия`,
           isFavorite: false,
-          createdAt: 'Только что',
+          createdAt: savedAt,
           createdBy: 'Вы',
-          updatedAt: 'Только что',
+          updatedAt: savedAt,
           updatedBy: 'Вы',
         },
       }),
@@ -175,13 +178,14 @@ export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<No
 }
 
 export const deleteNodes = async (nodeIds: NodeId[]): Promise<NodeId[]> => {
+  const savedAt = getCurrentDate()
   await Promise.all(
     nodeIds.map((nodeId) =>
       apiRequest<RawNode>(`/nodes/${nodeId}`, {
         method: 'PATCH',
         body: {
           isDeleted: true,
-          updatedAt: 'Только что',
+          updatedAt: savedAt,
           updatedBy: 'Вы',
         },
       }),
