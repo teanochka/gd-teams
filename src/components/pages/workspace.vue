@@ -29,6 +29,8 @@ const {
   currentDirectory,
   cutSelected,
   deleteSelected,
+  emptyStateDescription,
+  emptyStateTitle,
   error,
   folders,
   hasSelection,
@@ -42,10 +44,12 @@ const {
   searchQuery,
   selectedId,
   selectedItem,
+  selectedTagIds,
   selectItem,
   setSortField,
   setViewMode,
   tags,
+  toggleTagId,
   toggleSortOrder,
   typeLabels,
   viewMode,
@@ -66,7 +70,9 @@ const {
         :project-name="projectName"
         :folders="folders"
         :tags="tags"
+        :active-tag-ids="selectedTagIds"
         @open-folder="openFolder"
+        @toggle-tag="toggleTagId"
       />
 
       <main class="workspace-main">
@@ -157,8 +163,8 @@ const {
 
         <section v-else-if="!items.length" class="workspace-state" aria-live="polite">
           <IconFolder aria-hidden="true" />
-          <h2>Здесь пока пусто</h2>
-          <p>Создайте папку, документ или холст.</p>
+          <h2>{{ emptyStateTitle }}</h2>
+          <p>{{ emptyStateDescription }}</p>
         </section>
 
         <section v-else class="workspace-content" :class="viewMode" aria-label="Содержимое папки">

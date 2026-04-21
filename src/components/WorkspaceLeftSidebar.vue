@@ -21,10 +21,12 @@ defineProps<{
   projectName: string
   folders: FolderNode[]
   tags: TagItem[]
+  activeTagIds?: string[]
 }>()
 
 const emit = defineEmits<{
   (event: 'open-folder', id: string): void
+  (event: 'toggle-tag', id: string): void
 }>()
 
 const rootExpanded = ref(true)
@@ -73,7 +75,14 @@ const rootExpanded = ref(true)
 
     <section v-if="tags.length" class="sidebar-section tags-section">
       <h2>Тэги</h2>
-      <button v-for="tag in tags" :key="tag.id" class="sidebar-link tag-link" type="button">
+      <button
+        v-for="tag in tags"
+        :key="tag.id"
+        class="sidebar-link tag-link"
+        :class="{ active: activeTagIds?.includes(tag.id) }"
+        type="button"
+        @click="emit('toggle-tag', tag.id)"
+      >
         <IconTag aria-hidden="true" />
         <span>{{ tag.name }}</span>
       </button>
@@ -187,6 +196,12 @@ const rootExpanded = ref(true)
 
 .tag-link {
   color: #383838;
+}
+
+.sidebar-link.active {
+  border-color: #202020;
+  background: #202020;
+  color: #ffffff;
 }
 
 @media (max-width: 980px) {

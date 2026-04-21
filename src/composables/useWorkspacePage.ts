@@ -34,6 +34,18 @@ const getSingleQueryValue = (value: unknown) => {
   return typeof value === 'string' ? value : ''
 }
 
+const getQueryValues = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.length > 0)
+  }
+
+  if (typeof value === 'string' && value.length > 0) {
+    return [value]
+  }
+
+  return []
+}
+
 const toWorkspaceItem = (node: Node): WorkspaceItem => ({
   id: node.id,
   name: node.title,
@@ -94,6 +106,8 @@ export function useWorkspacePage() {
     },
   })
 
+  const activeTagIds = computed(() => getQueryValues(route.query.tag))
+
   const sortField = computed<SortField>(() => {
     const value = getSingleQueryValue(route.query.sort)
 
@@ -120,7 +134,12 @@ export function useWorkspacePage() {
   const projectName = computed(() => currentProject.value?.title ?? 'Проект')
   const breadcrumbLabels = computed(() => breadcrumbs.value.map((item) => item.title))
   const sidebarTags = computed(() => tags.value.map((tag) => ({ id: tag.id, name: tag.name })))
-  const selectedItem = computed(() => selectedItems.value[0] ? toWorkspaceItem(selectedItems.value[0]) : null)
+  const activeTagNames = computed(() =>
+    tags.value
+      .filter((tag) => activeTagIds.value.includes(tag.id))
+      .map((tag) => tag.name),
+  )
+  const selectedItem = computed(() => (selectedItems.value[0] ? toWorkspaceItem(selectedItems.value[0]) : null))
   const hasSelection = computed(() => selectedNodeIds.value.length > 0)
   const clipboardHasContent = computed(() => clipboard.value !== null)
   const viewModeLabel = computed(() => (viewMode.value === 'grid' ? 'Значки' : 'Список'))
@@ -144,8 +163,13 @@ export function useWorkspacePage() {
 
   const visibleItems = computed(() => {
     const query = searchQuery.value.trim().toLowerCase()
+    const selectedTags = activeTagIds.value
 
     const filtered = currentItems.value.filter((node) => {
+      if (selectedTags.length && !node.tags.some((tag) => selectedTags.includes(tag.id))) {
+        return false
+      }
+
       if (!query) {
         return true
       }
@@ -170,6 +194,22 @@ export function useWorkspacePage() {
         return compareText(left[field], right[field]) * direction
       })
       .map(toWorkspaceItem)
+  })
+
+  const emptyStateTitle = computed(() => {
+    if (activeTagIds.value.length) {
+      return 'Нет файлов с выбранными тэгами'
+    }
+
+    return 'Здесь пока пусто'
+  })
+
+  const emptyStateDescription = computed(() => {
+    if (activeTagNames.value.length) {
+      return `В текущей директории нет файлов или папок с тэгами: ${activeTagNames.value.join(', ')}.`
+    }
+
+    return 'Создайте папку, документ или холст.'
   })
 
   const openFolder = (nextFolderId: string) => {
@@ -200,6 +240,21 @@ export function useWorkspacePage() {
     void router.replace({ query: { ...route.query, sort: field } })
   }
 
+  const toggleTagId = (tagId: string) => {
+    const nextQuery = { ...route.query }
+    const nextTagIds = activeTagIds.value.includes(tagId)
+      ? activeTagIds.value.filter((id) => id !== tagId)
+      : [...activeTagIds.value, tagId]
+
+    if (nextTagIds.length) {
+      nextQuery.tag = nextTagIds
+    } else {
+      delete nextQuery.tag
+    }
+
+    void router.replace({ query: nextQuery })
+  }
+
   const toggleSortOrder = () => {
     const nextOrder: SortOrder = sortOrder.value === 'asc' ? 'desc' : 'asc'
     void router.replace({ query: { ...route.query, order: nextOrder } })
@@ -216,7 +271,12 @@ export function useWorkspacePage() {
   return {
     breadcrumbLabels,
     clipboardHasContent,
+    copySelected: workspaceStore.copySelected,
     currentDirectory,
+    cutSelected: workspaceStore.cutSelected,
+    deleteSelected: workspaceStore.deleteSelected,
+    emptyStateDescription,
+    emptyStateTitle,
     error: currentFolderError,
     folders: foldersTree,
     hasSelection,
@@ -230,16 +290,15 @@ export function useWorkspacePage() {
     searchQuery,
     selectedId: computed(() => selectedNodeIds.value[0] ?? null),
     selectedItem,
+    selectedTagIds: activeTagIds,
     selectItem: workspaceStore.selectOne,
     setSortField,
     setViewMode,
     tags: sidebarTags,
+    toggleTagId,
     toggleSortOrder,
     typeLabels,
     viewMode,
     viewModeLabel,
-    copySelected: workspaceStore.copySelected,
-    cutSelected: workspaceStore.cutSelected,
-    deleteSelected: workspaceStore.deleteSelected,
   }
 }
