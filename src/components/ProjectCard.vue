@@ -1,8 +1,19 @@
 <script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import IconOverflowMenuHorizontal from '~icons/carbon/overflow-menu-horizontal'
 import IconStar from '~icons/carbon/star'
 import IconTime from '~icons/carbon/time'
+import { useProjectsStore } from '@/stores/projects'
 import { formatDateTime } from '@/utils/formatDate'
+
+const dropdownMenu = useTemplateRef('dropdownMenu')
+const titleInput = ref<HTMLInputElement | null>(null)
+const router = useRouter()
+const projectsStore = useProjectsStore()
+
+const hide = () => dropdownMenu.value?.hide()
+const toggle = () => dropdownMenu.value?.toggle()
 
 type ProjectCardData = {
   id: string
@@ -14,27 +25,160 @@ type ProjectCardData = {
   isFavorite: boolean
   filesCount: number
   imageUrl: string
+  isDeleted: boolean
 }
 
-defineProps<{
+const props = defineProps<{
   project: ProjectCardData
 }>()
+
+const renamingProjectId = ref<string | null>(null)
+const draftTitle = ref('')
+const isSavingTitle = ref(false)
+const isRenaming = computed(() => renamingProjectId.value === props.project.id)
+const projectLinkProps = computed(() => {
+  if (isRenaming.value) {
+    return {
+      class: 'project-link',
+      'aria-label': props.project.title,
+    }
+  }
+
+  return {
+    class: 'project-link',
+    to: { name: 'project', params: { projectId: props.project.id } },
+    'aria-label': props.project.title,
+  }
+})
+
+watch(
+  () => props.project.title,
+  (title) => {
+    if (!isRenaming.value) {
+      draftTitle.value = title
+    }
+  },
+  { immediate: true },
+)
+
+const focusTitleInput = async () => {
+  await nextTick()
+  titleInput.value?.focus()
+  titleInput.value?.select()
+}
+
+const openEditPage = () => {
+  hide()
+  void router.push({ name: 'project-edit', params: { projectId: props.project.id } })
+}
+
+const startRename = () => {
+  hide()
+  renamingProjectId.value = props.project.id
+  draftTitle.value = props.project.title
+  void focusTitleInput()
+}
+
+const finishRename = async () => {
+  if (!isRenaming.value || isSavingTitle.value) {
+    return
+  }
+
+  const nextTitle = draftTitle.value.trim()
+
+  if (!nextTitle) {
+    draftTitle.value = props.project.title
+    renamingProjectId.value = null
+    return
+  }
+
+  if (nextTitle === props.project.title) {
+    renamingProjectId.value = null
+    return
+  }
+
+  isSavingTitle.value = true
+
+  try {
+    await projectsStore.renameProject(props.project.id, nextTitle)
+  } finally {
+    isSavingTitle.value = false
+    renamingProjectId.value = null
+  }
+}
+
+const cancelRename = () => {
+  draftTitle.value = props.project.title
+  renamingProjectId.value = null
+}
+
+const addToFavorites = () => {
+  hide()
+  void projectsStore.toggleFavoriteProject(props.project.id, true)
+}
+
+const removeFromFavorites = () => {
+  hide()
+  void projectsStore.toggleFavoriteProject(props.project.id, false)
+}
+
+const moveToTrash = () => {
+  hide()
+  void projectsStore.softDeleteProject(props.project.id)
+}
+
+const handleDocumentPointerDown = (event: PointerEvent) => {
+  if (!isRenaming.value || isSavingTitle.value) {
+    return
+  }
+
+  const target = event.target
+
+  if (!(target instanceof Node)) {
+    return
+  }
+
+  if (titleInput.value?.contains(target)) {
+    return
+  }
+
+  void finishRename()
+}
+
+watch(isRenaming, (value) => {
+  if (value) {
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+    return
+  }
+
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+})
 </script>
 
 <template>
-  <article class="project-card">
-    <RouterLink
-      class="project-link"
-      :to="{ name: 'project', params: { projectId: project.id } }"
-      :aria-label="project.title"
-    >
+  <article class="project-card" @contextmenu.prevent="toggle">
+    <component :is="isRenaming ? 'div' : RouterLink" v-bind="projectLinkProps">
       <div class="project-banner">
         <img :src="project.imageUrl" :alt="`Баннер проекта ${project.title}`" />
       </div>
 
       <div class="project-body">
         <div class="project-title-row">
-          <h2>{{ project.title }}</h2>
+          <input
+            v-if="isRenaming"
+            ref="titleInput"
+            v-model="draftTitle"
+            class="form-control title-input"
+            :disabled="isSavingTitle"
+            @click.stop
+            @keydown.enter.prevent="finishRename"
+            @keydown.esc.prevent="cancelRename"
+          />
+          <h2 v-else>{{ project.title }}</h2>
           <IconStar v-if="project.isFavorite" class="favorite-icon" aria-label="В избранном" />
         </div>
 
@@ -53,11 +197,30 @@ defineProps<{
           <span>Владелец: {{ project.owner }}</span>
         </div>
       </div>
-    </RouterLink>
+    </component>
 
-    <BButton variant="light" class="card-menu" aria-label="Действия проекта" @click.stop>
-      <IconOverflowMenuHorizontal aria-hidden="true" />
-    </BButton>
+    <BDropdown
+      ref="dropdownMenu"
+      variant="link"
+      toggle-class="card-menu-toggle"
+      class="card-menu"
+      no-caret
+    >
+      <template #button-content>
+        <IconOverflowMenuHorizontal aria-hidden="true" style="color: black" />
+      </template>
+      <BDropdownItem @click="startRename">Переименовать</BDropdownItem>
+      <BDropdownItem @click="openEditPage">Изменить</BDropdownItem>
+      <BDropdownItem v-if="!project.isFavorite" @click="addToFavorites">
+        В избранное
+      </BDropdownItem>
+      <BDropdownItem v-if="project.isFavorite" @click="removeFromFavorites">
+        Убрать из избранного
+      </BDropdownItem>
+      <BDropdownItem v-if="!project.isDeleted" @click="moveToTrash">
+        В корзину
+      </BDropdownItem>
+    </BDropdown>
   </article>
 </template>
 
@@ -105,14 +268,18 @@ defineProps<{
   position: absolute;
   top: 10px;
   right: 10px;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
   padding: 0;
   border: 1px solid #d0d0d0;
   border-radius: 8px;
-  color: #191919;
+  background: white;
+}
+
+.card-menu-toggle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px !important;
 }
 
 .project-body {
@@ -132,6 +299,7 @@ defineProps<{
 .project-title-row {
   justify-content: space-between;
   gap: 12px;
+  min-height: 28px;
 }
 
 .project-title-row h2 {
@@ -144,6 +312,16 @@ defineProps<{
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.title-input {
+  min-width: 0;
+  height: 28px;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.25;
 }
 
 .favorite-icon {

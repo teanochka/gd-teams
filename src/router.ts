@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import projectCreate from './components/pages/project-create.vue'
+import projectEdit from './components/pages/project-edit.vue'
 import projects from './components/pages/projects.vue'
 import workspace from './components/pages/workspace.vue'
 
@@ -9,6 +10,12 @@ const routes: RouteRecordRaw[] = [
     path: '/projects/new',
     name: 'project-create',
     component: projectCreate,
+    meta: { layout: 'projects' },
+  },
+  {
+    path: '/projects/:projectId/edit',
+    name: 'project-edit',
+    component: projectEdit,
     meta: { layout: 'projects' },
   },
   { path: '/projects', name: 'projects', component: projects, meta: { layout: 'projects' } },

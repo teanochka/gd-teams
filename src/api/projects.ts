@@ -1,5 +1,5 @@
 import { apiRequest } from '@/api/http'
-import type { CreateProjectPayload, Project, Team } from '@/types/domain'
+import type { CreateProjectPayload, Project, Team, UpdateProjectPayload } from '@/types/domain'
 
 type ProjectsResponse = {
   projects: Project[]
@@ -30,6 +30,33 @@ export const getProjects = async (): Promise<ProjectsResponse> => {
 
 export const getProject = async (projectId: string): Promise<Project> => {
   return apiRequest<Project>(`/projects/${projectId}`)
+}
+
+export const toggleFavoriteProject = async (projectId: string, isFavorite: boolean): Promise<Project> => {
+  return apiRequest<Project>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: { isFavorite },
+  })
+}
+
+export const softDeleteProject = async (projectId: string): Promise<Project> => {
+  return apiRequest<Project>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: { isDeleted: true },
+  })
+}
+
+export const restoreProject = async (projectId: string): Promise<Project> => {
+  return apiRequest<Project>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: { isDeleted: false },
+  })
+}
+
+export const permanentlyDeleteProject = async (projectId: string): Promise<void> => {
+  await apiRequest(`/projects/${projectId}`, {
+    method: 'DELETE',
+  })
 }
 
 const createEntityId = (prefix: string) => {
@@ -134,4 +161,43 @@ export const createProject = async (payload: CreateProjectPayload): Promise<Proj
   })
 
   return project
+}
+
+export const updateProject = async (
+  projectId: string,
+  payload: UpdateProjectPayload,
+): Promise<Project> => {
+  const existingProject = await getProject(projectId)
+  const title = payload.title.trim()
+  const description = payload.description.trim()
+  const team = await resolveProjectTeam(payload)
+  const updatedAt = new Date().toISOString()
+
+  return apiRequest<Project>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: {
+      title,
+      description,
+      updatedAt,
+      teamId: team.id,
+      teamName: team.name,
+      imageUrl: payload.imageUrl?.trim() || existingProject.imageUrl,
+    },
+  })
+}
+
+export const renameProject = async (projectId: string, title: string): Promise<Project> => {
+  const normalizedTitle = title.trim()
+
+  if (!normalizedTitle) {
+    throw new Error('Название проекта не может быть пустым')
+  }
+
+  return apiRequest<Project>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: {
+      title: normalizedTitle,
+      updatedAt: new Date().toISOString(),
+    },
+  })
 }

@@ -93,3 +93,11 @@ export type CreateProjectPayload = {
   teamId?: TeamId
   newTeamName?: string
 }
+
+export type UpdateProjectPayload = {
+  title: string
+  description: string
+  imageUrl?: string
+  teamId?: TeamId
+  newTeamName?: string
+}
