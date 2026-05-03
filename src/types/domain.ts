@@ -8,6 +8,17 @@ export type SortField = 'title' | 'createdAt' | 'updatedAt' | 'type'
 export type SortOrder = 'asc' | 'desc'
 export type ViewMode = 'grid' | 'list'
 
+export type LotionBlock = {
+  id: string
+  type: string
+  details: Record<string, unknown>
+}
+
+export type LotionPage = {
+  name: string
+  blocks: LotionBlock[]
+}
+
 export type Team = {
   id: TeamId
   name: string
@@ -50,6 +61,15 @@ export type Node = {
   createdBy: string
   updatedAt: string
   updatedBy: string
+}
+
+export type DocumentPage = {
+  id: NodeId
+  nodeId: NodeId
+  projectId: ProjectId
+  page: LotionPage
+  createdAt: string
+  updatedAt: string
 }
 
 export type PendingNodeDraft = {

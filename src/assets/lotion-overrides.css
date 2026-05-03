@@ -1,0 +1,29 @@
+.lotion .group:hover .group-hover\:opacity-100,
+.lotion .group-tooltip:hover .group-tooltip-hover\:opacity-100 {
+  opacity: 1 !important;
+}
+
+.lotion .group:not(:hover) .group-hover\:opacity-100.opacity-0 {
+  pointer-events: none;
+}
+
+.lotion .group:hover .group-hover\:opacity-100,
+.lotion .group-tooltip:hover .group-tooltip-hover\:opacity-100 {
+  pointer-events: auto;
+}
+
+.lotion .handle,
+.lotion .handle * {
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.lotion .handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.lotion .handle:active {
+  cursor: grabbing;
+}

@@ -1,4 +1,5 @@
 import { apiRequest } from '@/api/http'
+import { copyDocumentPage, createDocumentPage } from '@/api/documents'
 import type {
   Breadcrumb,
   CreateNodePayload,
@@ -122,6 +123,10 @@ export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
     },
   })
 
+  if (node.type === 'document') {
+    await createDocumentPage(mapNode(node, tags))
+  }
+
   await updateProjectNodeCount(payload.projectId, 1, savedAt)
 
   return mapNode(node, tags)
@@ -185,6 +190,19 @@ export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<No
       }),
     ),
   )
+
+  await Promise.all(
+    copiedNodes.map((copiedNode, index) => {
+      const sourceNode = sourceNodes[index]
+
+      if (sourceNode?.type !== 'document') {
+        return Promise.resolve(null)
+      }
+
+      return copyDocumentPage(sourceNode.id, mapNode(copiedNode, []))
+    }),
+  )
+
   const projectId = copiedNodes[0]?.projectId
   const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
 

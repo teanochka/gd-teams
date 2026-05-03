@@ -1,0 +1,163 @@
+import { apiRequest } from '@/api/http'
+import type { DocumentPage, LotionPage, Node, NodeId, ProjectId } from '@/types/domain'
+
+type RawNode = Omit<Node, 'tags'> & {
+  tagIds: string[]
+  icon?: string | null
+}
+
+const createBlockId = () => {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+
+  return `block-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+const getCurrentDate = () => new Date().toISOString()
+
+export const createDefaultLotionPage = (title: string): LotionPage => ({
+  name: title,
+  blocks: [
+    {
+      id: createBlockId(),
+      type: 'TEXT',
+      details: {
+        value: '',
+      },
+    },
+  ],
+})
+
+const clonePage = (page: LotionPage): LotionPage => ({
+  name: page.name.trim() || 'Untitled',
+  blocks: page.blocks.map((block) => ({
+    ...block,
+    details: { ...block.details },
+  })),
+})
+
+export const createDocumentPage = async (node: Pick<Node, 'id' | 'projectId' | 'title'>) => {
+  const savedAt = getCurrentDate()
+
+  return apiRequest<DocumentPage>('/documentPages', {
+    method: 'POST',
+    body: {
+      nodeId: node.id,
+      projectId: node.projectId,
+      page: createDefaultLotionPage(node.title),
+      createdAt: savedAt,
+      updatedAt: savedAt,
+    },
+  })
+}
+
+export const copyDocumentPage = async (
+  sourceNodeId: NodeId,
+  targetNode: Pick<Node, 'id' | 'projectId' | 'title'>,
+) => {
+  const pages = await apiRequest<DocumentPage[]>('/documentPages', {
+    query: { nodeId: sourceNodeId },
+  })
+  const savedAt = getCurrentDate()
+  const sourcePage = pages[0]?.page ?? createDefaultLotionPage(targetNode.title)
+  const page = clonePage(sourcePage)
+
+  page.name = targetNode.title
+
+  return apiRequest<DocumentPage>('/documentPages', {
+    method: 'POST',
+    body: {
+      nodeId: targetNode.id,
+      projectId: targetNode.projectId,
+      page,
+      createdAt: savedAt,
+      updatedAt: savedAt,
+    },
+  })
+}
+
+export const getDocumentPage = async (
+  documentId: NodeId,
+  projectId: ProjectId,
+): Promise<DocumentPage> => {
+  const pages = await apiRequest<DocumentPage[]>('/documentPages', {
+    query: { nodeId: documentId },
+  })
+  const existingPage = pages[0]
+
+  if (existingPage) {
+    return existingPage
+  }
+
+  const node = await apiRequest<RawNode>(`/nodes/${documentId}`)
+
+  if (node.type !== 'document' || node.projectId !== projectId) {
+    throw new Error('Document not found')
+  }
+
+  return createDocumentPage({
+    id: node.id,
+    projectId: node.projectId,
+    title: node.title,
+  })
+}
+
+export const saveDocumentPage = async (
+  documentId: NodeId,
+  page: LotionPage,
+): Promise<DocumentPage> => {
+  const savedAt = getCurrentDate()
+  const nextPage = clonePage(page)
+  const pages = await apiRequest<DocumentPage[]>('/documentPages', {
+    query: { nodeId: documentId },
+  })
+  const documentPageId = pages[0]?.id
+
+  if (!documentPageId) {
+    const node = await apiRequest<RawNode>(`/nodes/${documentId}`)
+
+    const [documentPage] = await Promise.all([
+      apiRequest<DocumentPage>('/documentPages', {
+        method: 'POST',
+        body: {
+          nodeId: node.id,
+          projectId: node.projectId,
+          page: nextPage,
+          createdAt: savedAt,
+          updatedAt: savedAt,
+        },
+      }),
+      apiRequest<RawNode>(`/nodes/${documentId}`, {
+        method: 'PATCH',
+        body: {
+          title: nextPage.name,
+          updatedAt: savedAt,
+          updatedBy: 'Р’С‹',
+        },
+      }),
+    ])
+
+    return documentPage
+  }
+
+  const [documentPage] = await Promise.all([
+    apiRequest<DocumentPage>(`/documentPages/${documentPageId}`, {
+      method: 'PATCH',
+      body: {
+        page: nextPage,
+        updatedAt: savedAt,
+      },
+    }),
+    apiRequest<RawNode>(`/nodes/${documentId}`, {
+      method: 'PATCH',
+      body: {
+        title: nextPage.name.trim() || 'Untitled',
+        updatedAt: savedAt,
+        updatedBy: 'Р’С‹',
+      },
+    }),
+  ])
+
+  return documentPage
+}
