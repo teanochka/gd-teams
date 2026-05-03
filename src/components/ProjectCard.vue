@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import IconOverflowMenuHorizontal from '~icons/carbon/overflow-menu-horizontal'
 import IconStar from '~icons/carbon/star'
 import IconTime from '~icons/carbon/time'
+import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
 import { useProjectsStore } from '@/stores/projects'
 import { formatDateTime } from '@/utils/formatDate'
 
 const dropdownMenu = useTemplateRef('dropdownMenu')
-const titleInput = ref<HTMLInputElement | null>(null)
 const router = useRouter()
 const projectsStore = useProjectsStore()
 
@@ -61,12 +61,6 @@ watch(
   { immediate: true },
 )
 
-const focusTitleInput = async () => {
-  await nextTick()
-  titleInput.value?.focus()
-  titleInput.value?.select()
-}
-
 const openEditPage = () => {
   hide()
   void router.push({ name: 'project-edit', params: { projectId: props.project.id } })
@@ -76,7 +70,6 @@ const startRename = () => {
   hide()
   renamingProjectId.value = props.project.id
   draftTitle.value = props.project.title
-  void focusTitleInput()
 }
 
 const finishRename = async () => {
@@ -127,35 +120,10 @@ const moveToTrash = () => {
   void projectsStore.softDeleteProject(props.project.id)
 }
 
-const handleDocumentPointerDown = (event: PointerEvent) => {
-  if (!isRenaming.value || isSavingTitle.value) {
-    return
-  }
-
-  const target = event.target
-
-  if (!(target instanceof Node)) {
-    return
-  }
-
-  if (titleInput.value?.contains(target)) {
-    return
-  }
-
-  void finishRename()
-}
-
-watch(isRenaming, (value) => {
-  if (value) {
-    document.addEventListener('pointerdown', handleDocumentPointerDown)
-    return
-  }
-
-  document.removeEventListener('pointerdown', handleDocumentPointerDown)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+const { inputRef: titleInput } = useInlineTitleEdit({
+  isEditing: isRenaming,
+  isBusy: isSavingTitle,
+  onCommit: finishRename,
 })
 </script>
 

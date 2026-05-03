@@ -1,8 +1,8 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
-  createNode as apiCreateNode,
   copyNodes as apiCopyNodes,
+  createNode as apiCreateNode,
   deleteNodes as apiDeleteNodes,
   getFolderContent,
   moveNodes as apiMoveNodes,
@@ -32,6 +32,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const foldersTree = ref<FolderTreeNode[]>([])
 
   const selectedNodeIds = ref<NodeId[]>([])
+  const selectionAnchorId = ref<NodeId | null>(null)
   const clipboard = ref<ClipboardState | null>(null)
 
   const isLoading = ref(false)
@@ -107,11 +108,94 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  function rebuildFoldersTree() {
+    const rootFolderId = currentProject.value?.rootFolderId
+
+    if (!rootFolderId) {
+      foldersTree.value = []
+      return
+    }
+
+    const nodes = Object.values(nodesById.value)
+
+    const buildTree = (parentId: NodeId): FolderTreeNode[] => {
+      return nodes
+        .filter((node) => node.parentId === parentId && node.type === 'folder' && !node.isDeleted)
+        .map((node) => {
+          const children = buildTree(node.id)
+
+          return {
+            id: node.id,
+            name: node.title,
+            ...(children.length ? { children } : {}),
+          }
+        })
+    }
+
+    foldersTree.value = buildTree(rootFolderId)
+  }
+
   function removeFromParentChildren(nodeIds: NodeId[]) {
     for (const folderId of Object.keys(childrenByFolderId.value)) {
       const children = childrenByFolderId.value[folderId] ?? []
       childrenByFolderId.value[folderId] = children.filter((id) => !nodeIds.includes(id))
     }
+  }
+
+  function normalizeSelectedNodeIds(nodeIds: NodeId[]) {
+    return [...new Set(nodeIds)].filter((nodeId) => {
+      const node = nodesById.value[nodeId]
+
+      return node !== undefined && !node.isDeleted
+    })
+  }
+
+  function findFolderTreeNode(targetId: NodeId, tree = foldersTree.value): FolderTreeNode | null {
+    for (const node of tree) {
+      if (node.id === targetId) {
+        return node
+      }
+
+      const nestedNode = node.children?.length ? findFolderTreeNode(targetId, node.children) : null
+
+      if (nestedNode) {
+        return nestedNode
+      }
+    }
+
+    return null
+  }
+
+  function collectFolderDescendantIds(folderId: NodeId) {
+    const folderNode = findFolderTreeNode(folderId)
+    const descendantIds = new Set<NodeId>()
+
+    const walk = (tree: FolderTreeNode[] = []) => {
+      for (const node of tree) {
+        descendantIds.add(node.id)
+        walk(node.children)
+      }
+    }
+
+    walk(folderNode?.children)
+
+    return descendantIds
+  }
+
+  function canMoveNodeIdsToFolder(nodeIds: NodeId[], targetFolderId: NodeId) {
+    return nodeIds.every((nodeId) => {
+      if (nodeId === targetFolderId) {
+        return false
+      }
+
+      const node = nodesById.value[nodeId]
+
+      if (!node || node.type !== 'folder') {
+        return true
+      }
+
+      return !collectFolderDescendantIds(nodeId).has(targetFolderId)
+    })
   }
 
   async function loadFolder(nextProjectId: ProjectId, folderId?: NodeId | null, force = false) {
@@ -120,6 +204,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (folderId && folderId !== 'root' && loadedFolderIds.value[folderId] && !force) {
       currentFolderId.value = folderId
       selectedNodeIds.value = []
+      selectionAnchorId.value = null
       return
     }
 
@@ -134,17 +219,18 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
       currentProject.value = data.project
       currentFolderId.value = resolvedFolderId
-      foldersTree.value = data.foldersTree
 
       cacheNodes([data.currentFolder, ...data.nodes])
       cacheTags(data.tags)
 
       childrenByFolderId.value[resolvedFolderId] = data.nodes.map((node) => node.id)
       breadcrumbsByFolderId.value[resolvedFolderId] = data.breadcrumbs
+      foldersTree.value = data.foldersTree
       loadedFolderIds.value[resolvedFolderId] = true
       loadingByFolderId.value[resolvedFolderId] = false
       errorByFolderId.value[resolvedFolderId] = null
       selectedNodeIds.value = []
+      selectionAnchorId.value = null
     } catch {
       errorByFolderId.value[loadingKey] = 'Не удалось загрузить папку'
     } finally {
@@ -161,12 +247,62 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     await loadFolder(projectId.value, currentFolderId.value, true)
   }
 
+  function setSelection(nodeIds: NodeId[], anchorId?: NodeId | null) {
+    selectedNodeIds.value = normalizeSelectedNodeIds(nodeIds)
+    const fallbackAnchorId = selectedNodeIds.value[selectedNodeIds.value.length - 1] ?? null
+
+    selectionAnchorId.value =
+      selectedNodeIds.value.length > 0 ? (anchorId ?? selectionAnchorId.value ?? fallbackAnchorId) : null
+  }
+
   function selectOne(nodeId: NodeId) {
-    selectedNodeIds.value = selectedNodeIds.value[0] === nodeId ? [] : [nodeId]
+    selectedNodeIds.value = [nodeId]
+    selectionAnchorId.value = nodeId
+  }
+
+  function toggleSelection(nodeId: NodeId) {
+    if (selectedNodeIds.value.includes(nodeId)) {
+      const remainingIds = selectedNodeIds.value.filter((id) => id !== nodeId)
+
+      setSelection(
+        remainingIds,
+        remainingIds.length
+          ? selectionAnchorId.value === nodeId
+            ? remainingIds[remainingIds.length - 1]
+            : selectionAnchorId.value
+          : null,
+      )
+      return
+    }
+
+    setSelection([...selectedNodeIds.value, nodeId], nodeId)
+  }
+
+  function selectRange(nodeIdsInOrder: NodeId[], targetNodeId: NodeId, additive = false) {
+    const anchorId = selectionAnchorId.value
+    const targetIndex = nodeIdsInOrder.indexOf(targetNodeId)
+
+    if (targetIndex === -1) {
+      return
+    }
+
+    const anchorIndex = anchorId ? nodeIdsInOrder.indexOf(anchorId) : -1
+
+    if (anchorIndex === -1) {
+      selectOne(targetNodeId)
+      return
+    }
+
+    const [startIndex, endIndex] =
+      anchorIndex <= targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex]
+    const rangeIds = nodeIdsInOrder.slice(startIndex, endIndex + 1)
+
+    setSelection(additive ? [...selectedNodeIds.value, ...rangeIds] : rangeIds, anchorId)
   }
 
   function clearSelection() {
     selectedNodeIds.value = []
+    selectionAnchorId.value = null
   }
 
   function copySelected() {
@@ -185,22 +321,30 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     clipboard.value = { type: 'cut', nodeIds: [...selectedNodeIds.value] }
   }
 
-  async function createNode(payload: Omit<CreateNodePayload, 'projectId' | 'parentId'>) {
-    if (!projectId.value || !currentFolderId.value) {
+  async function createNode(payload: Omit<CreateNodePayload, 'projectId'>) {
+    if (!projectId.value) {
       return null
     }
 
     const node = await apiCreateNode({
       ...payload,
       projectId: projectId.value,
-      parentId: currentFolderId.value,
     })
 
     cacheNodes([node])
-    childrenByFolderId.value[currentFolderId.value] = [
-      ...(childrenByFolderId.value[currentFolderId.value] ?? []),
+    childrenByFolderId.value[payload.parentId] = [
+      ...(childrenByFolderId.value[payload.parentId] ?? []),
       node.id,
     ]
+    rebuildFoldersTree()
+
+    if (currentProject.value) {
+      currentProject.value = {
+        ...currentProject.value,
+        filesCount: currentProject.value.filesCount + 1,
+        updatedAt: node.updatedAt,
+      }
+    }
 
     return node
   }
@@ -214,12 +358,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     const node = await apiRenameNode(nodeId, title)
     cacheNodes([node])
+    rebuildFoldersTree()
 
     return node
   }
 
   async function moveSelected(parentId: NodeId) {
     if (!selectedNodeIds.value.length) {
+      return []
+    }
+
+    if (!canMoveNodeIdsToFolder(selectedNodeIds.value, parentId)) {
       return []
     }
 
@@ -231,7 +380,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       ...(childrenByFolderId.value[parentId] ?? []),
       ...movedNodes.map((node) => node.id),
     ]
+    rebuildFoldersTree()
     selectedNodeIds.value = []
+    selectionAnchorId.value = null
 
     return movedNodes
   }
@@ -250,8 +401,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         ...(childrenByFolderId.value[targetFolderId] ?? []),
         ...copiedNodes.map((node) => node.id),
       ]
+      rebuildFoldersTree()
 
       return copiedNodes
+    }
+
+    if (!canMoveNodeIdsToFolder(clipboard.value.nodeIds, targetFolderId)) {
+      return []
     }
 
     const movedNodes = await apiMoveNodes(clipboard.value.nodeIds, targetFolderId)
@@ -261,8 +417,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       ...(childrenByFolderId.value[targetFolderId] ?? []),
       ...movedNodes.map((node) => node.id),
     ]
+    rebuildFoldersTree()
     clipboard.value = null
     selectedNodeIds.value = []
+    selectionAnchorId.value = null
 
     return movedNodes
   }
@@ -283,7 +441,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
 
     removeFromParentChildren(deletedIds)
+    rebuildFoldersTree()
     selectedNodeIds.value = []
+    selectionAnchorId.value = null
 
     return deletedIds
   }
@@ -298,6 +458,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     tagsById,
     foldersTree,
     selectedNodeIds,
+    selectionAnchorId,
     clipboard,
     isLoading,
     loadingByFolderId,
@@ -311,7 +472,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     currentFolderError,
     loadFolder,
     reloadCurrentFolder,
+    setSelection,
     selectOne,
+    toggleSelection,
+    selectRange,
     clearSelection,
     copySelected,
     cutSelected,

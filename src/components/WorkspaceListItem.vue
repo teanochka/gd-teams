@@ -1,43 +1,72 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import IconDocument from '~icons/carbon/document'
 import IconFolder from '~icons/carbon/folder'
 import IconPaintBrush from '~icons/carbon/paint-brush'
 import IconTag from '~icons/carbon/tag'
 import IconTemplate from '~icons/carbon/template'
+import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
+import type { NodeId, WorkspaceItem } from '@/types/domain'
 import { formatDateTime } from '@/utils/formatDate'
 
-type WorkspaceItemType = 'folder' | 'document' | 'canvas' | 'template'
-
-type WorkspaceItem = {
-  id: string
-  name: string
-  type: WorkspaceItemType
-  tags: string[]
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
+type WorkspaceItemSelectPayload = {
+  id: NodeId
+  event: MouseEvent
 }
 
-defineProps<{
+const props = defineProps<{
   item: WorkspaceItem
   selected: boolean
   typeLabel: string
+  editing?: boolean
+  draftName?: string
+  isSavingName?: boolean
 }>()
 
 const emit = defineEmits<{
-  (event: 'select', id: string): void
+  (event: 'select', payload: WorkspaceItemSelectPayload): void
   (event: 'open', item: WorkspaceItem): void
+  (event: 'update:draftName', value: string): void
+  (event: 'finish-name'): void
+  (event: 'cancel-name'): void
 }>()
+
+const isEditing = computed(() => props.editing ?? false)
+const currentDraftName = computed({
+  get: () => props.draftName ?? props.item.name,
+  set: (value: string) => emit('update:draftName', value),
+})
+
+const { inputRef } = useInlineTitleEdit({
+  isEditing,
+  isBusy: computed(() => props.isSavingName ?? false),
+  onCommit: () => emit('finish-name'),
+})
+
+const handleClick = (event: MouseEvent) => {
+  if (isEditing.value) {
+    return
+  }
+
+  emit('select', { id: props.item.id, event })
+}
+
+const handleDoubleClick = () => {
+  if (isEditing.value) {
+    return
+  }
+
+  emit('open', props.item)
+}
 </script>
 
 <template>
   <button
     class="workspace-list-item"
-    :class="{ selected }"
+    :class="{ selected, editing: isEditing }"
     type="button"
-    @click="emit('select', item.id)"
-    @dblclick="emit('open', item)"
+    @click="handleClick"
+    @dblclick="handleDoubleClick"
   >
     <span class="item-icon" :class="item.type">
       <IconFolder v-if="item.type === 'folder'" aria-hidden="true" />
@@ -47,7 +76,19 @@ const emit = defineEmits<{
     </span>
 
     <span class="item-main">
-      <strong>{{ item.name }}</strong>
+      <span class="item-name-shell">
+        <input
+          v-if="isEditing"
+          ref="inputRef"
+          v-model="currentDraftName"
+          class="form-control item-title-input"
+          :disabled="isSavingName"
+          @click.stop
+          @keydown.enter.prevent="emit('finish-name')"
+          @keydown.esc.prevent="emit('cancel-name')"
+        />
+        <strong v-else>{{ item.name }}</strong>
+      </span>
       <span>{{ typeLabel }}</span>
     </span>
 
@@ -90,6 +131,11 @@ const emit = defineEmits<{
   box-shadow: inset 0 0 0 1px #1f1f1f;
 }
 
+.workspace-list-item.editing {
+  border-color: #1f1f1f;
+  background: #fafafa;
+}
+
 .item-icon {
   display: grid;
   place-items: center;
@@ -112,15 +158,34 @@ const emit = defineEmits<{
   min-width: 0;
 }
 
-.item-main strong {
+.item-name-shell {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.item-main strong,
+.item-title-input {
+  display: block;
+  width: 100%;
+  height: 28px;
   min-width: 0;
-  overflow: hidden;
   color: #161616;
   font-size: 15px;
   font-weight: 750;
   line-height: 1.25;
+}
+
+.item-main strong {
+  overflow: hidden;
+  line-height: 28px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.item-title-input {
+  padding: 0 8px;
+  border-radius: 6px;
 }
 
 .item-main span,

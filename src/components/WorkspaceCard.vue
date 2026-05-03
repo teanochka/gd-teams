@@ -1,40 +1,69 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import IconDocument from '~icons/carbon/document'
 import IconFolder from '~icons/carbon/folder'
 import IconPaintBrush from '~icons/carbon/paint-brush'
 import IconTemplate from '~icons/carbon/template'
+import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
+import type { NodeId, WorkspaceItem } from '@/types/domain'
 
-type WorkspaceItemType = 'folder' | 'document' | 'canvas' | 'template'
-
-type WorkspaceItem = {
-  id: string
-  name: string
-  type: WorkspaceItemType
-  tags: string[]
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
+type WorkspaceItemSelectPayload = {
+  id: NodeId
+  event: MouseEvent
 }
 
-defineProps<{
+const props = defineProps<{
   item: WorkspaceItem
   selected: boolean
+  editing?: boolean
+  draftName?: string
+  isSavingName?: boolean
 }>()
 
 const emit = defineEmits<{
-  (event: 'select', id: string): void
+  (event: 'select', payload: WorkspaceItemSelectPayload): void
   (event: 'open', item: WorkspaceItem): void
+  (event: 'update:draftName', value: string): void
+  (event: 'finish-name'): void
+  (event: 'cancel-name'): void
 }>()
+
+const isEditing = computed(() => props.editing ?? false)
+const currentDraftName = computed({
+  get: () => props.draftName ?? props.item.name,
+  set: (value: string) => emit('update:draftName', value),
+})
+
+const { inputRef } = useInlineTitleEdit({
+  isEditing,
+  isBusy: computed(() => props.isSavingName ?? false),
+  onCommit: () => emit('finish-name'),
+})
+
+const handleClick = (event: MouseEvent) => {
+  if (isEditing.value) {
+    return
+  }
+
+  emit('select', { id: props.item.id, event })
+}
+
+const handleDoubleClick = () => {
+  if (isEditing.value) {
+    return
+  }
+
+  emit('open', props.item)
+}
 </script>
 
 <template>
   <button
     class="workspace-card"
-    :class="{ selected }"
+    :class="{ selected, editing: isEditing }"
     type="button"
-    @click="emit('select', item.id)"
-    @dblclick="emit('open', item)"
+    @click="handleClick"
+    @dblclick="handleDoubleClick"
   >
     <span class="card-icon" :class="item.type">
       <IconFolder v-if="item.type === 'folder'" aria-hidden="true" />
@@ -43,14 +72,26 @@ const emit = defineEmits<{
       <IconTemplate v-else aria-hidden="true" />
     </span>
 
-    <span class="card-title">{{ item.name }}</span>
+    <span class="card-title-shell">
+      <input
+        v-if="isEditing"
+        ref="inputRef"
+        v-model="currentDraftName"
+        class="form-control card-title-input"
+        :disabled="isSavingName"
+        @click.stop
+        @keydown.enter.prevent="emit('finish-name')"
+        @keydown.esc.prevent="emit('cancel-name')"
+      />
+      <span v-else class="card-title">{{ item.name }}</span>
+    </span>
   </button>
 </template>
 
 <style scoped>
 .workspace-card {
   display: grid;
-  grid-template-rows: 76px minmax(36px, auto);
+  grid-template-rows: 76px 36px;
   justify-items: center;
   gap: 10px;
   width: 100%;
@@ -75,6 +116,11 @@ const emit = defineEmits<{
   box-shadow: inset 0 0 0 1px #1f1f1f;
 }
 
+.workspace-card.editing {
+  border-color: #1f1f1f;
+  background: #fafafa;
+}
+
 .card-icon {
   display: grid;
   place-items: center;
@@ -91,16 +137,37 @@ const emit = defineEmits<{
   height: 42px;
 }
 
-.card-title {
-  display: -webkit-box;
+.card-title-shell {
+  display: grid;
+  align-items: center;
   width: 100%;
-  overflow: hidden;
+  height: 36px;
+}
+
+.card-title,
+.card-title-input {
+  width: 100%;
+  height: 36px;
+  min-width: 0;
   color: #171717;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
+}
+
+.card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  height: auto;
+  max-height: 36px;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.card-title-input {
+  padding: 0 8px;
+  border-radius: 6px;
+  text-align: center;
 }
 </style>

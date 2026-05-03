@@ -1,18 +1,36 @@
-import { computed, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useWorkspaceStore } from '@/stores/workspace'
-import type { Node, NodeType, SortField, SortOrder, ViewMode } from '@/types/domain'
+import type {
+  Node,
+  NodeId,
+  NodeType,
+  PendingNodeDraft,
+  SortField,
+  SortOrder,
+  ViewMode,
+  WorkspaceItem,
+} from '@/types/domain'
 
-type WorkspaceItem = {
-  id: string
-  name: string
-  type: NodeType
-  tags: string[]
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
+type WorkspaceItemSelectPayload = {
+  id: NodeId
+  event: MouseEvent
+}
+
+type SelectionBox = {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+type DragSelectionState = {
+  pointerId: number
+  startX: number
+  startY: number
+  additive: boolean
+  baseSelection: NodeId[]
 }
 
 const typeLabels: Record<NodeType, string> = {
@@ -20,6 +38,13 @@ const typeLabels: Record<NodeType, string> = {
   document: 'Документ',
   canvas: 'Холст',
   template: 'Шаблон',
+}
+
+const defaultNodeTitles: Record<NodeType, string> = {
+  folder: 'Новая папка',
+  document: 'Новый документ',
+  canvas: 'Новый холст',
+  template: 'Новый шаблон',
 }
 
 const sortFields = new Set<SortField>(['title', 'createdAt', 'updatedAt', 'type'])
@@ -57,7 +82,37 @@ const toWorkspaceItem = (node: Node): WorkspaceItem => ({
   updatedBy: node.updatedBy,
 })
 
+const toDraftWorkspaceItem = (draft: PendingNodeDraft): WorkspaceItem => ({
+  id: draft.id,
+  name: draft.title,
+  type: draft.type,
+  tags: [],
+  createdAt: draft.createdAt,
+  createdBy: draft.createdBy,
+  updatedAt: draft.updatedAt,
+  updatedBy: draft.updatedBy,
+  isDraft: true,
+})
+
 const compareText = (left: string, right: string) => left.localeCompare(right, 'ru')
+const createDraftId = (type: NodeType) => `draft-${type}-${Date.now()}`
+
+const createUniqueDraftTitle = (baseTitle: string, items: Array<Pick<WorkspaceItem, 'name'>>) => {
+  const normalizedBase = baseTitle.trim().toLowerCase()
+  const takenTitles = new Set(items.map((item) => item.name.trim().toLowerCase()))
+
+  if (!takenTitles.has(normalizedBase)) {
+    return baseTitle
+  }
+
+  let suffix = 1
+
+  while (takenTitles.has(`${baseTitle} (${suffix})`.toLowerCase())) {
+    suffix += 1
+  }
+
+  return `${baseTitle} (${suffix})`
+}
 
 export function useWorkspacePage() {
   const route = useRoute()
@@ -76,6 +131,18 @@ export function useWorkspacePage() {
     selectedNodeIds,
     tags,
   } = storeToRefs(workspaceStore)
+
+  const contentRef = ref<HTMLElement | null>(null)
+  const creatingNodeDraft = ref<PendingNodeDraft | null>(null)
+  const editingMode = ref<'create' | 'rename' | null>(null)
+  const editingItemId = ref<string | null>(null)
+  const editingInitialName = ref('')
+  const draftItemName = ref('')
+  const isSavingItemName = ref(false)
+  const selectionBox = ref<SelectionBox | null>(null)
+  const isDragSelecting = ref(false)
+
+  let dragSelectionState: DragSelectionState | null = null
 
   const projectId = computed(() => {
     return String(route.params.projectId ?? route.params.id ?? 'village-quest')
@@ -139,8 +206,15 @@ export function useWorkspacePage() {
       .filter((tag) => activeTagIds.value.includes(tag.id))
       .map((tag) => tag.name),
   )
-  const selectedItem = computed(() => (selectedItems.value[0] ? toWorkspaceItem(selectedItems.value[0]) : null))
+  const selectedItem = computed(() =>
+    selectedItems.value[0] ? toWorkspaceItem(selectedItems.value[0]) : null,
+  )
+  const selectedIdSet = computed(() => new Set(selectedNodeIds.value))
   const hasSelection = computed(() => selectedNodeIds.value.length > 0)
+  const hasSingleSelection = computed(() => selectedNodeIds.value.length === 1)
+  const canRenameSelection = computed(() => {
+    return hasSingleSelection.value && !creatingNodeDraft.value && editingMode.value === null
+  })
   const clipboardHasContent = computed(() => clipboard.value !== null)
   const viewModeLabel = computed(() => (viewMode.value === 'grid' ? 'Значки' : 'Список'))
 
@@ -182,8 +256,7 @@ export function useWorkspacePage() {
     })
 
     const direction = sortOrder.value === 'asc' ? 1 : -1
-
-    return [...filtered]
+    const sortedItems = [...filtered]
       .sort((left, right) => {
         const field = sortField.value
 
@@ -194,11 +267,32 @@ export function useWorkspacePage() {
         return compareText(left[field], right[field]) * direction
       })
       .map(toWorkspaceItem)
+
+    return creatingNodeDraft.value
+      ? [toDraftWorkspaceItem(creatingNodeDraft.value), ...sortedItems]
+      : sortedItems
+  })
+
+  const selectableItemIds = computed(() => {
+    return visibleItems.value.filter((item) => !item.isDraft).map((item) => item.id)
+  })
+
+  const selectionBoxStyle = computed(() => {
+    if (!selectionBox.value) {
+      return null
+    }
+
+    return {
+      left: `${selectionBox.value.left}px`,
+      top: `${selectionBox.value.top}px`,
+      width: `${selectionBox.value.width}px`,
+      height: `${selectionBox.value.height}px`,
+    }
   })
 
   const emptyStateTitle = computed(() => {
     if (activeTagIds.value.length) {
-      return 'Нет файлов с выбранными тэгами'
+      return 'Нет файлов с выбранными тегами'
     }
 
     return 'Здесь пока пусто'
@@ -206,11 +300,46 @@ export function useWorkspacePage() {
 
   const emptyStateDescription = computed(() => {
     if (activeTagNames.value.length) {
-      return `В текущей директории нет файлов или папок с тэгами: ${activeTagNames.value.join(', ')}.`
+      return `В текущей директории нет файлов или папок с тегами: ${activeTagNames.value.join(', ')}.`
     }
 
     return 'Создайте папку, документ или холст.'
   })
+
+  const resetDragSelection = () => {
+    dragSelectionState = null
+    selectionBox.value = null
+    isDragSelecting.value = false
+    window.removeEventListener('pointermove', handleDragPointerMove)
+    window.removeEventListener('pointerup', handleDragPointerUp)
+  }
+
+  const getSelectableNodeElements = () => {
+    if (!contentRef.value) {
+      return []
+    }
+
+    const selectableIds = new Set(selectableItemIds.value)
+
+    return Array.from(contentRef.value.querySelectorAll<HTMLElement>('[data-node-id]')).filter((element) =>
+      selectableIds.has(String(element.dataset.nodeId ?? '')),
+    )
+  }
+
+  const getIntersectedNodeIds = (left: number, top: number, right: number, bottom: number) => {
+    return getSelectableNodeElements()
+      .filter((element) => {
+        const rect = element.getBoundingClientRect()
+
+        return !(
+          rect.right < left ||
+          rect.left > right ||
+          rect.bottom < top ||
+          rect.top > bottom
+        )
+      })
+      .map((element) => String(element.dataset.nodeId))
+  }
 
   const openFolder = (nextFolderId: string) => {
     void router.push({
@@ -221,6 +350,10 @@ export function useWorkspacePage() {
   }
 
   const openItem = (item: WorkspaceItem) => {
+    if (item.isDraft) {
+      return
+    }
+
     if (item.type === 'folder') {
       openFolder(item.id)
       return
@@ -260,27 +393,251 @@ export function useWorkspacePage() {
     void router.replace({ query: { ...route.query, order: nextOrder } })
   }
 
+  const resetCreatingNodeState = () => {
+    creatingNodeDraft.value = null
+    editingMode.value = null
+    editingItemId.value = null
+    editingInitialName.value = ''
+    draftItemName.value = ''
+    isSavingItemName.value = false
+  }
+
+  const finishItemName = async () => {
+    if (!editingMode.value || !editingItemId.value || isSavingItemName.value) {
+      return
+    }
+
+    if (editingMode.value === 'create') {
+      if (!creatingNodeDraft.value) {
+        resetCreatingNodeState()
+        return
+      }
+
+      isSavingItemName.value = true
+
+      try {
+        const nextTitle = draftItemName.value.trim() || creatingNodeDraft.value.title
+        const createdNode = await workspaceStore.createNode({
+          parentId: creatingNodeDraft.value.parentId,
+          type: creatingNodeDraft.value.type,
+          title: nextTitle,
+        })
+
+        resetCreatingNodeState()
+
+        if (createdNode) {
+          workspaceStore.selectOne(createdNode.id)
+        }
+      } finally {
+        isSavingItemName.value = false
+      }
+
+      return
+    }
+
+    const nextTitle = draftItemName.value.trim()
+
+    if (!nextTitle || nextTitle === editingInitialName.value) {
+      resetCreatingNodeState()
+      return
+    }
+
+    isSavingItemName.value = true
+
+    try {
+      await workspaceStore.renameSelected(nextTitle)
+      resetCreatingNodeState()
+    } finally {
+      isSavingItemName.value = false
+    }
+  }
+
+  const startCreateNode = async (type: NodeType) => {
+    if (editingMode.value) {
+      await finishItemName()
+    }
+
+    if (!currentFolder.value) {
+      return
+    }
+
+    const siblingItems = currentItems.value.map(toWorkspaceItem)
+    const title = createUniqueDraftTitle(defaultNodeTitles[type], siblingItems)
+    const savedAt = new Date().toISOString()
+
+    creatingNodeDraft.value = {
+      id: createDraftId(type),
+      projectId: projectId.value,
+      parentId: currentFolder.value.id,
+      type,
+      title,
+      createdAt: savedAt,
+      createdBy: 'Вы',
+      updatedAt: savedAt,
+      updatedBy: 'Вы',
+    }
+    editingMode.value = 'create'
+    editingItemId.value = creatingNodeDraft.value.id
+    editingInitialName.value = title
+    draftItemName.value = title
+    workspaceStore.clearSelection()
+  }
+
+  const startRenameSelected = () => {
+    if (!hasSingleSelection.value || creatingNodeDraft.value || editingMode.value) {
+      return
+    }
+
+    const node = selectedItems.value[0]
+
+    if (!node) {
+      return
+    }
+
+    editingMode.value = 'rename'
+    editingItemId.value = node.id
+    editingInitialName.value = node.title
+    draftItemName.value = node.title
+  }
+
+  const cancelItemName = () => {
+    if (!editingMode.value || isSavingItemName.value) {
+      return
+    }
+
+    resetCreatingNodeState()
+  }
+
+  const handleItemSelect = ({ id, event }: WorkspaceItemSelectPayload) => {
+    if (editingItemId.value) {
+      return
+    }
+
+    const isAdditive = event.ctrlKey || event.metaKey
+
+    if (event.shiftKey) {
+      workspaceStore.selectRange(selectableItemIds.value, id, isAdditive)
+      return
+    }
+
+    if (isAdditive) {
+      workspaceStore.toggleSelection(id)
+      return
+    }
+
+    workspaceStore.selectOne(id)
+  }
+
+  const handleDragPointerMove = (event: PointerEvent) => {
+    if (!dragSelectionState || !contentRef.value || event.pointerId !== dragSelectionState.pointerId) {
+      return
+    }
+
+    const dx = event.clientX - dragSelectionState.startX
+    const dy = event.clientY - dragSelectionState.startY
+
+    if (!isDragSelecting.value && Math.abs(dx) < 3 && Math.abs(dy) < 3) {
+      return
+    }
+
+    isDragSelecting.value = true
+
+    const containerRect = contentRef.value.getBoundingClientRect()
+    const left = Math.min(dragSelectionState.startX, event.clientX)
+    const top = Math.min(dragSelectionState.startY, event.clientY)
+    const right = Math.max(dragSelectionState.startX, event.clientX)
+    const bottom = Math.max(dragSelectionState.startY, event.clientY)
+    const intersectedNodeIds = getIntersectedNodeIds(left, top, right, bottom)
+
+    selectionBox.value = {
+      left: left - containerRect.left,
+      top: top - containerRect.top,
+      width: right - left,
+      height: bottom - top,
+    }
+
+    workspaceStore.setSelection(
+      dragSelectionState.additive
+        ? [...dragSelectionState.baseSelection, ...intersectedNodeIds]
+        : intersectedNodeIds,
+      intersectedNodeIds[intersectedNodeIds.length - 1] ?? null,
+    )
+  }
+
+  const handleDragPointerUp = (event: PointerEvent) => {
+    if (!dragSelectionState || event.pointerId !== dragSelectionState.pointerId) {
+      return
+    }
+
+    resetDragSelection()
+  }
+
+  const handleContentPointerDown = (event: PointerEvent) => {
+    if (event.button !== 0 || editingItemId.value) {
+      return
+    }
+
+    const target = event.target
+
+    if (target instanceof Element && target.closest('[data-node-id]')) {
+      return
+    }
+
+    const additive = event.ctrlKey || event.metaKey
+
+    if (!additive && !event.shiftKey) {
+      workspaceStore.clearSelection()
+    }
+
+    dragSelectionState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      additive,
+      baseSelection: additive ? [...selectedNodeIds.value] : [],
+    }
+
+    window.addEventListener('pointermove', handleDragPointerMove)
+    window.addEventListener('pointerup', handleDragPointerUp)
+  }
+
   watch(
     [projectId, folderId],
     ([nextProjectId, nextFolderId]) => {
+      resetCreatingNodeState()
+      resetDragSelection()
       void workspaceStore.loadFolder(nextProjectId, nextFolderId)
     },
     { immediate: true },
   )
 
+  onBeforeUnmount(() => {
+    resetDragSelection()
+  })
+
   return {
     breadcrumbLabels,
+    cancelItemName,
+    canRenameSelection,
     clipboardHasContent,
+    contentRef,
     copySelected: workspaceStore.copySelected,
     currentDirectory,
     cutSelected: workspaceStore.cutSelected,
     deleteSelected: workspaceStore.deleteSelected,
+    draftItemName,
+    editingItemId,
     emptyStateDescription,
     emptyStateTitle,
     error: currentFolderError,
+    finishItemName,
     folders: foldersTree,
+    handleContentPointerDown,
+    handleItemSelect,
     hasSelection,
+    isDragSelecting,
     isLoading: isCurrentFolderLoading,
+    isSavingItemName,
     items: visibleItems,
     openFolder,
     openItem,
@@ -288,12 +645,15 @@ export function useWorkspacePage() {
     projectName,
     reloadCurrentFolder: workspaceStore.reloadCurrentFolder,
     searchQuery,
-    selectedId: computed(() => selectedNodeIds.value[0] ?? null),
+    selectedIdSet,
     selectedItem,
+    selectionBoxStyle,
+    sortOrder,
     selectedTagIds: activeTagIds,
-    selectItem: workspaceStore.selectOne,
     setSortField,
     setViewMode,
+    startRenameSelected,
+    startCreateNode,
     tags: sidebarTags,
     toggleTagId,
     toggleSortOrder,

@@ -52,6 +52,30 @@ export type Node = {
   updatedBy: string
 }
 
+export type PendingNodeDraft = {
+  id: NodeId
+  projectId: ProjectId
+  parentId: NodeId
+  type: NodeType
+  title: string
+  createdAt: string
+  createdBy: string
+  updatedAt: string
+  updatedBy: string
+}
+
+export type WorkspaceItem = {
+  id: NodeId
+  name: string
+  type: NodeType
+  tags: string[]
+  createdAt: string
+  createdBy: string
+  updatedAt: string
+  updatedBy: string
+  isDraft?: boolean
+}
+
 export type FolderTreeNode = {
   id: NodeId
   name: string

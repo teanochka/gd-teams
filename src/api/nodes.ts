@@ -57,6 +57,18 @@ const createNodeId = (type: NodeType) => `${type}-${Date.now()}`
 
 const getCurrentDate = () => new Date().toISOString()
 
+const updateProjectNodeCount = async (projectId: ProjectId, delta: number, updatedAt: string) => {
+  const project = await apiRequest<Project>(`/projects/${projectId}`)
+
+  await apiRequest<Project>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: {
+      filesCount: Math.max(0, project.filesCount + delta),
+      updatedAt,
+    },
+  })
+}
+
 export const getFolderContent = async (
   projectId: ProjectId,
   folderId?: NodeId | null,
@@ -109,6 +121,8 @@ export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
       updatedBy: 'Вы',
     },
   })
+
+  await updateProjectNodeCount(payload.projectId, 1, savedAt)
 
   return mapNode(node, tags)
 }

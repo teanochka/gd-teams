@@ -24,17 +24,27 @@ import { useWorkspacePage } from '@/composables/useWorkspacePage'
 
 const {
   breadcrumbLabels,
+  cancelItemName,
+  canRenameSelection,
   clipboardHasContent,
+  contentRef,
   copySelected,
   currentDirectory,
   cutSelected,
   deleteSelected,
+  draftItemName,
+  editingItemId,
   emptyStateDescription,
   emptyStateTitle,
   error,
+  finishItemName,
   folders,
+  handleContentPointerDown,
+  handleItemSelect,
   hasSelection,
+  isDragSelecting,
   isLoading,
+  isSavingItemName,
   items,
   openFolder,
   openItem,
@@ -42,12 +52,15 @@ const {
   projectName,
   reloadCurrentFolder,
   searchQuery,
-  selectedId,
+  selectedIdSet,
   selectedItem,
+  selectionBoxStyle,
+  sortOrder,
   selectedTagIds,
-  selectItem,
   setSortField,
   setViewMode,
+  startRenameSelected,
+  startCreateNode,
   tags,
   toggleTagId,
   toggleSortOrder,
@@ -82,47 +95,77 @@ const {
               <IconAdd aria-hidden="true" />
               <span>Создать</span>
             </template>
-            <BDropdownItem>
+            <BDropdownItem @click="startCreateNode('folder')">
               <IconFolder aria-hidden="true" />
               Папка
             </BDropdownItem>
-            <BDropdownItem>
+            <BDropdownItem @click="startCreateNode('document')">
               <IconDocument aria-hidden="true" />
               Документ
             </BDropdownItem>
-            <BDropdownItem>
+            <BDropdownItem @click="startCreateNode('canvas')">
               <IconPaintBrush aria-hidden="true" />
               Холст
             </BDropdownItem>
-            <BDropdownItem>
+            <BDropdownItem @click="startCreateNode('template')">
               <IconTemplate aria-hidden="true" />
               Шаблон
             </BDropdownItem>
           </BDropdown>
 
           <div class="tool-group" aria-label="Действия">
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Вырезать" @click="cutSelected">
+            <BButton
+              variant="light"
+              :disabled="!hasSelection"
+              aria-label="Вырезать"
+              @click="cutSelected"
+            >
               <IconCut aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Копировать" @click="copySelected">
+            <BButton
+              variant="light"
+              :disabled="!hasSelection"
+              aria-label="Копировать"
+              @click="copySelected"
+            >
               <IconCopy aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!clipboardHasContent" aria-label="Вставить" @click="pasteClipboard">
+            <BButton
+              variant="light"
+              :disabled="!clipboardHasContent"
+              aria-label="Вставить"
+              @click="pasteClipboard"
+            >
               <IconPaste aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Переименовать">
+            <BButton
+              variant="light"
+              :disabled="!canRenameSelection"
+              aria-label="Переименовать"
+              @click="startRenameSelected"
+            >
               <IconEdit aria-hidden="true" />
             </BButton>
-            <BButton variant="light" :disabled="!hasSelection" aria-label="Удалить" @click="deleteSelected">
+            <BButton
+              variant="light"
+              :disabled="!hasSelection"
+              aria-label="Удалить"
+              @click="deleteSelected"
+            >
               <IconTrashCan aria-hidden="true" />
             </BButton>
           </div>
 
           <BDropdown variant="outline-dark" class="toolbar-dropdown">
             <template #button-content>
-              <IconSortAscending aria-hidden="true" />
+              <IconSortAscending
+                aria-hidden="true"
+                class="sort-icon"
+                :class="{ desc: sortOrder === 'desc' }"
+                @click.stop="toggleSortOrder"
+              />
               <span>Сортировать</span>
-              <IconChevronDown aria-hidden="true" @click.stop="toggleSortOrder" />
+              <IconChevronDown aria-hidden="true" />
             </template>
             <BDropdownItem @click="setSortField('title')">По имени</BDropdownItem>
             <BDropdownItem @click="setSortField('createdAt')">По дате создания</BDropdownItem>
@@ -139,12 +182,20 @@ const {
             <BDropdownItem @click="setViewMode('grid')">
               <IconGrid aria-hidden="true" />
               Значки
-              <IconCheckmark v-if="viewMode === 'grid'" class="dropdown-check" aria-hidden="true" />
+              <IconCheckmark
+                v-if="viewMode === 'grid'"
+                class="dropdown-check"
+                aria-hidden="true"
+              />
             </BDropdownItem>
             <BDropdownItem @click="setViewMode('list')">
               <IconList aria-hidden="true" />
               Список
-              <IconCheckmark v-if="viewMode === 'list'" class="dropdown-check" aria-hidden="true" />
+              <IconCheckmark
+                v-if="viewMode === 'list'"
+                class="dropdown-check"
+                aria-hidden="true"
+              />
             </BDropdownItem>
           </BDropdown>
         </section>
@@ -167,27 +218,50 @@ const {
           <p>{{ emptyStateDescription }}</p>
         </section>
 
-        <section v-else class="workspace-content" :class="viewMode" aria-label="Содержимое папки">
+        <section
+          v-else
+          ref="contentRef"
+          class="workspace-content"
+          :class="[viewMode, { selecting: isDragSelecting }]"
+          aria-label="Содержимое папки"
+          @pointerdown="handleContentPointerDown"
+        >
           <WorkspaceCard
             v-if="viewMode === 'grid'"
             v-for="item in items"
             :key="item.id"
+            :data-node-id="item.id"
             :item="item"
-            :selected="selectedId === item.id"
+            :selected="selectedIdSet.has(item.id)"
+            :editing="editingItemId === item.id"
+            :draft-name="draftItemName"
+            :is-saving-name="isSavingItemName"
             @open="openItem"
-            @select="selectItem"
+            @select="handleItemSelect"
+            @update:draft-name="draftItemName = $event"
+            @finish-name="finishItemName"
+            @cancel-name="cancelItemName"
           />
 
           <WorkspaceListItem
             v-else
             v-for="item in items"
             :key="item.id"
+            :data-node-id="item.id"
             :item="item"
-            :selected="selectedId === item.id"
+            :selected="selectedIdSet.has(item.id)"
             :type-label="typeLabels[item.type]"
+            :editing="editingItemId === item.id"
+            :draft-name="draftItemName"
+            :is-saving-name="isSavingItemName"
             @open="openItem"
-            @select="selectItem"
+            @select="handleItemSelect"
+            @update:draft-name="draftItemName = $event"
+            @finish-name="finishItemName"
+            @cancel-name="cancelItemName"
           />
+
+          <div v-if="selectionBoxStyle" class="selection-box" :style="selectionBoxStyle" />
         </section>
       </main>
 
@@ -254,6 +328,14 @@ const {
   margin-left: auto;
 }
 
+.sort-icon {
+  transition: transform 0.16s ease;
+}
+
+.sort-icon.desc {
+  transform: rotate(180deg);
+}
+
 .tool-group {
   display: flex;
   align-items: center;
@@ -311,6 +393,14 @@ const {
   margin: 0;
 }
 
+.workspace-content {
+  position: relative;
+}
+
+.workspace-content.selecting {
+  user-select: none;
+}
+
 .workspace-content.list {
   display: grid;
   gap: 8px;
@@ -321,6 +411,15 @@ const {
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   align-items: start;
   gap: 14px;
+}
+
+.selection-box {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid rgba(25, 25, 25, 0.55);
+  border-radius: 8px;
+  background: rgba(31, 31, 31, 0.08);
+  pointer-events: none;
 }
 
 @media (max-width: 1180px) {
