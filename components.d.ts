@@ -37,6 +37,7 @@ declare module 'vue' {
     ProjectsSidebar: typeof import('./src/components/ProjectsSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TodoBlock: typeof import('./src/components/lotion/TodoBlock.vue')['default']
     Workspace: typeof import('./src/components/pages/workspace.vue')['default']
     WorkspaceCard: typeof import('./src/components/WorkspaceCard.vue')['default']
     WorkspaceHeader: typeof import('./src/components/WorkspaceHeader.vue')['default']

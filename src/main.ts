@@ -4,8 +4,10 @@ import { createPinia } from "pinia";
 import App from "./App.vue";
 import router from "./router";
 import { OhVueIcon, addIcons } from "oh-vue-icons";
+import { registerBlock } from "@dashibase/lotion";
 import {
   BiHr,
+  BiListCheck,
   BiQuote,
   BiTextLeft,
   BiTypeH1,
@@ -16,6 +18,7 @@ import {
   HiTrash,
   MdDragindicator,
 } from "oh-vue-icons/icons";
+import TodoBlock from "./components/lotion/TodoBlock.vue";
 
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue-next/dist/bootstrap-vue-next.css";
@@ -24,6 +27,7 @@ import "./assets/lotion-overrides.css";
 
 addIcons(
   BiHr,
+  BiListCheck,
   BiQuote,
   BiTextLeft,
   BiTypeH1,
@@ -34,6 +38,8 @@ addIcons(
   HiTrash,
   MdDragindicator,
 );
+
+registerBlock("TODO", "To-do list", TodoBlock, "bi-list-check");
 
 const app = createApp(App);
 

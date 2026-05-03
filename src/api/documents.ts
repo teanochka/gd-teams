@@ -16,6 +16,21 @@ const createBlockId = () => {
 
 const getCurrentDate = () => new Date().toISOString()
 
+export const sanitizeLotionBlockValue = (value: unknown) => {
+  if (typeof value !== 'string') {
+    return value
+  }
+
+  return value
+    .replace(/<input\b[^>]*>/gi, '')
+    .replace(/<br\b[^>]*ProseMirror-trailingBreak[^>]*>/gi, '')
+    .replace(/<br\b[^>]*class=["']?ProseMirror-trailingBreak["']?[^>]*>/gi, '')
+    .replace(/(?:<br\s*)?class=["']?Prose(?:Mirror-trailingBreak)?(?:["']?&gt;|["']?>)?/gi, '')
+    .replace(/Mirror-trailingBreak(?:["']?&gt;|["']?>)?/gi, '')
+    .replace(/ProseMirror-trailingBreak(?:["']?&gt;|["']?>)?/gi, '')
+    .replace(/&gt;/gi, '')
+}
+
 export const createDefaultLotionPage = (title: string): LotionPage => ({
   name: title,
   blocks: [
@@ -33,7 +48,10 @@ const clonePage = (page: LotionPage): LotionPage => ({
   name: page.name.trim() || 'Untitled',
   blocks: page.blocks.map((block) => ({
     ...block,
-    details: { ...block.details },
+    details: {
+      ...block.details,
+      value: sanitizeLotionBlockValue(block.details.value),
+    },
   })),
 })
 

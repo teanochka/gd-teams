@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
   getDocumentPage as apiGetDocumentPage,
+  sanitizeLotionBlockValue,
   saveDocumentPage as apiSaveDocumentPage,
 } from '@/api/documents'
 import { useWorkspaceStore } from '@/stores/workspace'
@@ -13,9 +14,28 @@ const clonePage = (page: LotionPage): LotionPage => ({
   name: page.name,
   blocks: page.blocks.map((block) => ({
     ...block,
-    details: { ...block.details },
+    details: {
+      ...block.details,
+      value: sanitizeLotionBlockValue(block.details.value),
+    },
   })),
 })
+
+function sanitizePageInPlace(page: LotionPage) {
+  let changed = false
+
+  for (const block of page.blocks) {
+    const value = block.details.value
+    const nextValue = sanitizeLotionBlockValue(value)
+
+    if (nextValue !== value) {
+      block.details.value = nextValue
+      changed = true
+    }
+  }
+
+  return changed
+}
 
 export const useDocumentsStore = defineStore('documents', () => {
   const pagesById = ref<Record<NodeId, LotionPage>>({})
@@ -101,10 +121,13 @@ export const useDocumentsStore = defineStore('documents', () => {
   }
 
   function scheduleSave(documentId: NodeId) {
-    if (!pagesById.value[documentId]) {
+    const page = pagesById.value[documentId]
+
+    if (!page) {
       return
     }
 
+    sanitizePageInPlace(page)
     isDirtyById.value[documentId] = true
 
     if (saveTimers.has(documentId)) {
