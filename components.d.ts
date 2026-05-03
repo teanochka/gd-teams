@@ -22,6 +22,7 @@ declare module 'vue' {
     BInputGroupText: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroupText']
     BSpinner: typeof import('bootstrap-vue-next/components/BSpinner')['BSpinner']
     Document: typeof import('./src/components/pages/document.vue')['default']
+    DocumentTemplatePrompt: typeof import('./src/components/DocumentTemplatePrompt.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
     IconEcosystem: typeof import('./src/components/icons/IconEcosystem.vue')['default']
