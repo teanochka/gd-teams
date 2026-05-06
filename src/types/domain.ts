@@ -8,15 +8,32 @@ export type SortField = 'title' | 'createdAt' | 'updatedAt' | 'type'
 export type SortOrder = 'asc' | 'desc'
 export type ViewMode = 'grid' | 'list'
 
+export type LotionTableData = {
+  rows: string[][]
+  columnWidths: number[]
+  rowHeights: number[]
+}
+
+export type LotionBlockDetails = Record<string, unknown> & {
+  value?: unknown
+  table?: LotionTableData
+}
+
 export type LotionBlock = {
   id: string
   type: string
-  details: Record<string, unknown>
+  details: LotionBlockDetails
+}
+
+export type DocumentCard = {
+  blockIds: string[]
 }
 
 export type LotionPage = {
   name: string
+  coverUrl?: string
   blocks: LotionBlock[]
+  card?: DocumentCard
 }
 
 export type Team = {

@@ -9,6 +9,7 @@ import {
   BiHr,
   BiListCheck,
   BiQuote,
+  BiTable,
   BiTextLeft,
   BiTypeH1,
   BiTypeH2,
@@ -19,6 +20,7 @@ import {
   MdDragindicator,
 } from "oh-vue-icons/icons";
 import TodoBlock from "./components/lotion/TodoBlock.vue";
+import TableBlock from "./components/lotion/TableBlock.vue";
 
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue-next/dist/bootstrap-vue-next.css";
@@ -29,6 +31,7 @@ addIcons(
   BiHr,
   BiListCheck,
   BiQuote,
+  BiTable,
   BiTextLeft,
   BiTypeH1,
   BiTypeH2,
@@ -40,6 +43,7 @@ addIcons(
 );
 
 registerBlock("TODO", "To-do list", TodoBlock, "bi-list-check");
+registerBlock("TABLE", "Table", TableBlock, "bi-table");
 
 const app = createApp(App);
 

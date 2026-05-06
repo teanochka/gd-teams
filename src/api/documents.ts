@@ -1,5 +1,13 @@
 import { apiRequest } from '@/api/http'
-import type { DocumentPage, LotionPage, Node, NodeId, ProjectId } from '@/types/domain'
+import type {
+  DocumentPage,
+  LotionBlockDetails,
+  LotionPage,
+  LotionTableData,
+  Node,
+  NodeId,
+  ProjectId,
+} from '@/types/domain'
 
 type RawNode = Omit<Node, 'tags'> & {
   tagIds: string[]
@@ -31,6 +39,20 @@ export const sanitizeLotionBlockValue = (value: unknown) => {
     .replace(/&gt;/gi, '')
 }
 
+const cloneTableData = (table: LotionTableData): LotionTableData => ({
+  rows: table.rows.map((row) => [...row]),
+  columnWidths: [...table.columnWidths],
+  rowHeights: [...table.rowHeights],
+})
+
+export const cloneLotionBlockDetails = (
+  details: LotionBlockDetails,
+): LotionBlockDetails => ({
+  ...details,
+  value: sanitizeLotionBlockValue(details.value),
+  table: details.table ? cloneTableData(details.table) : undefined,
+})
+
 export const createDefaultLotionPage = (title: string): LotionPage => ({
   name: title,
   blocks: [
@@ -42,17 +64,23 @@ export const createDefaultLotionPage = (title: string): LotionPage => ({
       },
     },
   ],
+  card: {
+    blockIds: [],
+  },
 })
 
 const clonePage = (page: LotionPage): LotionPage => ({
   name: page.name.trim() || 'Untitled',
+  coverUrl: page.coverUrl,
   blocks: page.blocks.map((block) => ({
     ...block,
-    details: {
-      ...block.details,
-      value: sanitizeLotionBlockValue(block.details.value),
-    },
+    details: cloneLotionBlockDetails(block.details),
   })),
+  card: {
+    blockIds: page.card?.blockIds.filter((blockId) =>
+      page.blocks.some((block) => block.id === blockId),
+    ) ?? [],
+  },
 })
 
 export const createDocumentPage = async (node: Pick<Node, 'id' | 'projectId' | 'title'>) => {

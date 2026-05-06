@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
+    "dev:network": "vite --host 0.0.0.0",
     "api": "json-server db.json --port 3000",
     "dev:all": "run-p api dev",
     "build": "run-p type-check \"build-only {@}\" --",

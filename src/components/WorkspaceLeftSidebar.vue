@@ -1,48 +1,67 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import IconChevronRight from '~icons/carbon/chevron-right'
-import IconFolder from '~icons/carbon/folder'
-import IconStar from '~icons/carbon/star'
-import IconTag from '~icons/carbon/tag'
-import IconTrashCan from '~icons/carbon/trash-can'
+import { ref } from "vue";
+import IconChevronRight from "~icons/carbon/chevron-right";
+import IconFolder from "~icons/carbon/folder";
+import IconStar from "~icons/carbon/star";
+import IconTag from "~icons/carbon/tag";
+import IconTrashCan from "~icons/carbon/trash-can";
 
 type FolderNode = {
-  id: string
-  name: string
-  children?: FolderNode[]
-}
+  id: string;
+  name: string;
+  children?: FolderNode[];
+};
 
 type TagItem = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 defineProps<{
-  projectName: string
-  folders: FolderNode[]
-  tags: TagItem[]
-  activeTagIds?: string[]
-}>()
+  projectName: string;
+  folders: FolderNode[];
+  tags: TagItem[];
+  activeTagIds?: string[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'open-folder', id: string): void
-  (event: 'toggle-tag', id: string): void
-}>()
+  (event: "open-folder", id: string): void;
+  (event: "toggle-tag", id: string): void;
+}>();
 
-const rootExpanded = ref(true)
+const rootExpanded = ref(true);
 </script>
 
 <template>
   <aside class="workspace-left-sidebar" aria-label="Дерево проекта">
-    <button class="project-root" type="button" @click="rootExpanded = !rootExpanded">
-      <IconChevronRight :class="{ expanded: rootExpanded }" aria-hidden="true" />
+    <button class="sidebar-button" type="button">
+      <IconStar aria-hidden="true" />
+      <span>Agile Board</span>
+    </button>
+    <button class="sidebar-button" type="button">
+      <IconTrashCan aria-hidden="true" />
+      <span>Чат</span>
+    </button>
+    <button
+      class="project-root"
+      type="button"
+      @click="rootExpanded = !rootExpanded"
+    >
+      <IconChevronRight
+        :class="{ expanded: rootExpanded }"
+        aria-hidden="true"
+      />
       <IconFolder aria-hidden="true" />
       <span>{{ projectName }}</span>
     </button>
 
     <div v-if="rootExpanded" class="folder-tree">
       <div v-for="folder in folders" :key="folder.id" class="folder-group">
-        <button class="tree-item" type="button" @click="emit('open-folder', folder.id)">
+        <button
+          class="tree-item"
+          type="button"
+          @click="emit('open-folder', folder.id)"
+        >
           <IconFolder aria-hidden="true" />
           <span>{{ folder.name }}</span>
         </button>
@@ -61,7 +80,6 @@ const rootExpanded = ref(true)
         </div>
       </div>
     </div>
-
     <nav class="sidebar-section" aria-label="Быстрые разделы">
       <button class="sidebar-link" type="button">
         <IconStar aria-hidden="true" />
@@ -110,6 +128,22 @@ const rootExpanded = ref(true)
   border-radius: 8px;
   background: transparent;
   color: #242424;
+  font: inherit;
+  text-align: left;
+}
+
+.sidebar-button {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 2px;
+  padding: 8px 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 0px 18px 18px 0px;
+  background: #242424;
+  color: white;
   font: inherit;
   text-align: left;
 }
@@ -164,7 +198,7 @@ const rootExpanded = ref(true)
 .folder-tree {
   display: grid;
   gap: 3px;
-  margin: 6px 0 18px;
+  margin: 6px 10px 18px;
 }
 
 .tree-children {

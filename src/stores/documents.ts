@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
+  cloneLotionBlockDetails,
   getDocumentPage as apiGetDocumentPage,
   sanitizeLotionBlockValue,
   saveDocumentPage as apiSaveDocumentPage,
@@ -12,17 +13,21 @@ const saveDelay = 700
 
 const clonePage = (page: LotionPage): LotionPage => ({
   name: page.name,
+  coverUrl: page.coverUrl,
   blocks: page.blocks.map((block) => ({
     ...block,
-    details: {
-      ...block.details,
-      value: sanitizeLotionBlockValue(block.details.value),
-    },
+    details: cloneLotionBlockDetails(block.details),
   })),
+  card: {
+    blockIds: page.card?.blockIds.filter((blockId) =>
+      page.blocks.some((block) => block.id === blockId),
+    ) ?? [],
+  },
 })
 
 function sanitizePageInPlace(page: LotionPage) {
   let changed = false
+  const blockIds = new Set(page.blocks.map((block) => block.id))
 
   for (const block of page.blocks) {
     const value = block.details.value
@@ -32,6 +37,16 @@ function sanitizePageInPlace(page: LotionPage) {
       block.details.value = nextValue
       changed = true
     }
+  }
+
+  const nextCardBlockIds = page.card?.blockIds.filter((blockId) => blockIds.has(blockId)) ?? []
+
+  if (!page.card) {
+    page.card = { blockIds: nextCardBlockIds }
+    changed = true
+  } else if (nextCardBlockIds.length !== page.card.blockIds.length) {
+    page.card.blockIds = nextCardBlockIds
+    changed = true
   }
 
   return changed
@@ -143,6 +158,25 @@ export const useDocumentsStore = defineStore('documents', () => {
     )
   }
 
+  function addBlockToCard(documentId: NodeId, blockId: string) {
+    const page = pagesById.value[documentId]
+
+    if (!page || !page.blocks.some((block) => block.id === blockId)) {
+      return
+    }
+
+    if (!page.card) {
+      page.card = { blockIds: [] }
+    }
+
+    if (page.card.blockIds.includes(blockId)) {
+      return
+    }
+
+    page.card.blockIds.push(blockId)
+    scheduleSave(documentId)
+  }
+
   async function flushDocument(documentId: NodeId) {
     if (saveTimers.has(documentId)) {
       clearTimeout(saveTimers.get(documentId))
@@ -181,6 +215,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     loadDocument,
     saveDocument,
     scheduleSave,
+    addBlockToCard,
     flushDocument,
     clearDocument,
   }
