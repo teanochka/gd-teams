@@ -162,3 +162,41 @@ export type UpdateProjectPayload = {
   teamId?: TeamId
   newTeamName?: string
 }
+
+export type KanbanPriority = 'Low' | 'Medium' | 'High' | 'Critical'
+export type KanbanTaskType = 'Task' | 'Bug' | 'Story' | 'Epic'
+export type KanbanStatus = 'to-do' | 'in-progress' | 'in-review' | 'done'
+
+export type KanbanMember = {
+  id: UserId
+  name: string
+  role: string
+  color: string
+}
+
+export type KanbanTask = {
+  id: string
+  key: string
+  title: string
+  description: string
+  assigneeId: UserId
+  authorId: UserId
+  priority: KanbanPriority
+  parentId: string | null
+  dueDate: string | null
+  startDate: string | null
+  labels: string[]
+  role: string | null
+  type: KanbanTaskType
+  status: KanbanStatus
+  subtasks: string[]
+  linkedTasks: string[]
+  coverColor?: string
+}
+
+export type KanbanColumn = {
+  id: string
+  title: string
+  status: KanbanStatus | string
+  tasks: KanbanTask[]
+}
