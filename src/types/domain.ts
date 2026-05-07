@@ -200,3 +200,17 @@ export type KanbanColumn = {
   status: KanbanStatus | string
   tasks: KanbanTask[]
 }
+
+export type KanbanBoard = {
+  id: string
+  projectId: ProjectId
+  members: KanbanMember[]
+  roles: string[]
+  taskTypes: KanbanTaskType[]
+  priorities: KanbanPriority[]
+  statuses: KanbanStatus[]
+  tags: string[]
+  columns: KanbanColumn[]
+  createdAt: string
+  updatedAt: string
+}

@@ -177,6 +177,28 @@ export const useDocumentsStore = defineStore('documents', () => {
     scheduleSave(documentId)
   }
 
+  function setCardBlockIds(documentId: NodeId, blockIds: string[]) {
+    const page = pagesById.value[documentId]
+
+    if (!page) {
+      return
+    }
+
+    const validBlockIds = new Set(page.blocks.map((block) => block.id))
+    const nextBlockIds = [...new Set(blockIds)].filter((blockId) => validBlockIds.has(blockId))
+
+    if (!page.card) {
+      page.card = { blockIds: [] }
+    }
+
+    if (page.card.blockIds.join('\u0000') === nextBlockIds.join('\u0000')) {
+      return
+    }
+
+    page.card.blockIds = nextBlockIds
+    scheduleSave(documentId)
+  }
+
   async function flushDocument(documentId: NodeId) {
     if (saveTimers.has(documentId)) {
       clearTimeout(saveTimers.get(documentId))
@@ -216,6 +238,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     saveDocument,
     scheduleSave,
     addBlockToCard,
+    setCardBlockIds,
     flushDocument,
     clearDocument,
   }

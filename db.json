@@ -30,13 +30,13 @@
       "title": "Comat Po",
       "description": "Документы по балансу, атакам и состояниям врагов.",
       "createdAt": "2026-04-01T00:00:00.000Z",
-      "updatedAt": "2026-05-03T22:52:34.025Z",
+      "updatedAt": "2026-05-07T22:14:46.750Z",
       "owner": "Марк",
       "teamId": "team-gameplay",
       "teamName": "Команда геймплея",
       "isFavorite": true,
       "isDeleted": false,
-      "filesCount": 33,
+      "filesCount": 36,
       "imageUrl": "https://picsum.photos/seed/combat-prototype/900/520",
       "rootFolderId": "combat-root"
     },
@@ -881,15 +881,15 @@
       "projectId": "ui-kit",
       "parentId": "BxaA2nmqeRg",
       "type": "document",
-      "title": "Новый документ",
+      "title": "HUD Inventory Flow",
       "icon": null,
       "tagIds": [],
       "isFavorite": false,
       "isDeleted": false,
       "createdAt": "2026-05-03T20:23:30.558Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-03T20:23:30.558Z",
-      "updatedBy": "Вы"
+      "updatedAt": "2026-05-07T23:15:58.182Z",
+      "updatedBy": "Р’С‹"
     },
     {
       "id": "l1baQjdojks",
@@ -950,6 +950,51 @@
       "createdBy": "Вы",
       "updatedAt": "2026-05-03T22:52:34.025Z",
       "updatedBy": "Вы"
+    },
+    {
+      "id": "3ZHkayHaLs8",
+      "projectId": "combat-prototype",
+      "parentId": "RwcUf6zaOew",
+      "type": "document",
+      "title": "Новый документ",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-07T22:14:40.792Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-07T22:14:40.792Z",
+      "updatedBy": "Вы"
+    },
+    {
+      "id": "08SirmAeUiI",
+      "projectId": "combat-prototype",
+      "parentId": "RwcUf6zaOew",
+      "type": "canvas",
+      "title": "Новый холст",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-07T22:14:43.684Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-07T22:14:43.684Z",
+      "updatedBy": "Вы"
+    },
+    {
+      "id": "36zQQdWep3A",
+      "projectId": "combat-prototype",
+      "parentId": "RwcUf6zaOew",
+      "type": "folder",
+      "title": "Новая папка",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-07T22:14:46.750Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-07T22:14:46.750Z",
+      "updatedBy": "Вы"
     }
   ],
   "documentPages": [
@@ -958,19 +1003,157 @@
       "nodeId": "JPfa3BUxXOE",
       "projectId": "ui-kit",
       "page": {
-        "name": "Новый документ",
+        "name": "HUD Inventory Flow",
         "blocks": [
           {
-            "id": "9c84bcd5-55b0-4a82-bf81-237787610aa3",
+            "id": "hud-flow-title",
+            "type": "H1",
+            "details": {
+              "value": "HUD Inventory Flow"
+            }
+          },
+          {
+            "id": "hud-flow-summary",
             "type": "TEXT",
             "details": {
-              "value": ""
+              "value": "Goal: define the first playable inventory HUD for the vertical slice. The flow should let players compare equipment quickly, understand item rarity, and return to combat without losing context."
+            }
+          },
+          {
+            "id": "hud-flow-principles-copy",
+            "type": "TEXT",
+            "details": {
+              "value": "The inventory should feel lightweight and tactical: no full-screen modal during combat, no hidden stats behind extra clicks, and clear affordances for equip, compare, dismantle, and favorite."
+            }
+          },
+          {
+            "id": "hud-flow-principles-title",
+            "type": "H2",
+            "details": {
+              "value": "Design principles"
+            }
+          },
+          {
+            "id": "hud-flow-quote",
+            "type": "QUOTE",
+            "details": {
+              "value": "A player should know in under three seconds whether a new item is worth equipping, saving, or dismantling."
+            }
+          },
+          {
+            "id": "hud-flow-check-compare",
+            "type": "TODO",
+            "details": {
+              "value": "Show delta stats next to the equipped item",
+              "checked": true
+            }
+          },
+          {
+            "id": "hud-flow-check-gamepad",
+            "type": "TODO",
+            "details": {
+              "value": "Validate gamepad navigation between item grid and details panel",
+              "checked": false
+            }
+          },
+          {
+            "id": "hud-flow-open-title",
+            "type": "H2",
+            "details": {
+              "value": "Open questions"
+            }
+          },
+          {
+            "id": "hud-flow-open-2",
+            "type": "TODO",
+            "details": {
+              "value": "Confirm minimum readable font size for handheld mode",
+              "checked": false
+            }
+          },
+          {
+            "id": "hud-flow-open-1",
+            "type": "TODO",
+            "details": {
+              "value": "Decide whether consumables live in the same grid or in a separate radial menu",
+              "checked": false
+            }
+          },
+          {
+            "id": "hud-flow-table",
+            "type": "TABLE",
+            "details": {
+              "value": "",
+              "table": {
+                "rows": [
+                  [
+                    "Screen",
+                    "Primary action",
+                    "Empty state",
+                    "Notes"
+                  ],
+                  [
+                    "Inventory grid",
+                    "Select item",
+                    "Show starter gear placeholder",
+                    "Keep filters visible while scrolling"
+                  ],
+                  [
+                    "Item details",
+                    "Equip / compare",
+                    "Prompt player to select an item",
+                    "Rarity color must not be the only signal"
+                  ],
+                  [
+                    "Quick loot",
+                    "Take all",
+                    "Collapse after 4 seconds",
+                    "Keyboard: E to take, Tab to inspect"
+                  ],
+                  [
+                    "Dismantle confirm",
+                    "Hold to confirm",
+                    "Disabled when no item is selected",
+                    "Use for rare+ items only"
+                  ]
+                ],
+                "columnWidths": [
+                  170,
+                  190,
+                  230,
+                  260
+                ],
+                "rowHeights": [
+                  44,
+                  56,
+                  56,
+                  56,
+                  56
+                ]
+              }
+            }
+          },
+          {
+            "id": "1fcd8a35-55c4-4b32-9432-4f37606f752f",
+            "type": "TEXT",
+            "details": {
+              "value": "пппп"
             }
           }
-        ]
+        ],
+        "card": {
+          "blockIds": [
+            "hud-flow-summary",
+            "hud-flow-open-1",
+            "hud-flow-principles-title",
+            "hud-flow-open-title",
+            "hud-flow-open-2",
+            "1fcd8a35-55c4-4b32-9432-4f37606f752f"
+          ]
+        }
       },
       "createdAt": "2026-05-03T21:42:04.817Z",
-      "updatedAt": "2026-05-03T21:42:04.817Z"
+      "updatedAt": "2026-05-07T23:15:58.182Z"
     },
     {
       "nodeId": "pFUf28lzuSU",
@@ -1903,6 +2086,421 @@
       "createdAt": "2026-05-03T22:11:54.528Z",
       "updatedAt": "2026-05-06T20:24:49.060Z",
       "id": "_FbiC8FKCGQ"
+    },
+    {
+      "nodeId": "3ZHkayHaLs8",
+      "projectId": "combat-prototype",
+      "page": {
+        "name": "Новый документ",
+        "blocks": [
+          {
+            "id": "ea773c62-67fd-4fff-bfac-0a18b4adbcb9",
+            "type": "TEXT",
+            "details": {
+              "value": ""
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-05-07T22:14:40.800Z",
+      "updatedAt": "2026-05-07T22:14:40.800Z",
+      "id": "D_5dwlausZQ"
+    }
+  ],
+  "kanbanBoards": [
+    {
+      "id": "kanban-combat-prototype",
+      "projectId": "combat-prototype",
+      "members": [
+        {
+          "id": "user-1",
+          "name": "Мятный уголок",
+          "role": "Game Designer",
+          "color": "#0f8f72"
+        },
+        {
+          "id": "user-2",
+          "name": "Светлая башня",
+          "role": "Developer",
+          "color": "#4263eb"
+        },
+        {
+          "id": "user-3",
+          "name": "Тихий контур",
+          "role": "QA",
+          "color": "#9b5de5"
+        },
+        {
+          "id": "user-4",
+          "name": "Новый игрок",
+          "role": "Narrative",
+          "color": "#c47f17"
+        }
+      ],
+      "roles": [
+        "Game Designer",
+        "Developer",
+        "QA",
+        "Narrative"
+      ],
+      "taskTypes": [
+        "Task",
+        "Bug",
+        "Story",
+        "Epic"
+      ],
+      "priorities": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+      ],
+      "statuses": [
+        "to-do",
+        "in-progress",
+        "in-review",
+        "done"
+      ],
+      "tags": [
+        "combat",
+        "economy",
+        "ux",
+        "level",
+        "balance"
+      ],
+      "columns": [
+        {
+          "id": "column-1",
+          "title": "To do",
+          "status": "to-do",
+          "tasks": [
+            {
+              "id": "task-1",
+              "key": "KAN-6",
+              "title": "Настроить быстрый поиск по игровым задачам",
+              "description": "Поиск должен работать по названию, ключу и описанию карточки.",
+              "assigneeId": "user-1",
+              "authorId": "user-1",
+              "priority": "Medium",
+              "parentId": null,
+              "dueDate": null,
+              "startDate": null,
+              "labels": [
+                "ux"
+              ],
+              "role": "Game Designer",
+              "type": "Task",
+              "status": "to-do",
+              "subtasks": [
+                "Собрать состояния поиска",
+                "Проверить пустой результат"
+              ],
+              "linkedTasks": [
+                "KAN-2"
+              ]
+            },
+            {
+              "id": "task-2",
+              "key": "KAN-7",
+              "title": "Описать сценарии онбординга команды",
+              "description": "Нужен компактный флоу для новых участников проекта.",
+              "assigneeId": "user-4",
+              "authorId": "user-1",
+              "priority": "High",
+              "parentId": null,
+              "dueDate": "17 мая",
+              "startDate": "10 мая",
+              "labels": [
+                "ux",
+                "level"
+              ],
+              "role": "Narrative",
+              "type": "Story",
+              "status": "to-do",
+              "subtasks": [],
+              "linkedTasks": [
+                "KAN-6"
+              ],
+              "coverColor": "#9775fa"
+            }
+          ]
+        },
+        {
+          "id": "column-2",
+          "title": "In progress",
+          "status": "in-progress",
+          "tasks": [
+            {
+              "id": "task-3",
+              "key": "KAN-8",
+              "title": "Сверстать карточку баланса оружия",
+              "description": "Карточка должна помещать ключевые параметры без горизонтального скролла.",
+              "assigneeId": "user-2",
+              "authorId": "user-1",
+              "priority": "Critical",
+              "parentId": null,
+              "dueDate": "20 мая",
+              "startDate": null,
+              "labels": [
+                "combat",
+                "balance"
+              ],
+              "role": "Developer",
+              "type": "Bug",
+              "status": "in-progress",
+              "subtasks": [
+                "Состояние ошибки",
+                "Состояние загрузки"
+              ],
+              "linkedTasks": [],
+              "coverColor": "#ff8787"
+            }
+          ]
+        },
+        {
+          "id": "column-3",
+          "title": "In review",
+          "status": "in-review",
+          "tasks": [
+            {
+              "id": "task-4",
+              "key": "KAN-9",
+              "title": "Проверить доску на коротких названиях колонок",
+              "description": "Убедиться, что перенос и hover-состояния не ломают сетку.",
+              "assigneeId": "user-3",
+              "authorId": "user-2",
+              "priority": "Low",
+              "parentId": null,
+              "dueDate": null,
+              "startDate": null,
+              "labels": [
+                "qa"
+              ],
+              "role": "QA",
+              "type": "Task",
+              "status": "in-review",
+              "subtasks": [
+                "Desktop",
+                "Mobile"
+              ],
+              "linkedTasks": [
+                "KAN-8"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "column-4",
+          "title": "Done",
+          "status": "done",
+          "tasks": [
+            {
+              "id": "task-5",
+              "key": "KAN-10",
+              "title": "Согласовать список ролей",
+              "description": "Роли нужны для фильтров и будущих прав доступа.",
+              "assigneeId": "user-1",
+              "authorId": "user-1",
+              "priority": "Medium",
+              "parentId": null,
+              "dueDate": null,
+              "startDate": "6 мая",
+              "labels": [
+                "economy"
+              ],
+              "role": "Game Designer",
+              "type": "Epic",
+              "status": "done",
+              "subtasks": [],
+              "linkedTasks": [],
+              "coverColor": "#51cf66"
+            }
+          ]
+        }
+      ],
+      "createdAt": "2026-05-07T00:00:00.000Z",
+      "updatedAt": "2026-05-07T00:00:00.000Z"
+    },
+    {
+      "id": "0q3RjefSCi8",
+      "projectId": "1",
+      "members": [
+        {
+          "id": "user-1",
+          "name": "Мятный уголок",
+          "role": "Game Designer",
+          "color": "#0f8f72"
+        },
+        {
+          "id": "user-2",
+          "name": "Светлая башня",
+          "role": "Developer",
+          "color": "#4263eb"
+        },
+        {
+          "id": "user-3",
+          "name": "Тихий контур",
+          "role": "QA",
+          "color": "#9b5de5"
+        },
+        {
+          "id": "user-4",
+          "name": "Новый игрок",
+          "role": "Narrative",
+          "color": "#c47f17"
+        }
+      ],
+      "roles": [
+        "Game Designer",
+        "Developer",
+        "QA",
+        "Narrative"
+      ],
+      "taskTypes": [
+        "Task",
+        "Bug",
+        "Story",
+        "Epic"
+      ],
+      "priorities": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+      ],
+      "statuses": [
+        "to-do",
+        "in-progress",
+        "in-review",
+        "done"
+      ],
+      "tags": [
+        "combat",
+        "economy",
+        "ux",
+        "level",
+        "balance"
+      ],
+      "columns": [
+        {
+          "id": "column-1",
+          "title": "To do",
+          "status": "to-do",
+          "tasks": []
+        },
+        {
+          "id": "column-2",
+          "title": "In progress",
+          "status": "in-progress",
+          "tasks": []
+        },
+        {
+          "id": "column-3",
+          "title": "In review",
+          "status": "in-review",
+          "tasks": []
+        },
+        {
+          "id": "column-4",
+          "title": "Done",
+          "status": "done",
+          "tasks": []
+        }
+      ],
+      "createdAt": "2026-05-07T16:49:12.176Z",
+      "updatedAt": "2026-05-07T16:49:12.176Z"
+    },
+    {
+      "id": "7-JWqhDgMWo",
+      "projectId": "1",
+      "members": [
+        {
+          "id": "user-1",
+          "name": "Мятный уголок",
+          "role": "Game Designer",
+          "color": "#0f8f72"
+        },
+        {
+          "id": "user-2",
+          "name": "Светлая башня",
+          "role": "Developer",
+          "color": "#4263eb"
+        },
+        {
+          "id": "user-3",
+          "name": "Тихий контур",
+          "role": "QA",
+          "color": "#9b5de5"
+        },
+        {
+          "id": "user-4",
+          "name": "Новый игрок",
+          "role": "Narrative",
+          "color": "#c47f17"
+        }
+      ],
+      "roles": [
+        "Game Designer",
+        "Developer",
+        "QA",
+        "Narrative"
+      ],
+      "taskTypes": [
+        "Task",
+        "Bug",
+        "Story",
+        "Epic"
+      ],
+      "priorities": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+      ],
+      "statuses": [
+        "to-do",
+        "in-progress",
+        "in-review",
+        "done"
+      ],
+      "tags": [
+        "combat",
+        "economy",
+        "ux",
+        "level",
+        "balance"
+      ],
+      "columns": [
+        {
+          "id": "column-1",
+          "title": "To do",
+          "status": "to-do",
+          "tasks": []
+        },
+        {
+          "id": "column-2",
+          "title": "In progress",
+          "status": "in-progress",
+          "tasks": []
+        },
+        {
+          "id": "column-3",
+          "title": "In review",
+          "status": "in-review",
+          "tasks": []
+        },
+        {
+          "id": "column-4",
+          "title": "Done",
+          "status": "done",
+          "tasks": []
+        }
+      ],
+      "createdAt": "2026-05-07T16:49:35.683Z",
+      "updatedAt": "2026-05-07T16:49:35.683Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

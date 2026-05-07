@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Draggable from 'vuedraggable'
 import IconAdd from '~icons/carbon/add'
 import IconCheckmark from '~icons/carbon/checkmark'
@@ -9,24 +10,14 @@ import IconFilter from '~icons/carbon/filter'
 import IconSearch from '~icons/carbon/search'
 import IconUserAvatarFilled from '~icons/carbon/user-avatar-filled'
 import KanbanCard from '@/components/KanbanCard.vue'
-import type {
-  KanbanColumn,
-  KanbanMember,
-  KanbanPriority,
-  KanbanStatus,
-  KanbanTask,
-  KanbanTaskType,
-} from '@/types/domain'
+import { useKanbanStore } from '@/stores/kanban'
+import type { KanbanColumn, KanbanStatus, KanbanTask } from '@/types/domain'
 
 type FilterKey = 'assignee' | 'role' | 'type' | 'tag' | 'status' | 'priority'
 type DetailFieldKey = 'assigneeId' | 'priority' | 'parentId' | 'dueDate' | 'labels' | 'role' | 'startDate' | 'authorId'
 
-const members: KanbanMember[] = [
-  { id: 'user-1', name: 'Мятный уголок', role: 'Game Designer', color: '#0f8f72' },
-  { id: 'user-2', name: 'Светлая башня', role: 'Developer', color: '#4263eb' },
-  { id: 'user-3', name: 'Тихий контур', role: 'QA', color: '#9b5de5' },
-  { id: 'user-4', name: 'Новый игрок', role: 'Narrative', color: '#c47f17' },
-]
+const route = useRoute()
+const kanbanStore = useKanbanStore()
 
 const coverColors = [
   { name: 'Мята', value: '#51cf66' },
@@ -41,125 +32,6 @@ const coverColors = [
   { name: 'Сталь', value: '#adb5bd' },
 ]
 
-const roles = ['Game Designer', 'Developer', 'QA', 'Narrative']
-const taskTypes: KanbanTaskType[] = ['Task', 'Bug', 'Story', 'Epic']
-const priorities: KanbanPriority[] = ['Low', 'Medium', 'High', 'Critical']
-const statuses: KanbanStatus[] = ['to-do', 'in-progress', 'in-review', 'done']
-const tags = ['combat', 'economy', 'ux', 'level', 'balance']
-
-const initialTasks: KanbanTask[] = [
-  {
-    id: 'task-1',
-    key: 'KAN-6',
-    title: 'Настроить быстрый поиск по игровым задачам',
-    description: 'Поиск должен работать по названию, ключу и описанию карточки.',
-    assigneeId: 'user-1',
-    authorId: 'user-1',
-    priority: 'Medium',
-    parentId: null,
-    dueDate: null,
-    startDate: null,
-    labels: ['ux'],
-    role: 'Game Designer',
-    type: 'Task',
-    status: 'to-do',
-    subtasks: ['Собрать состояния поиска', 'Проверить пустой результат'],
-    linkedTasks: ['KAN-2'],
-  },
-  {
-    id: 'task-2',
-    key: 'KAN-7',
-    title: 'Описать сценарии онбординга команды',
-    description: 'Нужен компактный флоу для новых участников проекта.',
-    assigneeId: 'user-4',
-    authorId: 'user-1',
-    priority: 'High',
-    parentId: null,
-    dueDate: '17 мая',
-    startDate: '10 мая',
-    labels: ['ux', 'level'],
-    role: 'Narrative',
-    type: 'Story',
-    status: 'to-do',
-    subtasks: [],
-    linkedTasks: ['KAN-6'],
-    coverColor: '#9775fa',
-  },
-  {
-    id: 'task-3',
-    key: 'KAN-8',
-    title: 'Сверстать карточку баланса оружия',
-    description: 'Карточка должна помещать ключевые параметры без горизонтального скролла.',
-    assigneeId: 'user-2',
-    authorId: 'user-1',
-    priority: 'Critical',
-    parentId: null,
-    dueDate: '20 мая',
-    startDate: null,
-    labels: ['combat', 'balance'],
-    role: 'Developer',
-    type: 'Bug',
-    status: 'in-progress',
-    subtasks: ['Состояние ошибки', 'Состояние загрузки'],
-    linkedTasks: [],
-    coverColor: '#ff8787',
-  },
-  {
-    id: 'task-4',
-    key: 'KAN-9',
-    title: 'Проверить доску на коротких названиях колонок',
-    description: 'Убедиться, что перенос и hover-состояния не ломают сетку.',
-    assigneeId: 'user-3',
-    authorId: 'user-2',
-    priority: 'Low',
-    parentId: null,
-    dueDate: null,
-    startDate: null,
-    labels: ['qa'],
-    role: 'QA',
-    type: 'Task',
-    status: 'in-review',
-    subtasks: ['Desktop', 'Mobile'],
-    linkedTasks: ['KAN-8'],
-  },
-  {
-    id: 'task-5',
-    key: 'KAN-10',
-    title: 'Согласовать список ролей',
-    description: 'Роли нужны для фильтров и будущих прав доступа.',
-    assigneeId: 'user-1',
-    authorId: 'user-1',
-    priority: 'Medium',
-    parentId: null,
-    dueDate: null,
-    startDate: '6 мая',
-    labels: ['economy'],
-    role: 'Game Designer',
-    type: 'Epic',
-    status: 'done',
-    subtasks: [],
-    linkedTasks: [],
-    coverColor: '#51cf66',
-  },
-]
-
-const columns = ref<KanbanColumn[]>([
-  { id: 'column-1', title: 'To do', status: 'to-do', tasks: initialTasks.filter((task) => task.status === 'to-do') },
-  {
-    id: 'column-2',
-    title: 'In progress',
-    status: 'in-progress',
-    tasks: initialTasks.filter((task) => task.status === 'in-progress'),
-  },
-  {
-    id: 'column-3',
-    title: 'In review',
-    status: 'in-review',
-    tasks: initialTasks.filter((task) => task.status === 'in-review'),
-  },
-  { id: 'column-4', title: 'Done', status: 'done', tasks: initialTasks.filter((task) => task.status === 'done') },
-])
-
 const searchQuery = ref('')
 const selectedTaskId = ref<string | null>(null)
 const isAddingColumn = ref(false)
@@ -173,17 +45,55 @@ const activeFilters = ref<Record<FilterKey, string[]>>({
   priority: [],
 })
 
+const projectId = computed(() => {
+  const value = route.params.projectId
+
+  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
+})
+
+const board = computed(() => {
+  return projectId.value ? kanbanStore.boardsByProjectId[projectId.value] ?? null : null
+})
+
+const columns = computed<KanbanColumn[]>({
+  get: () => board.value?.columns ?? [],
+  set: (nextColumns) => {
+    if (projectId.value) {
+      kanbanStore.replaceColumns(projectId.value, nextColumns)
+    }
+  },
+})
+
+const members = computed(() => board.value?.members ?? [])
+const roles = computed(() => board.value?.roles ?? [])
+const taskTypes = computed(() => board.value?.taskTypes ?? [])
+const priorities = computed(() => board.value?.priorities ?? [])
+const statuses = computed(() => board.value?.statuses ?? [])
+const tags = computed(() => board.value?.tags ?? [])
+const isLoading = computed(() => {
+  return projectId.value ? Boolean(kanbanStore.isLoadingByProjectId[projectId.value]) : false
+})
+const isSaving = computed(() => {
+  return projectId.value ? Boolean(kanbanStore.isSavingByProjectId[projectId.value]) : false
+})
+const isDirty = computed(() => {
+  return projectId.value ? Boolean(kanbanStore.isDirtyByProjectId[projectId.value]) : false
+})
+const error = computed(() => {
+  return projectId.value ? kanbanStore.errorByProjectId[projectId.value] : null
+})
+
 const filterGroups = computed(() => [
-  { key: 'assignee' as const, title: 'Исполнитель', options: members.map((member) => ({ label: member.name, value: member.id })) },
-  { key: 'role' as const, title: 'Роль', options: roles.map((role) => ({ label: role, value: role })) },
-  { key: 'type' as const, title: 'Тип задачи', options: taskTypes.map((type) => ({ label: type, value: type })) },
-  { key: 'tag' as const, title: 'Тэги', options: tags.map((tag) => ({ label: tag, value: tag })) },
+  { key: 'assignee' as const, title: 'Исполнитель', options: members.value.map((member) => ({ label: member.name, value: member.id })) },
+  { key: 'role' as const, title: 'Роль', options: roles.value.map((role) => ({ label: role, value: role })) },
+  { key: 'type' as const, title: 'Тип задачи', options: taskTypes.value.map((type) => ({ label: type, value: type })) },
+  { key: 'tag' as const, title: 'Тэги', options: tags.value.map((tag) => ({ label: tag, value: tag })) },
   {
     key: 'status' as const,
     title: 'Статус',
-    options: statuses.map((status) => ({ label: getStatusLabel(status), value: status })),
+    options: statuses.value.map((status) => ({ label: getStatusLabel(status), value: status })),
   },
-  { key: 'priority' as const, title: 'Приоритет', options: priorities.map((priority) => ({ label: priority, value: priority })) },
+  { key: 'priority' as const, title: 'Приоритет', options: priorities.value.map((priority) => ({ label: priority, value: priority })) },
 ])
 
 const allTasks = computed(() => columns.value.flatMap((column) => column.tasks))
@@ -230,19 +140,19 @@ const detailFields = computed(() => {
   }
 
   return [
-    { key: 'assigneeId' as const, label: 'Исполнитель', value: getMember(task.assigneeId)?.name ?? 'Нет', options: members.map((member) => ({ label: member.name, value: member.id })) },
-    { key: 'priority' as const, label: 'Приоритет', value: task.priority, options: priorities.map((priority) => ({ label: priority, value: priority })) },
+    { key: 'assigneeId' as const, label: 'Исполнитель', value: getMember(task.assigneeId)?.name ?? 'Нет', options: members.value.map((member) => ({ label: member.name, value: member.id })) },
+    { key: 'priority' as const, label: 'Приоритет', value: task.priority, options: priorities.value.map((priority) => ({ label: priority, value: priority })) },
     { key: 'parentId' as const, label: 'Родитель', value: task.parentId ?? 'Нет', options: [{ label: 'Нет', value: '' }, ...allTasks.value.filter((item) => item.id !== task.id).map((item) => ({ label: item.key, value: item.key }))] },
     { key: 'dueDate' as const, label: 'Срок исполнения', value: task.dueDate ?? 'Нет', options: ['Нет', 'Сегодня', 'Завтра', '17 мая', '20 мая'].map((value) => ({ label: value, value })) },
-    { key: 'labels' as const, label: 'Метки', value: task.labels.length ? task.labels.join(', ') : 'Нет', options: tags.map((tag) => ({ label: tag, value: tag })) },
-    { key: 'role' as const, label: 'Роль', value: task.role ?? 'Нет', options: roles.map((role) => ({ label: role, value: role })) },
+    { key: 'labels' as const, label: 'Метки', value: task.labels.length ? task.labels.join(', ') : 'Нет', options: tags.value.map((tag) => ({ label: tag, value: tag })) },
+    { key: 'role' as const, label: 'Роль', value: task.role ?? 'Нет', options: roles.value.map((role) => ({ label: role, value: role })) },
     { key: 'startDate' as const, label: 'Start date', value: task.startDate ?? 'Нет', options: ['Нет', '6 мая', '10 мая', 'Сегодня', 'Завтра'].map((value) => ({ label: value, value })) },
-    { key: 'authorId' as const, label: 'Автор', value: getMember(task.authorId)?.name ?? 'Нет', options: members.map((member) => ({ label: member.name, value: member.id })) },
+    { key: 'authorId' as const, label: 'Автор', value: getMember(task.authorId)?.name ?? 'Нет', options: members.value.map((member) => ({ label: member.name, value: member.id })) },
   ]
 })
 
 function getMember(memberId: string) {
-  return members.find((member) => member.id === memberId) ?? null
+  return members.value.find((member) => member.id === memberId) ?? null
 }
 
 function getStatusLabel(status: string) {
@@ -291,12 +201,10 @@ function finishAddColumn() {
     return
   }
 
-  columns.value.push({
-    id: `column-${Date.now()}`,
-    title,
-    status: title.toLowerCase().replace(/\s+/g, '-'),
-    tasks: [],
-  })
+  if (projectId.value) {
+    kanbanStore.addColumn(projectId.value, title)
+  }
+
   cancelAddColumn()
 }
 
@@ -306,60 +214,27 @@ function cancelAddColumn() {
 }
 
 function createTask(columnId: string) {
-  const column = columns.value.find((item) => item.id === columnId)
-
-  if (!column) {
-    return
+  if (projectId.value) {
+    kanbanStore.createTask(projectId.value, columnId)
   }
-
-  const nextIndex = allTasks.value.length + 1
-  const defaultMember = members[0]
-
-  if (!defaultMember) {
-    return
-  }
-
-  column.tasks.unshift({
-    id: `task-${Date.now()}`,
-    key: `KAN-${nextIndex + 5}`,
-    title: 'Новая задача',
-    description: 'Добавьте описание задачи.',
-    assigneeId: defaultMember.id,
-    authorId: defaultMember.id,
-    priority: 'Medium',
-    parentId: null,
-    dueDate: null,
-    startDate: null,
-    labels: [],
-    role: null,
-    type: 'Task',
-    status: column.status as KanbanStatus,
-    subtasks: [],
-    linkedTasks: [],
-  })
-  syncStatuses()
 }
 
 function syncStatuses() {
-  columns.value.forEach((column) => {
-    column.tasks.forEach((task) => {
-      task.status = column.status as KanbanStatus
-    })
-  })
+  if (projectId.value) {
+    kanbanStore.scheduleSave(projectId.value)
+  }
 }
 
 function renameTask(taskId: string, title: string) {
-  const task = allTasks.value.find((item) => item.id === taskId)
-
-  if (task) {
-    task.title = title
+  if (projectId.value) {
+    kanbanStore.renameTask(projectId.value, taskId, title)
   }
 }
 
 function deleteTask(taskId: string) {
-  columns.value.forEach((column) => {
-    column.tasks = column.tasks.filter((task) => task.id !== taskId)
-  })
+  if (projectId.value) {
+    kanbanStore.deleteTask(projectId.value, taskId)
+  }
 
   if (selectedTaskId.value === taskId) {
     selectedTaskId.value = null
@@ -374,10 +249,8 @@ function copyTaskLink(taskId: string) {
 }
 
 function setTaskCover(taskId: string, color: string) {
-  const task = allTasks.value.find((item) => item.id === taskId)
-
-  if (task) {
-    task.coverColor = color
+  if (projectId.value) {
+    kanbanStore.setTaskCover(projectId.value, taskId, color)
   }
 }
 
@@ -390,27 +263,30 @@ function selectDetailValue(field: DetailFieldKey, value: string) {
 
   if (field === 'labels') {
     const index = task.labels.indexOf(value)
+    const nextLabels = [...task.labels]
 
     if (index >= 0) {
-      task.labels.splice(index, 1)
+      nextLabels.splice(index, 1)
+      updateSelectedTaskField('labels', nextLabels)
       return
     }
 
-    task.labels.push(value)
+    nextLabels.push(value)
+    updateSelectedTaskField('labels', nextLabels)
     return
   }
 
   if (field === 'parentId') {
-    task.parentId = value || null
+    updateSelectedTaskField('parentId', value || null)
     return
   }
 
   if (field === 'dueDate' || field === 'startDate') {
-    task[field] = value === 'Нет' ? null : value
+    updateSelectedTaskField(field, value === 'Нет' ? null : value)
     return
   }
 
-  task[field] = value as never
+  updateSelectedTaskField(field, value)
 }
 
 function isDetailOptionSelected(field: DetailFieldKey, value: string) {
@@ -434,6 +310,38 @@ function isDetailOptionSelected(field: DetailFieldKey, value: string) {
 
   return String(task[field]) === value
 }
+
+function updateSelectedTaskField<Key extends keyof KanbanTask>(field: Key, value: KanbanTask[Key]) {
+  const task = selectedTask.value
+
+  if (!projectId.value || !task) {
+    return
+  }
+
+  kanbanStore.updateTaskField(projectId.value, task.id, field, value)
+}
+
+watch(
+  projectId,
+  async (nextProjectId, previousProjectId) => {
+    if (previousProjectId) {
+      await kanbanStore.flushBoard(previousProjectId)
+    }
+
+    selectedTaskId.value = null
+
+    if (nextProjectId) {
+      await kanbanStore.loadBoard(nextProjectId)
+    }
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  if (projectId.value) {
+    void kanbanStore.flushBoard(projectId.value)
+  }
+})
 </script>
 
 <template>
@@ -473,86 +381,109 @@ function isDetailOptionSelected(field: DetailFieldKey, value: string) {
       </BDropdown>
     </section>
 
-    <section class="columns-toolbar" aria-label="Колонки доски">
+    <section v-if="isLoading" class="kanban-state" aria-live="polite">
+      <h2>Загружаем доску</h2>
+      <p>Получаем колонки и карточки из мок-БД.</p>
+    </section>
+
+    <section v-else-if="error" class="kanban-state kanban-state-error" aria-live="polite">
+      <h2>Не удалось открыть доску</h2>
+      <p>{{ error }}</p>
+    </section>
+
+    <section v-else-if="!board" class="kanban-state" aria-live="polite">
+      <h2>Доска не найдена</h2>
+      <p>Для этого проекта пока нет kanban-данных.</p>
+    </section>
+
+    <template v-else>
+      <div class="kanban-save-state" aria-live="polite">
+        <span v-if="isSaving">Сохраняем...</span>
+        <span v-else-if="isDirty">Есть несохраненные изменения</span>
+        <span v-else>Сохранено</span>
+      </div>
+
+      <section class="columns-toolbar" aria-label="Колонки доски">
+        <Draggable
+          v-model="columns"
+          item-key="id"
+          tag="div"
+          class="column-tabs"
+          handle=".column-title-handle"
+          ghost-class="column-tab-ghost"
+        >
+          <template #item="{ element }">
+            <button class="column-title-handle" type="button">
+              {{ element.title }}
+            </button>
+          </template>
+        </Draggable>
+
+        <form v-if="isAddingColumn" class="new-column-form" @submit.prevent="finishAddColumn">
+          <input v-model="newColumnTitle" type="text" placeholder="Название колонки" autofocus />
+          <button class="icon-button" type="submit" aria-label="Добавить колонку">
+            <IconCheckmark aria-hidden="true" />
+          </button>
+          <button class="icon-button" type="button" aria-label="Отменить" @click="cancelAddColumn">
+            <IconClose aria-hidden="true" />
+          </button>
+        </form>
+
+        <button v-else class="add-column-button" type="button" aria-label="Добавить колонку" @click="startAddColumn">
+          <IconAdd aria-hidden="true" />
+        </button>
+      </section>
+
       <Draggable
         v-model="columns"
         item-key="id"
-        tag="div"
-        class="column-tabs"
+        tag="section"
+        class="kanban-board"
         handle=".column-title-handle"
-        ghost-class="column-tab-ghost"
+        ghost-class="column-ghost"
       >
-        <template #item="{ element }">
-          <button class="column-title-handle" type="button">
-            {{ element.title }}
-          </button>
+        <template #item="{ element: column }">
+          <article class="kanban-column">
+            <header class="column-header">
+              <button class="column-title-handle" type="button">
+                <span>{{ column.title }}</span>
+                <BBadge variant="light">{{ column.tasks.length }}</BBadge>
+              </button>
+              <button class="create-task-button" type="button" @click="createTask(column.id)">
+                <IconAdd aria-hidden="true" />
+                <span>Создать</span>
+              </button>
+            </header>
+
+            <Draggable
+              v-model="column.tasks"
+              item-key="id"
+              tag="div"
+              class="task-list"
+              group="kanban-tasks"
+              ghost-class="task-ghost"
+              drag-class="task-drag"
+              @change="syncStatuses"
+            >
+              <template #item="{ element: task }">
+                <KanbanCard
+                  v-show="visibleColumns.find((item) => item.id === column.id)?.tasks.some((item) => item.id === task.id)"
+                  :task="task"
+                  :assignee="getMember(task.assigneeId)"
+                  :done="column.status === 'done'"
+                  :cover-colors="coverColors"
+                  @open="selectedTaskId = $event"
+                  @rename="renameTask"
+                  @delete="deleteTask"
+                  @copy-link="copyTaskLink"
+                  @set-cover="setTaskCover"
+                />
+              </template>
+            </Draggable>
+          </article>
         </template>
       </Draggable>
-
-      <form v-if="isAddingColumn" class="new-column-form" @submit.prevent="finishAddColumn">
-        <input v-model="newColumnTitle" type="text" placeholder="Название колонки" autofocus />
-        <button class="icon-button" type="submit" aria-label="Добавить колонку">
-          <IconCheckmark aria-hidden="true" />
-        </button>
-        <button class="icon-button" type="button" aria-label="Отменить" @click="cancelAddColumn">
-          <IconClose aria-hidden="true" />
-        </button>
-      </form>
-
-      <button v-else class="add-column-button" type="button" aria-label="Добавить колонку" @click="startAddColumn">
-        <IconAdd aria-hidden="true" />
-      </button>
-    </section>
-
-    <Draggable
-      v-model="columns"
-      item-key="id"
-      tag="section"
-      class="kanban-board"
-      handle=".column-title-handle"
-      ghost-class="column-ghost"
-    >
-      <template #item="{ element: column }">
-        <article class="kanban-column">
-          <header class="column-header">
-            <button class="column-title-handle" type="button">
-              <span>{{ column.title }}</span>
-              <BBadge variant="light">{{ column.tasks.length }}</BBadge>
-            </button>
-            <button class="create-task-button" type="button" @click="createTask(column.id)">
-              <IconAdd aria-hidden="true" />
-              <span>Создать</span>
-            </button>
-          </header>
-
-          <Draggable
-            v-model="column.tasks"
-            item-key="id"
-            tag="div"
-            class="task-list"
-            group="kanban-tasks"
-            ghost-class="task-ghost"
-            drag-class="task-drag"
-            @change="syncStatuses"
-          >
-            <template #item="{ element: task }">
-              <KanbanCard
-                v-show="visibleColumns.find((item) => item.id === column.id)?.tasks.some((item) => item.id === task.id)"
-                :task="task"
-                :assignee="getMember(task.assigneeId)"
-                :done="column.status === 'done'"
-                :cover-colors="coverColors"
-                @open="selectedTaskId = $event"
-                @rename="renameTask"
-                @delete="deleteTask"
-                @copy-link="copyTaskLink"
-                @set-cover="setTaskCover"
-              />
-            </template>
-          </Draggable>
-        </article>
-      </template>
-    </Draggable>
+    </template>
 
     <div v-if="selectedTask" class="task-details-backdrop" @click.self="selectedTaskId = null">
       <aside class="task-details" aria-label="Карточка задачи">
@@ -734,6 +665,44 @@ function isDetailOptionSelected(field: DetailFieldKey, value: string) {
 .columns-toolbar {
   justify-content: space-between;
   margin-bottom: 14px;
+}
+
+.kanban-state {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  padding: 44px;
+  border: 1px dashed #cfcfcf;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #606060;
+  text-align: center;
+}
+
+.kanban-state h2 {
+  margin: 0 0 6px;
+  color: #191919;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.kanban-state p {
+  margin: 0;
+}
+
+.kanban-state-error h2 {
+  color: #b42318;
+}
+
+.kanban-save-state {
+  position: fixed;
+  right: 24px;
+  bottom: 20px;
+  z-index: 20;
+  color: #7a828e;
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .column-tabs {
