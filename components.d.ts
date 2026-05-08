@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppToast: typeof import('./src/components/AppToast.vue')['default']
     BAlert: typeof import('bootstrap-vue-next/components/BAlert')['BAlert']
     BBadge: typeof import('bootstrap-vue-next/components/BBadge')['BBadge']
     BButton: typeof import('bootstrap-vue-next/components/BButton')['BButton']
@@ -32,6 +33,7 @@ declare module 'vue' {
     IconEcosystem: typeof import('./src/components/icons/IconEcosystem.vue')['default']
     IconSupport: typeof import('./src/components/icons/IconSupport.vue')['default']
     IconTooling: typeof import('./src/components/icons/IconTooling.vue')['default']
+    ImageBlock: typeof import('./src/components/lotion/ImageBlock.vue')['default']
     Kanban: typeof import('./src/components/pages/kanban.vue')['default']
     KanbanCard: typeof import('./src/components/KanbanCard.vue')['default']
     ProjectCard: typeof import('./src/components/ProjectCard.vue')['default']

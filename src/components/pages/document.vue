@@ -72,6 +72,10 @@ const stripHtml = (value: string) => {
 };
 
 const isBlockEmpty = (block: LotionBlock) => {
+  if (block.type === "IMAGE") {
+    return typeof block.details.imageUrl !== "string" || block.details.imageUrl.length === 0;
+  }
+
   if (block.type === "TABLE" && block.details.table) {
     return block.details.table.rows.every((row) =>
       row.every((cell) => stripHtml(cell).length === 0),

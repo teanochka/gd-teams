@@ -17,6 +17,8 @@ export type LotionTableData = {
 export type LotionBlockDetails = Record<string, unknown> & {
   value?: unknown
   table?: LotionTableData
+  imageUrl?: string
+  imageWidthPercent?: number
 }
 
 export type LotionBlock = {

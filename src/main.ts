@@ -7,6 +7,7 @@ import { OhVueIcon, addIcons } from "oh-vue-icons";
 import { registerBlock } from "@dashibase/lotion";
 import {
   BiHr,
+  BiImage,
   BiListCheck,
   BiQuote,
   BiTable,
@@ -21,6 +22,7 @@ import {
 } from "oh-vue-icons/icons";
 import TodoBlock from "./components/lotion/TodoBlock.vue";
 import TableBlock from "./components/lotion/TableBlock.vue";
+import ImageBlock from "./components/lotion/ImageBlock.vue";
 
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue-next/dist/bootstrap-vue-next.css";
@@ -29,6 +31,7 @@ import "./assets/lotion-overrides.css";
 
 addIcons(
   BiHr,
+  BiImage,
   BiListCheck,
   BiQuote,
   BiTable,
@@ -44,6 +47,7 @@ addIcons(
 
 registerBlock("TODO", "To-do list", TodoBlock, "bi-list-check");
 registerBlock("TABLE", "Table", TableBlock, "bi-table");
+registerBlock("IMAGE", "Image", ImageBlock, "bi-image");
 
 const app = createApp(App);
 
