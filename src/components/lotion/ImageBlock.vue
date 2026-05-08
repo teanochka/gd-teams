@@ -45,18 +45,12 @@ const props = defineProps({
 
 const { showToast } = useAppToast()
 
-const blockRef = ref<HTMLDivElement | null>(null)
-const emptyButtonRef = ref<HTMLButtonElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const imageFrameRef = ref<HTMLDivElement | null>(null)
 const isMenuOpen = ref(false)
 const activeTab = ref<MenuTab>('upload')
 const linkedImageUrl = ref('')
 const resizeState = ref<ResizeState | null>(null)
-const menuPosition = ref({
-  left: 0,
-  top: 0,
-})
 let previousBodyUserSelect = ''
 
 const imageUrl = computed(() => props.block.details.imageUrl ?? '')
@@ -111,34 +105,12 @@ function ensureDetails() {
     props.block.details.imageWidthPercent ?? defaultImageWidthPercent
 }
 
-function updateMenuPosition(anchor: HTMLElement | null | undefined = emptyButtonRef.value ?? blockRef.value) {
-  if (!anchor) {
-    return
-  }
-
-  const rect = anchor.getBoundingClientRect()
-
-  menuPosition.value = {
-    left: rect.left + rect.width / 2,
-    top: rect.bottom + 6,
-  }
-}
-
-function openMenu(event?: MouseEvent) {
+function openMenu() {
   if (props.readonly) {
     return
   }
 
-  if (event) {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
-  const anchor =
-    event?.currentTarget instanceof HTMLElement ? event.currentTarget : undefined
-
   isMenuOpen.value = true
-  void nextTick(() => updateMenuPosition(anchor))
 }
 
 function closeMenu() {
@@ -313,7 +285,6 @@ defineExpose({
 
 <template>
   <div
-    ref="blockRef"
     class="image-block"
     @keydown.stop
     @mousedown.stop
@@ -351,73 +322,65 @@ defineExpose({
     </div>
 
     <div v-else class="image-empty">
-      <button
-        ref="emptyButtonRef"
-        class="image-empty-button"
-        type="button"
-        @click="openMenu"
-      >
+      <button class="image-empty-button" type="button" @click="openMenu">
         <v-icon name="bi-image" />
         <span>add an image</span>
       </button>
     </div>
 
-    <Teleport to="body">
-      <div
-        v-if="isMenuOpen"
-        class="image-menu"
-        :style="{ left: `${menuPosition.left}px`, top: `${menuPosition.top}px` }"
-        @mousedown.capture.stop
-        @pointerdown.capture.stop
-        @click.capture.stop
-        @keydown.capture.stop
-      >
-        <div class="image-menu-tabs" role="tablist">
-          <button
-            type="button"
-            :class="{ active: activeTab === 'upload' }"
-            @click="activeTab = 'upload'"
-          >
-            Upload
-          </button>
-          <button
-            type="button"
-            :class="{ active: activeTab === 'link' }"
-            @click="activeTab = 'link'"
-          >
-            Link
-          </button>
-        </div>
-
-        <div v-if="activeTab === 'upload'" class="image-menu-panel">
-          <button class="image-menu-primary" type="button" @click="triggerUpload">
-            Upload file
-          </button>
-        </div>
-
-        <div v-else class="image-menu-panel image-link-panel">
-          <input
-            v-model="linkedImageUrl"
-            type="url"
-            placeholder="https://example.com/image.png"
-            spellcheck="false"
-            @mousedown.stop
-            @pointerdown.stop
-            @click.stop
-            @input.stop
-            @keydown.enter.prevent="confirmLinkedImage"
-          >
-          <button
-            class="image-menu-primary"
-            type="button"
-            :disabled="!isLinkedImageUrlValid"
-            @click="confirmLinkedImage"
-          >
-            Confirm
-          </button>
-        </div>
+    <div
+      v-if="isMenuOpen"
+      class="image-menu"
+      @mousedown.stop
+      @pointerdown.stop
+      @click.stop
+      @keydown.stop
+    >
+      <div class="image-menu-tabs" role="tablist">
+        <button
+          type="button"
+          :class="{ active: activeTab === 'upload' }"
+          @click="activeTab = 'upload'"
+        >
+          Upload
+        </button>
+        <button
+          type="button"
+          :class="{ active: activeTab === 'link' }"
+          @click="activeTab = 'link'"
+        >
+          Link
+        </button>
       </div>
-    </Teleport>
+
+      <div v-if="activeTab === 'upload'" class="image-menu-panel">
+        <button class="image-menu-primary" type="button" @click="triggerUpload">
+          Upload file
+        </button>
+      </div>
+
+      <div v-else class="image-menu-panel image-link-panel">
+        <input
+          v-model="linkedImageUrl"
+          type="url"
+          placeholder="https://example.com/image.png"
+          spellcheck="false"
+          @mousedown.stop
+          @pointerdown.stop
+          @click.stop
+          @input.stop
+          @keydown.enter.prevent="confirmLinkedImage"
+        >
+        <button
+          class="image-menu-primary"
+          type="button"
+          :disabled="!isLinkedImageUrlValid"
+          @click="confirmLinkedImage"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -511,8 +474,10 @@ defineExpose({
 }
 
 .image-menu {
-  position: fixed;
-  z-index: 2200;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  z-index: 20;
   width: min(360px, calc(100vw - 48px));
   padding: 8px;
   border: 1px solid #d0d5dd;

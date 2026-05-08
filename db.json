@@ -45,13 +45,13 @@
       "title": "UI Kit",
       "description": "Макеты экранов, компоненты интерфейса и состояния.",
       "createdAt": "2026-04-01T00:00:00.000Z",
-      "updatedAt": "2026-05-07T23:47:00.403Z",
+      "updatedAt": "2026-05-08T00:42:00.966Z",
       "owner": "Саша",
       "teamId": "team-art",
       "teamName": "Команда арта",
       "isFavorite": true,
       "isDeleted": false,
-      "filesCount": 44,
+      "filesCount": 45,
       "imageUrl": "https://picsum.photos/seed/ui-kit/900/520",
       "rootFolderId": "ui-root"
     },
@@ -1010,6 +1010,21 @@
       "createdBy": "Вы",
       "updatedAt": "2026-05-07T23:47:00.403Z",
       "updatedBy": "Вы"
+    },
+    {
+      "id": "cLZ6Agq-U8E",
+      "projectId": "ui-kit",
+      "parentId": "BxaA2nmqeRg",
+      "type": "document",
+      "title": "Орк-воин",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-08T00:42:00.966Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-08T00:46:05.815Z",
+      "updatedBy": "Р’С‹"
     }
   ],
   "documentPages": [
@@ -2211,6 +2226,84 @@
       "createdAt": "2026-05-07T23:47:00.410Z",
       "updatedAt": "2026-05-07T23:47:00.410Z",
       "id": "V0WLzqvcVnQ"
+    },
+    {
+      "nodeId": "cLZ6Agq-U8E",
+      "projectId": "ui-kit",
+      "page": {
+        "name": "Орк-воин",
+        "blocks": [
+          {
+            "id": "360aa239-4d4b-4bd2-8394-9cf371c332e9",
+            "type": "IMAGE",
+            "details": {
+              "value": "https://rz.gamexp.com/img/pets/portrait_orc2.jpg",
+              "imageWidthPercent": 60,
+              "imageUrl": "https://rz.gamexp.com/img/pets/portrait_orc2.jpg"
+            }
+          },
+          {
+            "id": "c3fe213c-9c39-4b03-85fe-f5a25000ae43",
+            "type": "DIVIDER",
+            "details": {}
+          },
+          {
+            "id": "5a7ae59a-6bf9-41b2-9441-1649269f73b3",
+            "type": "TEXT",
+            "details": {
+              "value": ""
+            }
+          },
+          {
+            "id": "556487a7-33eb-4881-a896-bb3af999acc8",
+            "type": "TABLE",
+            "details": {
+              "value": "\n",
+              "table": {
+                "rows": [
+                  [
+                    "HP",
+                    "120"
+                  ],
+                  [
+                    "DMG",
+                    "120"
+                  ],
+                  [
+                    "",
+                    ""
+                  ]
+                ],
+                "columnWidths": [
+                  245.45452880859375,
+                  237.27276611328125
+                ],
+                "rowHeights": [
+                  42,
+                  42,
+                  42
+                ]
+              }
+            }
+          },
+          {
+            "id": "fd73b0eb-5269-44a7-9c6d-c211fb0faaa1",
+            "type": "H3",
+            "details": {
+              "value": "Тяжелый пехотинец, вооруженный топором"
+            }
+          }
+        ],
+        "card": {
+          "blockIds": [
+            "556487a7-33eb-4881-a896-bb3af999acc8",
+            "fd73b0eb-5269-44a7-9c6d-c211fb0faaa1"
+          ]
+        }
+      },
+      "createdAt": "2026-05-08T00:42:00.976Z",
+      "updatedAt": "2026-05-08T00:46:05.815Z",
+      "id": "PB8oB7FgxeA"
     }
   ],
   "kanbanBoards": [
