@@ -1,4 +1,20 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
+const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `${value}/`)
+
+const resolveApiBaseUrl = () => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
+
+  if (configuredBaseUrl) {
+    if (/^https?:\/\//i.test(configuredBaseUrl)) {
+      return ensureTrailingSlash(configuredBaseUrl)
+    }
+
+    return ensureTrailingSlash(new URL(configuredBaseUrl, window.location.origin).toString())
+  }
+
+  return ensureTrailingSlash(new URL('/api', window.location.origin).toString())
+}
+
+const apiBaseUrl = resolveApiBaseUrl()
 
 type RequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
@@ -9,7 +25,7 @@ type RequestOptions = {
 }
 
 const buildUrl = (path: string, query?: RequestOptions['query']) => {
-  const url = new URL(path, apiBaseUrl)
+  const url = new URL(path.replace(/^\//, ''), apiBaseUrl)
 
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined && value !== null && value !== '') {

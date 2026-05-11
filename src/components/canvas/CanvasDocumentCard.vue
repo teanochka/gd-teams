@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, watch } from 'vue'
-import { Lotion } from '@dashibase/lotion'
+import { computed, watch } from 'vue'
 import IconDocument from '~icons/carbon/document'
-import { cloneLotionBlockDetails } from '@/api/documents'
+import CanvasCardBlockRenderer from '@/components/canvas/CanvasCardBlockRenderer.vue'
 import { useDocumentsStore } from '@/stores/documents'
-import type { CanvasDocumentCard, LotionBlock, LotionPage } from '@/types/domain'
+import type { CanvasDocumentCard, LotionBlock } from '@/types/domain'
 
 const props = defineProps<{
   card: CanvasDocumentCard
@@ -15,13 +14,6 @@ const emit = defineEmits<{
 }>()
 
 const documentsStore = useDocumentsStore()
-const cardPage = reactive<LotionPage>({
-  name: '',
-  blocks: [],
-  card: {
-    blockIds: [],
-  },
-})
 
 const sourcePage = computed(() => documentsStore.pagesById[props.card.documentId] ?? null)
 const isLoading = computed(() => Boolean(documentsStore.isLoadingById[props.card.documentId]))
@@ -35,96 +27,17 @@ const cardStyle = computed(() => ({
   minHeight: `${props.card.height}px`,
 }))
 
-const cloneBlock = (block: LotionBlock): LotionBlock => ({
-  ...block,
-  details: cloneLotionBlockDetails(block.details),
-})
-
-const prepareReadonlyDom = async () => {
-  await nextTick()
-
-  document
-    .querySelectorAll<HTMLElement>(
-      `[data-canvas-document-card-id="${props.card.id}"] .group > div:first-child > *`,
-    )
-    .forEach((control) => {
-      if (control.querySelector('path[d="M12 4v16m8-8H4"]')) {
-        control.style.display = 'none'
-      }
-    })
-
-  document
-    .querySelectorAll<HTMLElement>(
-      `[data-canvas-document-card-id="${props.card.id}"] [contenteditable="true"]`,
-    )
-    .forEach((element) => {
-      element.setAttribute('contenteditable', 'false')
-      element.setAttribute('spellcheck', 'false')
-    })
-}
-
-const syncCardPage = async () => {
+const cardBlocks = computed(() => {
   const page = sourcePage.value
 
   if (!page) {
-    cardPage.name = props.card.title
-    cardPage.blocks = []
-    cardPage.card = { blockIds: [] }
-    return
+    return []
   }
 
-  const cardBlockIds = page.card?.blockIds ?? []
-  const blocks = cardBlockIds
+  return (page.card?.blockIds ?? [])
     .map((blockId) => page.blocks.find((block) => block.id === blockId) ?? null)
     .filter((block): block is LotionBlock => block !== null)
-    .map(cloneBlock)
-
-  cardPage.name = page.name
-  cardPage.blocks = blocks
-  cardPage.card = { blockIds: blocks.map((block) => block.id) }
-
-  await prepareReadonlyDom()
-}
-
-const isEditableTarget = (target: EventTarget | null) => {
-  return (
-    target instanceof HTMLElement &&
-    Boolean(target.closest('.canvas-document-card [contenteditable]'))
-  )
-}
-
-const preventTextInput = (event: Event) => {
-  if (!isEditableTarget(event.target)) {
-    return
-  }
-
-  event.preventDefault()
-  event.stopPropagation()
-}
-
-const preventEditingKeydown = (event: KeyboardEvent) => {
-  if (!isEditableTarget(event.target)) {
-    return
-  }
-
-  const key = event.key.toLowerCase()
-  const isAllowedShortcut = (event.ctrlKey || event.metaKey) && ['a', 'c'].includes(key)
-  const isNavigationKey = [
-    'arrowup',
-    'arrowdown',
-    'arrowleft',
-    'arrowright',
-    'escape',
-    'tab',
-  ].includes(key)
-
-  if (isAllowedShortcut || isNavigationKey) {
-    return
-  }
-
-  event.preventDefault()
-  event.stopPropagation()
-}
+})
 
 const startMove = (event: PointerEvent) => {
   emit('start-move', { card: props.card, event })
@@ -138,14 +51,9 @@ watch(
     }
 
     await documentsStore.loadDocument(documentId, projectId)
-    await syncCardPage()
   },
   { immediate: true },
 )
-
-watch(sourcePage, () => {
-  void syncCardPage()
-}, { deep: true })
 </script>
 
 <template>
@@ -153,10 +61,6 @@ watch(sourcePage, () => {
     class="canvas-document-card"
     :data-canvas-document-card-id="card.id"
     :style="cardStyle"
-    @beforeinput.capture="preventTextInput"
-    @keydown.capture="preventEditingKeydown"
-    @paste.capture="preventTextInput"
-    @compositionstart.capture="preventTextInput"
   >
     <header class="document-card-header" @pointerdown="startMove">
       <IconDocument aria-hidden="true" />
@@ -167,10 +71,16 @@ watch(sourcePage, () => {
     <div class="document-card-body">
       <div v-if="isLoading" class="document-card-state">Загрузка...</div>
       <div v-else-if="error" class="document-card-state error">{{ error }}</div>
-      <div v-else-if="!cardPage.blocks.length" class="document-card-state">
+      <div v-else-if="!cardBlocks.length" class="document-card-state">
         В карточке документа нет блоков
       </div>
-      <Lotion v-else :page="cardPage" />
+      <div v-else class="document-card-blocks">
+        <CanvasCardBlockRenderer
+          v-for="block in cardBlocks"
+          :key="block.id"
+          :block="block"
+        />
+      </div>
     </div>
   </article>
 </template>
@@ -228,6 +138,11 @@ watch(sourcePage, () => {
   padding: 14px 16px 18px;
 }
 
+.document-card-blocks {
+  display: grid;
+  gap: 10px;
+}
+
 .document-card-state {
   display: grid;
   place-items: center;
@@ -239,15 +154,5 @@ watch(sourcePage, () => {
 
 .document-card-state.error {
   color: #b42318;
-}
-
-.document-card-body :deep(.lotion h1) {
-  margin-bottom: 16px;
-  font-size: 22px;
-  line-height: 1.2;
-}
-
-.document-card-body :deep([contenteditable='false']) {
-  caret-color: transparent;
 }
 </style>
