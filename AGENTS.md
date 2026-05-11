@@ -321,6 +321,3 @@ Lotion подключается в `main.ts`, там же регистрирую
 
 8. Добавить тесты на stores/API helpers.
    Самые полезные первые тесты: `getFolderContent()`, защита move от циклов, copy document page, autosave flush, kanban status sync.
-
-9. Удалить или использовать `counter.ts`.
-   Если demo store не нужен, лучше убрать его, чтобы структура stores отражала реальные домены.
