@@ -8,6 +8,8 @@ import projectEdit from "./components/pages/project-edit.vue";
 import projects from "./components/pages/projects.vue";
 import workspace from "./components/pages/workspace.vue";
 import document from "./components/pages/document.vue";
+import kanban from "./components/pages/kanban.vue";
+import canvas from "./components/pages/canvas.vue";
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/projects" },
   {
@@ -47,9 +49,14 @@ const routes: RouteRecordRaw[] = [
     component: document,
   },
   {
+    path: "/project/:projectId/kanban",
+    name: "project-kanban",
+    component: kanban,
+  },
+  {
     path: "/project/:projectId/canvas/:canvasId",
     name: "project-canvas",
-    component: workspace,
+    component: canvas,
   },
   {
     path: "/project/:projectId/template/:templateId",

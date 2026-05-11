@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import IconAdd from '~icons/carbon/add'
-import IconCheckmark from '~icons/carbon/checkmark'
-import IconChevronDown from '~icons/carbon/chevron-down'
-import IconCopy from '~icons/carbon/copy'
-import IconCut from '~icons/carbon/cut'
-import IconDocument from '~icons/carbon/document'
-import IconEdit from '~icons/carbon/edit'
-import IconFolder from '~icons/carbon/folder'
-import IconGrid from '~icons/carbon/grid'
-import IconList from '~icons/carbon/list'
-import IconPaintBrush from '~icons/carbon/paint-brush'
-import IconPaste from '~icons/carbon/paste'
-import IconSortAscending from '~icons/carbon/sort-ascending'
-import IconTemplate from '~icons/carbon/template'
-import IconTrashCan from '~icons/carbon/trash-can'
-import IconView from '~icons/carbon/view'
-import WorkspaceCard from '@/components/WorkspaceCard.vue'
-import WorkspaceHeader from '@/components/WorkspaceHeader.vue'
-import WorkspaceLeftSidebar from '@/components/WorkspaceLeftSidebar.vue'
-import WorkspaceListItem from '@/components/WorkspaceListItem.vue'
-import WorkspaceRightSidebar from '@/components/WorkspaceRightSidebar.vue'
-import ContextMenu from '@/components/ContextMenu.vue'
-import { useWorkspacePage } from '@/composables/useWorkspacePage'
-import IconStar from '~icons/carbon/star'
-import IconOpenPanelTop from '~icons/carbon/open-panel-top'
-import IconTag from '~icons/carbon/tag'
-import { ref } from 'vue'
+import IconAdd from "~icons/carbon/add";
+import IconCheckmark from "~icons/carbon/checkmark";
+import IconChevronDown from "~icons/carbon/chevron-down";
+import IconCopy from "~icons/carbon/copy";
+import IconCut from "~icons/carbon/cut";
+import IconDocument from "~icons/carbon/document";
+import IconEdit from "~icons/carbon/edit";
+import IconFolder from "~icons/carbon/folder";
+import IconGrid from "~icons/carbon/grid";
+import IconList from "~icons/carbon/list";
+import IconPaintBrush from "~icons/carbon/paint-brush";
+import IconPaste from "~icons/carbon/paste";
+import IconSortAscending from "~icons/carbon/sort-ascending";
+import IconTemplate from "~icons/carbon/template";
+import IconTrashCan from "~icons/carbon/trash-can";
+import IconView from "~icons/carbon/view";
+import WorkspaceCard from "@/components/workspace/WorkspaceCard.vue";
+import WorkspaceHeader from "@/components/workspace/WorkspaceHeader.vue";
+import WorkspaceLeftSidebar from "@/components/workspace/WorkspaceLeftSidebar.vue";
+import WorkspaceListItem from "@/components/workspace/WorkspaceListItem.vue";
+import WorkspaceRightSidebar from "@/components/workspace/WorkspaceRightSidebar.vue";
+import ContextMenu from "@/components/ContextMenu.vue";
+import { useWorkspacePage } from "@/composables/useWorkspacePage";
+import IconStar from "~icons/carbon/star";
+import IconOpenPanelTop from "~icons/carbon/open-panel-top";
+import IconTag from "~icons/carbon/tag";
+import { ref } from "vue";
 
 const {
   breadcrumbLabels,
@@ -54,6 +54,7 @@ const {
   openFolder,
   openItem,
   pasteClipboard,
+  projectId,
   projectName,
   reloadCurrentFolder,
   searchQuery,
@@ -87,46 +88,83 @@ const {
   createTag,
   updateTag,
   deleteTag,
-} = useWorkspacePage()
+} = useWorkspacePage();
 
-import IconArrowLeft from '~icons/carbon/arrow-left'
-import IconReset from '~icons/carbon/reset'
+import IconArrowLeft from "~icons/carbon/arrow-left";
+import IconReset from "~icons/carbon/reset";
 
-const contextMenuRef = ref<InstanceType<typeof ContextMenu> | null>(null)
-const contextMenuOptions = ref<any[]>([])
+const contextMenuRef = ref<InstanceType<typeof ContextMenu> | null>(null);
+const contextMenuOptions = ref<any[]>([]);
 
 const handleContextMenu = (e: MouseEvent, item: any) => {
-  e.preventDefault()
-  
+  e.preventDefault();
+
   if (!selectedIdSet.value.has(item.id)) {
-    handleItemSelect({ id: item.id, event: e as any })
+    handleItemSelect({ id: item.id, event: e as any });
   }
 
   contextMenuOptions.value = [
-    { label: 'Открыть', action: () => openItem(item), icon: IconOpenPanelTop },
-    { label: 'Переименовать', action: () => startRenameSelected(), icon: IconEdit, disabled: !canRenameSelection.value },
-    { label: 'Дублировать', action: () => { copySelected(); pasteClipboard() }, icon: IconCopy },
-    { label: 'Переместить', action: () => cutSelected(), icon: IconCut },
-    { label: item.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное', action: () => toggleFavorite(item.id, !item.isFavorite), icon: IconStar },
-    { label: 'Редактировать теги', action: () => console.log('Edit tags'), icon: IconTag },
+    { label: "Открыть", action: () => openItem(item), icon: IconOpenPanelTop },
+    {
+      label: "Переименовать",
+      action: () => startRenameSelected(),
+      icon: IconEdit,
+      disabled: !canRenameSelection.value,
+    },
+    {
+      label: "Дублировать",
+      action: () => {
+        copySelected();
+        pasteClipboard();
+      },
+      icon: IconCopy,
+    },
+    { label: "Переместить", action: () => cutSelected(), icon: IconCut },
+    {
+      label: item.isFavorite ? "Убрать из избранного" : "Добавить в избранное",
+      action: () => toggleFavorite(item.id, !item.isFavorite),
+      icon: IconStar,
+    },
+    {
+      label: "Редактировать теги",
+      action: () => console.log("Edit tags"),
+      icon: IconTag,
+    },
     { divider: true },
-    { label: 'Удалить', action: () => deleteSelected(), icon: IconTrashCan }
-  ]
+    { label: "Удалить", action: () => deleteSelected(), icon: IconTrashCan },
+  ];
 
-  contextMenuRef.value?.show(e)
-}
+  contextMenuRef.value?.show(e);
+};
 
 const handleEmptyContextMenu = (e: MouseEvent) => {
-  e.preventDefault()
+  e.preventDefault();
   contextMenuOptions.value = [
-    { label: 'Создать папку', action: () => startCreateNode('folder'), icon: IconFolder },
-    { label: 'Создать документ', action: () => startCreateNode('document'), icon: IconDocument },
-    { label: 'Создать холст', action: () => startCreateNode('canvas'), icon: IconPaintBrush },
+    {
+      label: "Создать папку",
+      action: () => startCreateNode("folder"),
+      icon: IconFolder,
+    },
+    {
+      label: "Создать документ",
+      action: () => startCreateNode("document"),
+      icon: IconDocument,
+    },
+    {
+      label: "Создать холст",
+      action: () => startCreateNode("canvas"),
+      icon: IconPaintBrush,
+    },
     { divider: true },
-    { label: 'Вставить', action: () => pasteClipboard(), icon: IconPaste, disabled: !clipboardHasContent.value }
-  ]
-  contextMenuRef.value?.show(e)
-}
+    {
+      label: "Вставить",
+      action: () => pasteClipboard(),
+      icon: IconPaste,
+      disabled: !clipboardHasContent.value,
+    },
+  ];
+  contextMenuRef.value?.show(e);
+};
 </script>
 
 <template>
@@ -141,12 +179,18 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
 
     <div class="workspace-shell">
       <WorkspaceLeftSidebar
+        :project-id="projectId"
         :project-name="projectName"
         :folders="folders"
         :tags="tags"
         :active-tag-ids="selectedTagIds"
         :special-view="specialView"
-        @open-folder="(id) => { exitSpecialView(); openFolder(id) }"
+        @open-folder="
+          (id) => {
+            exitSpecialView();
+            openFolder(id);
+          }
+        "
         @toggle-tag="toggleTagId"
         @create-tag="createTag($event.name, $event.color)"
         @update-tag="updateTag($event.id, $event.name, $event.color)"
@@ -156,7 +200,10 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
       />
 
       <main class="workspace-main">
-        <section class="workspace-toolbar" aria-label="Инструменты файлового менеджера">
+        <section
+          class="workspace-toolbar"
+          aria-label="Инструменты файлового менеджера"
+        >
           <BDropdown variant="dark" class="create-dropdown">
             <template #button-content>
               <IconAdd aria-hidden="true" />
@@ -234,13 +281,22 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
               <span>Сортировать</span>
               <IconChevronDown aria-hidden="true" />
             </template>
-            <BDropdownItem @click="setSortField('title')">По имени</BDropdownItem>
-            <BDropdownItem @click="setSortField('createdAt')">По дате создания</BDropdownItem>
-            <BDropdownItem @click="setSortField('updatedAt')">По дате изменения</BDropdownItem>
+            <BDropdownItem @click="setSortField('title')"
+              >По имени</BDropdownItem
+            >
+            <BDropdownItem @click="setSortField('createdAt')"
+              >По дате создания</BDropdownItem
+            >
+            <BDropdownItem @click="setSortField('updatedAt')"
+              >По дате изменения</BDropdownItem
+            >
             <BDropdownItem @click="setSortField('type')">По типу</BDropdownItem>
           </BDropdown>
 
-          <BDropdown variant="outline-dark" class="toolbar-dropdown view-dropdown">
+          <BDropdown
+            variant="outline-dark"
+            class="toolbar-dropdown view-dropdown"
+          >
             <template #button-content>
               <IconView aria-hidden="true" />
               <span>{{ viewModeLabel }}</span>
@@ -284,21 +340,39 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
             </h2>
             <div v-if="specialView === 'trash'" class="special-view-actions">
               <template v-if="hasSelection">
-                <BButton variant="outline-dark" size="sm" @click="restoreSelected">
+                <BButton
+                  variant="outline-dark"
+                  size="sm"
+                  @click="restoreSelected"
+                >
                   <IconReset aria-hidden="true" />
                   Восстановить выбранные
                 </BButton>
-                <BButton variant="danger" size="sm" @click="permanentDeleteSelected">
+                <BButton
+                  variant="danger"
+                  size="sm"
+                  @click="permanentDeleteSelected"
+                >
                   <IconTrashCan aria-hidden="true" />
                   Удалить навсегда
                 </BButton>
               </template>
               <template v-else>
-                <BButton variant="outline-dark" size="sm" :disabled="!specialViewItems.length" @click="restoreAll">
+                <BButton
+                  variant="outline-dark"
+                  size="sm"
+                  :disabled="!specialViewItems.length"
+                  @click="restoreAll"
+                >
                   <IconReset aria-hidden="true" />
                   Восстановить все
                 </BButton>
-                <BButton variant="danger" size="sm" :disabled="!specialViewItems.length" @click="emptyTrash">
+                <BButton
+                  variant="danger"
+                  size="sm"
+                  :disabled="!specialViewItems.length"
+                  @click="emptyTrash"
+                >
                   <IconTrashCan aria-hidden="true" />
                   Очистить корзину
                 </BButton>
@@ -306,24 +380,30 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
             </div>
           </section>
 
-          <section v-if="specialViewLoading" class="workspace-state" aria-live="polite">
+          <section
+            v-if="specialViewLoading"
+            class="workspace-state"
+            aria-live="polite"
+          >
             <IconFolder aria-hidden="true" />
             <h2>Загружаем...</h2>
           </section>
 
-          <section v-else-if="!specialViewItems.length" class="workspace-state" aria-live="polite">
+          <section
+            v-else-if="!specialViewItems.length"
+            class="workspace-state"
+            aria-live="polite"
+          >
             <IconFolder aria-hidden="true" />
             <h2 v-if="specialView === 'trash'">Корзина пуста</h2>
             <h2 v-else>Нет избранных элементов</h2>
-            <p v-if="specialView === 'trash'">Удалённые элементы будут отображаться здесь.</p>
+            <p v-if="specialView === 'trash'">
+              Удалённые элементы будут отображаться здесь.
+            </p>
             <p v-else>Добавьте элементы в избранное, нажав на звёздочку.</p>
           </section>
 
-          <section
-            v-else
-            class="workspace-content"
-            :class="[viewMode]"
-          >
+          <section v-else class="workspace-content" :class="[viewMode]">
             <WorkspaceCard
               v-if="viewMode === 'grid'"
               v-for="node in specialViewItems"
@@ -332,7 +412,7 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
                 id: node.id,
                 name: node.title,
                 type: node.type,
-                tags: node.tags.map(t => t.name),
+                tags: node.tags.map((t) => t.name),
                 createdAt: node.createdAt,
                 createdBy: node.createdBy,
                 updatedAt: node.updatedAt,
@@ -353,7 +433,7 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
                 id: node.id,
                 name: node.title,
                 type: node.type,
-                tags: node.tags.map(t => t.name),
+                tags: node.tags.map((t) => t.name),
                 createdAt: node.createdAt,
                 createdBy: node.createdBy,
                 updatedAt: node.updatedAt,
@@ -371,81 +451,91 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
 
         <!-- Normal folder view -->
         <template v-else>
+          <section v-if="isLoading" class="workspace-state" aria-live="polite">
+            <IconFolder aria-hidden="true" />
+            <h2>Загружаем папку</h2>
+            <p>Получаем содержимое текущей директории.</p>
+          </section>
 
-        <section v-if="isLoading" class="workspace-state" aria-live="polite">
-          <IconFolder aria-hidden="true" />
-          <h2>Загружаем папку</h2>
-          <p>Получаем содержимое текущей директории.</p>
-        </section>
+          <section v-else-if="error" class="workspace-state" aria-live="polite">
+            <IconFolder aria-hidden="true" />
+            <h2>Не удалось открыть папку</h2>
+            <p>{{ error }}</p>
+          </section>
 
-        <section v-else-if="error" class="workspace-state" aria-live="polite">
-          <IconFolder aria-hidden="true" />
-          <h2>Не удалось открыть папку</h2>
-          <p>{{ error }}</p>
-        </section>
+          <section
+            v-else-if="!items.length"
+            class="workspace-state"
+            aria-live="polite"
+          >
+            <IconFolder aria-hidden="true" />
+            <h2>{{ emptyStateTitle }}</h2>
+            <p>{{ emptyStateDescription }}</p>
+          </section>
 
-        <section v-else-if="!items.length" class="workspace-state" aria-live="polite">
-          <IconFolder aria-hidden="true" />
-          <h2>{{ emptyStateTitle }}</h2>
-          <p>{{ emptyStateDescription }}</p>
-        </section>
-
-        <section
-          v-else
-          ref="contentRef"
-          class="workspace-content"
-          :class="[viewMode, { selecting: isDragSelecting }]"
-          aria-label="Содержимое папки"
-          @pointerdown="handleContentPointerDown"
-          @contextmenu="handleEmptyContextMenu"
-        >
-          <WorkspaceCard
-            v-if="viewMode === 'grid'"
-            v-for="item in items"
-            :key="item.id"
-            :data-node-id="item.id"
-            :item="item"
-            :selected="selectedIdSet.has(item.id)"
-            :editing="editingItemId === item.id"
-            :draft-name="draftItemName"
-            :is-saving-name="isSavingItemName"
-            @contextmenu.stop="handleContextMenu($event, item)"
-            @open="openItem"
-            @select="handleItemSelect"
-            @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
-            @update:draft-name="draftItemName = $event"
-            @finish-name="finishItemName"
-            @cancel-name="cancelItemName"
-          />
-
-          <WorkspaceListItem
+          <section
             v-else
-            v-for="item in items"
-            :key="item.id"
-            :data-node-id="item.id"
-            :item="item"
-            :selected="selectedIdSet.has(item.id)"
-            :type-label="typeLabels[item.type]"
-            :editing="editingItemId === item.id"
-            :draft-name="draftItemName"
-            :is-saving-name="isSavingItemName"
-            @contextmenu.stop="handleContextMenu($event, item)"
-            @open="openItem"
-            @select="handleItemSelect"
-            @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
-            @update:draft-name="draftItemName = $event"
-            @finish-name="finishItemName"
-            @cancel-name="cancelItemName"
-          />
+            ref="contentRef"
+            class="workspace-content"
+            :class="[viewMode, { selecting: isDragSelecting }]"
+            aria-label="Содержимое папки"
+            @pointerdown="handleContentPointerDown"
+            @contextmenu="handleEmptyContextMenu"
+          >
+            <WorkspaceCard
+              v-if="viewMode === 'grid'"
+              v-for="item in items"
+              :key="item.id"
+              :data-node-id="item.id"
+              :item="item"
+              :selected="selectedIdSet.has(item.id)"
+              :editing="editingItemId === item.id"
+              :draft-name="draftItemName"
+              :is-saving-name="isSavingItemName"
+              @contextmenu.stop="handleContextMenu($event, item)"
+              @open="openItem"
+              @select="handleItemSelect"
+              @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
+              @update:draft-name="draftItemName = $event"
+              @finish-name="finishItemName"
+              @cancel-name="cancelItemName"
+            />
 
-          <div v-if="selectionBoxStyle" class="selection-box" :style="selectionBoxStyle" />
-        </section>
-        </template><!-- end normal folder view -->
+            <WorkspaceListItem
+              v-else
+              v-for="item in items"
+              :key="item.id"
+              :data-node-id="item.id"
+              :item="item"
+              :selected="selectedIdSet.has(item.id)"
+              :type-label="typeLabels[item.type]"
+              :editing="editingItemId === item.id"
+              :draft-name="draftItemName"
+              :is-saving-name="isSavingItemName"
+              @contextmenu.stop="handleContextMenu($event, item)"
+              @open="openItem"
+              @select="handleItemSelect"
+              @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
+              @update:draft-name="draftItemName = $event"
+              @finish-name="finishItemName"
+              @cancel-name="cancelItemName"
+            />
+
+            <div
+              v-if="selectionBoxStyle"
+              class="selection-box"
+              :style="selectionBoxStyle"
+            />
+          </section> </template
+        ><!-- end normal folder view -->
       </main>
 
-      <WorkspaceRightSidebar :item="selectedItem" :current-directory="currentDirectory" />
+      <WorkspaceRightSidebar
+        :item="selectedItem"
+        :current-directory="currentDirectory"
+      />
     </div>
-    
+
     <ContextMenu ref="contextMenuRef" :options="contextMenuOptions" />
   </div>
 </template>
@@ -665,7 +755,9 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
   color: #333;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .special-view-back:hover {

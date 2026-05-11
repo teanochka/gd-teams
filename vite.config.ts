@@ -9,8 +9,23 @@ import { BootstrapVueNextResolver } from 'bootstrap-vue-next/resolvers'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag === 'canvas-drawing-editor',
+        },
+      },
+    }),
     vueDevTools(),
     Components({
       resolvers: [BootstrapVueNextResolver()],

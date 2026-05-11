@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import IconChevronRight from '~icons/carbon/chevron-right'
-import IconFolder from '~icons/carbon/folder'
-import ProjectCard from '@/components/ProjectCard.vue'
-import ProjectsSidebar from '@/components/ProjectsSidebar.vue'
-import { useProjectsPage } from '@/composables/useProjectsPage'
+import IconChevronRight from "~icons/carbon/chevron-right";
+import IconFolder from "~icons/carbon/folder";
+import ProjectCard from "@/components/project/ProjectCard.vue";
+import ProjectsSidebar from "@/components/project/ProjectsSidebar.vue";
+import { useProjectsPage } from "@/composables/useProjectsPage";
 
 const {
   activeItem,
@@ -13,13 +13,17 @@ const {
   isLoading,
   setActiveItem,
   teams,
-} = useProjectsPage()
+} = useProjectsPage();
 </script>
 
 <template>
   <div class="projects-page">
     <div class="projects-shell">
-      <ProjectsSidebar :active-item="activeItem" :teams="teams" @select="setActiveItem" />
+      <ProjectsSidebar
+        :active-item="activeItem"
+        :teams="teams"
+        @select="setActiveItem"
+      />
 
       <main class="projects-main">
         <section class="projects-toolbar" aria-labelledby="projects-title">
@@ -53,8 +57,16 @@ const {
           <p>{{ error }}</p>
         </section>
 
-        <section v-else-if="filteredProjects.length" class="projects-grid" aria-label="Список проектов">
-          <ProjectCard v-for="project in filteredProjects" :key="project.id" :project="project" />
+        <section
+          v-else-if="filteredProjects.length"
+          class="projects-grid"
+          aria-label="Список проектов"
+        >
+          <ProjectCard
+            v-for="project in filteredProjects"
+            :key="project.id"
+            :project="project"
+          />
         </section>
 
         <section v-else class="empty-state" aria-live="polite">

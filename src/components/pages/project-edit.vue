@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import IconChevronRight from "~icons/carbon/chevron-right";
-import ProjectForm from "@/components/ProjectForm.vue";
-import ProjectsSidebar from "@/components/ProjectsSidebar.vue";
+import ProjectForm from "@/components/project/ProjectForm.vue";
+import ProjectsSidebar from "@/components/project/ProjectsSidebar.vue";
 import { useProjectsStore } from "@/stores/projects";
 import type { UpdateProjectPayload } from "@/types/domain";
 
