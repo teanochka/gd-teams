@@ -933,7 +933,7 @@
       "isDeleted": false,
       "createdAt": "2026-05-03T22:11:54.522Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-06T20:24:49.060Z",
+      "updatedAt": "2026-05-11T10:16:11.490Z",
       "updatedBy": "Р’С‹"
     },
     {
@@ -948,7 +948,7 @@
       "isDeleted": false,
       "createdAt": "2026-05-03T22:52:34.025Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-03T22:52:34.025Z",
+      "updatedAt": "2026-05-11T12:16:22.834Z",
       "updatedBy": "Вы"
     },
     {
@@ -1025,6 +1025,21 @@
       "createdBy": "Вы",
       "updatedAt": "2026-05-08T00:46:05.815Z",
       "updatedBy": "Р’С‹"
+    },
+    {
+      "id": "oB3ycCzqyL4",
+      "projectId": "combat-prototype",
+      "parentId": "combat-root",
+      "type": "folder",
+      "title": "Новая папка (1) копия",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-11T10:49:15.566Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-11T10:49:15.566Z",
+      "updatedBy": "Вы"
     }
   ],
   "documentPages": [
@@ -1598,6 +1613,21 @@
             }
           },
           {
+            "id": "2485821c-f297-465e-9dcb-a3bc16e60eca",
+            "type": "TEXT",
+            "details": {
+              "value": ""
+            }
+          },
+          {
+            "id": "67f81733-a63a-4873-8620-ecc2547cc495",
+            "type": "IMAGE",
+            "details": {
+              "value": "\n",
+              "imageWidthPercent": 60
+            }
+          },
+          {
             "id": "0a0c8894-44f9-4859-bf66-d77f3f1e2e8b",
             "type": "TEXT",
             "details": {
@@ -2114,7 +2144,7 @@
         }
       },
       "createdAt": "2026-05-03T22:11:54.528Z",
-      "updatedAt": "2026-05-06T20:24:49.060Z",
+      "updatedAt": "2026-05-11T10:16:11.490Z",
       "id": "_FbiC8FKCGQ"
     },
     {
@@ -2304,6 +2334,154 @@
       "createdAt": "2026-05-08T00:42:00.976Z",
       "updatedAt": "2026-05-08T00:46:05.815Z",
       "id": "PB8oB7FgxeA"
+    }
+  ],
+  "canvasPages": [
+    {
+      "nodeId": "1Z_ODmzioBQ",
+      "projectId": "combat-prototype",
+      "data": {
+        "objects": [
+          {
+            "id": "ufltftjbc",
+            "type": "ARROW",
+            "x": 1241.0085258483887,
+            "y": 622.1250038146973,
+            "x2": 1241.0085258483887,
+            "y2": 622.1250038146973,
+            "color": "#000000",
+            "lineWidth": 3,
+            "lineStyle": "solid",
+            "arrowType": "single",
+            "visible": true
+          },
+          {
+            "id": "bd8tg8qjf",
+            "type": "ARROW",
+            "x": 1240.0085258483887,
+            "y": 582.1250038146973,
+            "x2": 1240.0085258483887,
+            "y2": 582.1250038146973,
+            "color": "#000000",
+            "lineWidth": 3,
+            "lineStyle": "solid",
+            "arrowType": "single",
+            "visible": true
+          },
+          {
+            "id": "itqw95vrh",
+            "type": "GROUP",
+            "x": 500.2164209863249,
+            "y": 174.04742417744683,
+            "width": 931,
+            "height": 521,
+            "color": "#000000",
+            "lineWidth": 3,
+            "children": [
+              {
+                "id": "lp81y4y1q",
+                "type": "RECTANGLE",
+                "x": 172,
+                "y": 71,
+                "width": 122,
+                "height": 184,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "fillMode": "stroke"
+              },
+              {
+                "id": "4xai38rnv",
+                "type": "RECTANGLE",
+                "x": 389,
+                "y": 247,
+                "width": 312,
+                "height": 203,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "fillMode": "stroke"
+              },
+              {
+                "id": "3oy62t5ap",
+                "type": "ARROW",
+                "x": 289,
+                "y": 161,
+                "x2": 548,
+                "y2": 250,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "arrowType": "single"
+              },
+              {
+                "id": "arlhj15sa",
+                "type": "ARROW",
+                "x": 644,
+                "y": 315,
+                "x2": 644,
+                "y2": 315,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "arrowType": "single"
+              },
+              {
+                "id": "apwga4vfm",
+                "type": "ARROW",
+                "x": 341,
+                "y": 190,
+                "x2": 576,
+                "y2": 246,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "arrowType": "single"
+              },
+              {
+                "id": "fkem9y55b",
+                "type": "ARROW",
+                "x": 606,
+                "y": 341,
+                "x2": 605,
+                "y2": 341,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "arrowType": "single"
+              },
+              {
+                "id": "6c306wz90",
+                "type": "ARROW",
+                "x": 32,
+                "y": 10,
+                "x2": 820,
+                "y2": 521,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "arrowType": "single"
+              },
+              {
+                "id": "x8xu91dd3",
+                "type": "ARROW",
+                "x": 0,
+                "y": 0,
+                "x2": 931,
+                "y2": 497,
+                "color": "#000000",
+                "lineWidth": 3,
+                "lineStyle": "solid",
+                "arrowType": "single"
+              }
+            ],
+            "visible": true
+          }
+        ]
+      },
+      "createdAt": "2026-05-11T12:14:35.498Z",
+      "updatedAt": "2026-05-11T12:16:22.834Z",
+      "id": "0ycinGzDzpQ"
     }
   ],
   "kanbanBoards": [

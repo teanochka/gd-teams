@@ -24,6 +24,7 @@ declare module 'vue' {
     BInputGroup: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroup']
     BInputGroupText: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroupText']
     BSpinner: typeof import('bootstrap-vue-next/components/BSpinner')['BSpinner']
+    Canvas: typeof import('./src/components/pages/canvas.vue')['default']
     ColorPaletteMenu: typeof import('./src/components/ColorPaletteMenu.vue')['default']
     Document: typeof import('./src/components/pages/document.vue')['default']
     DocumentCover: typeof import('./src/components/DocumentCover.vue')['default']

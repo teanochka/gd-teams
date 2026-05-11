@@ -9,6 +9,7 @@ import projects from "./components/pages/projects.vue";
 import workspace from "./components/pages/workspace.vue";
 import document from "./components/pages/document.vue";
 import kanban from "./components/pages/kanban.vue";
+import canvas from "./components/pages/canvas.vue";
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/projects" },
   {
@@ -55,7 +56,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/project/:projectId/canvas/:canvasId",
     name: "project-canvas",
-    component: workspace,
+    component: canvas,
   },
   {
     path: "/project/:projectId/template/:templateId",

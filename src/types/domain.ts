@@ -91,6 +91,24 @@ export type DocumentPage = {
   updatedAt: string
 }
 
+export type CanvasObject = Record<string, unknown> & {
+  id: string
+  type: string
+}
+
+export type CanvasData = {
+  objects: CanvasObject[]
+}
+
+export type CanvasPage = {
+  id: string
+  nodeId: NodeId
+  projectId: ProjectId
+  data: CanvasData
+  createdAt: string
+  updatedAt: string
+}
+
 export type PendingNodeDraft = {
   id: NodeId
   projectId: ProjectId
