@@ -8,7 +8,7 @@ import IconOverflowMenuHorizontal from '~icons/carbon/overflow-menu-horizontal'
 import IconPaintBrush from '~icons/carbon/paint-brush'
 import IconTrashCan from '~icons/carbon/trash-can'
 import IconUserAvatarFilled from '~icons/carbon/user-avatar-filled'
-import ColorPaletteMenu from '@/components/ColorPaletteMenu.vue'
+import ColorPaletteMenu from '@/components/shared/ColorPaletteMenu.vue'
 import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
 import type { KanbanMember, KanbanPriority, KanbanTask } from '@/types/domain'
 

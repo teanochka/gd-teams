@@ -13,8 +13,8 @@ import IconRenew from "~icons/carbon/renew";
 import IconSearch from "~icons/carbon/search";
 import IconSortAscending from "~icons/carbon/sort-ascending";
 import IconView from "~icons/carbon/view";
-import WorkspaceCard from "@/components/WorkspaceCard.vue";
-import WorkspaceListItem from "@/components/WorkspaceListItem.vue";
+import WorkspaceCard from "@/components/workspace/WorkspaceCard.vue";
+import WorkspaceListItem from "@/components/workspace/WorkspaceListItem.vue";
 import { useWorkspaceStore } from "@/stores/workspace";
 import {
   canvasDocumentDragType,

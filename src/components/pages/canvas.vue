@@ -5,8 +5,8 @@ import { useRoute, useRouter } from "vue-router";
 import IconArrowDown from "~icons/carbon/arrow-down";
 import IconArrowLeft from "~icons/carbon/arrow-left";
 import IconArrowUp from "~icons/carbon/arrow-up";
-import CanvasDocumentCard from "@/components/CanvasDocumentCard.vue";
-import CanvasProjectExplorer from "@/components/CanvasProjectExplorer.vue";
+import CanvasDocumentCard from "@/components/canvas/CanvasDocumentCard.vue";
+import CanvasProjectExplorer from "@/components/canvas/CanvasProjectExplorer.vue";
 import { cloneCanvasData, createDefaultCanvasData } from "@/api/canvas";
 import { useCanvasesStore } from "@/stores/canvases";
 import {

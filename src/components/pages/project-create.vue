@@ -1,58 +1,65 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
-import IconChevronRight from '~icons/carbon/chevron-right'
-import ProjectForm from '@/components/ProjectForm.vue'
-import ProjectsSidebar from '@/components/ProjectsSidebar.vue'
-import { useProjectsStore } from '@/stores/projects'
-import type { CreateProjectPayload } from '@/types/domain'
+import { computed, onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
+import IconChevronRight from "~icons/carbon/chevron-right";
+import ProjectForm from "@/components/project/ProjectForm.vue";
+import ProjectsSidebar from "@/components/project/ProjectsSidebar.vue";
+import { useProjectsStore } from "@/stores/projects";
+import type { CreateProjectPayload } from "@/types/domain";
 
-const router = useRouter()
-const projectsStore = useProjectsStore()
-const { activeSection, teamsWithCounts } = storeToRefs(projectsStore)
+const router = useRouter();
+const projectsStore = useProjectsStore();
+const { activeSection, teamsWithCounts } = storeToRefs(projectsStore);
 
-const isSubmitting = ref(false)
-const error = ref('')
+const isSubmitting = ref(false);
+const error = ref("");
 
-const teams = computed(() => teamsWithCounts.value)
+const teams = computed(() => teamsWithCounts.value);
 
 onMounted(async () => {
   if (!projectsStore.projects.length) {
-    await projectsStore.loadProjects()
+    await projectsStore.loadProjects();
   }
-})
+});
 
 const setActiveItem = (value: string) => {
-  projectsStore.setActiveSection(value)
-  void router.push({ name: 'projects' })
-}
+  projectsStore.setActiveSection(value);
+  void router.push({ name: "projects" });
+};
 
 const submitProject = async (payload: CreateProjectPayload) => {
-  isSubmitting.value = true
-  error.value = ''
+  isSubmitting.value = true;
+  error.value = "";
 
   try {
-    const project = await projectsStore.createProject(payload)
-    await router.push({ name: 'project', params: { projectId: project.id } })
+    const project = await projectsStore.createProject(payload);
+    await router.push({ name: "project", params: { projectId: project.id } });
   } catch (requestError) {
     error.value =
       requestError instanceof Error
         ? requestError.message
-        : 'Не удалось создать проект. Проверьте json-server и попробуйте еще раз.'
+        : "Не удалось создать проект. Проверьте json-server и попробуйте еще раз.";
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
-}
+};
 </script>
 
 <template>
   <div class="project-create-page">
     <div class="projects-shell">
-      <ProjectsSidebar :active-item="activeSection" :teams="teams" @select="setActiveItem" />
+      <ProjectsSidebar
+        :active-item="activeSection"
+        :teams="teams"
+        @select="setActiveItem"
+      />
 
       <main class="project-create-main">
-        <section class="project-create-toolbar" aria-labelledby="create-project-title">
+        <section
+          class="project-create-toolbar"
+          aria-labelledby="create-project-title"
+        >
           <div>
             <div class="breadcrumbs">
               <RouterLink :to="{ name: 'projects' }">Проекты</RouterLink>

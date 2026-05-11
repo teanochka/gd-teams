@@ -10,8 +10,8 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import { Lotion } from "@dashibase/lotion";
 import IconArrowLeft from "~icons/carbon/arrow-left";
-import DocumentCover from "@/components/DocumentCover.vue";
-import DocumentTemplatePrompt from "@/components/DocumentTemplatePrompt.vue";
+import DocumentCover from "@/components/document/DocumentCover.vue";
+import DocumentTemplatePrompt from "@/components/document/DocumentTemplatePrompt.vue";
 import { useDocumentsStore } from "@/stores/documents";
 import type { LotionBlock, LotionPage } from "@/types/domain";
 

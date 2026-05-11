@@ -9,7 +9,7 @@ import IconClose from '~icons/carbon/close'
 import IconFilter from '~icons/carbon/filter'
 import IconSearch from '~icons/carbon/search'
 import IconUserAvatarFilled from '~icons/carbon/user-avatar-filled'
-import KanbanCard from '@/components/KanbanCard.vue'
+import KanbanCard from '@/components/kanban/KanbanCard.vue'
 import { useKanbanStore } from '@/stores/kanban'
 import type { KanbanColumn, KanbanStatus, KanbanTask } from '@/types/domain'
 

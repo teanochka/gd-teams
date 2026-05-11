@@ -1,37 +1,37 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import ProjectsHeader from '@/components/ProjectsHeader.vue'
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import ProjectsHeader from "@/components/project/ProjectsHeader.vue";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
 const searchQuery = computed({
   get: () => {
-    const search = route.query.search
+    const search = route.query.search;
 
     if (Array.isArray(search)) {
-      return search[0] ?? ''
+      return search[0] ?? "";
     }
 
-    return search ?? ''
+    return search ?? "";
   },
   set: (value: string) => {
-    const nextQuery = { ...route.query }
+    const nextQuery = { ...route.query };
 
     if (value.trim()) {
-      nextQuery.search = value
+      nextQuery.search = value;
     } else {
-      delete nextQuery.search
+      delete nextQuery.search;
     }
 
-    void router.replace({ query: nextQuery })
+    void router.replace({ query: nextQuery });
   },
-})
+});
 
 const handleCreateProject = () => {
-  void router.push({ name: 'project-create' })
-}
+  void router.push({ name: "project-create" });
+};
 </script>
 
 <template>
