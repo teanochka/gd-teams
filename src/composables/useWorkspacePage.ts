@@ -689,6 +689,7 @@ export function useWorkspacePage() {
     openFolder,
     openItem,
     pasteClipboard: workspaceStore.pasteClipboard,
+    projectId,
     projectName,
     reloadCurrentFolder: workspaceStore.reloadCurrentFolder,
     searchQuery,

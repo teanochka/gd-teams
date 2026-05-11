@@ -30,13 +30,13 @@
       "title": "Comat Po",
       "description": "Документы по балансу, атакам и состояниям врагов.",
       "createdAt": "2026-04-01T00:00:00.000Z",
-      "updatedAt": "2026-05-07T22:14:46.750Z",
+      "updatedAt": "2026-05-11T23:02:58.381Z",
       "owner": "Марк",
       "teamId": "team-gameplay",
       "teamName": "Команда геймплея",
       "isFavorite": true,
       "isDeleted": false,
-      "filesCount": 36,
+      "filesCount": 37,
       "imageUrl": "https://picsum.photos/seed/combat-prototype/900/520",
       "rootFolderId": "combat-root"
     },
@@ -185,6 +185,12 @@
       "projectId": "village-quest",
       "name": "balance",
       "color": "#7a6f46"
+    },
+    {
+      "id": "ZQPAwoyzBIg",
+      "projectId": "combat-prototype",
+      "name": "hiiii",
+      "color": "#6366f1"
     }
   ],
   "nodes": [
@@ -912,11 +918,11 @@
       "title": "Новый холст",
       "icon": null,
       "tagIds": [],
-      "isFavorite": false,
-      "isDeleted": false,
+      "isFavorite": true,
+      "isDeleted": true,
       "createdAt": "2026-05-03T22:52:34.025Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-11T22:05:52.911Z",
+      "updatedAt": "2026-05-11T23:02:24.997Z",
       "updatedBy": "Вы"
     },
     {
@@ -1037,6 +1043,51 @@
       "createdAt": "2026-05-11T15:35:09.330Z",
       "createdBy": "Вы",
       "updatedAt": "2026-05-11T15:47:20.671Z",
+      "updatedBy": "Вы"
+    },
+    {
+      "id": "9WQtDPhy6zo",
+      "projectId": "combat-prototype",
+      "parentId": "combat-root",
+      "type": "canvas",
+      "title": "Новый холст копия",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-11T23:02:17.935Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-11T23:02:17.935Z",
+      "updatedBy": "Вы"
+    },
+    {
+      "id": "9_gk3OoC2WQ",
+      "projectId": "combat-prototype",
+      "parentId": "oB3ycCzqyL4",
+      "type": "document",
+      "title": "test",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-11T23:02:58.381Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-11T23:02:58.381Z",
+      "updatedBy": "Вы"
+    },
+    {
+      "id": "cCx6lUiNrSs",
+      "projectId": "combat-prototype",
+      "parentId": "combat-root",
+      "type": "folder",
+      "title": "Новая папка (1) копия копия",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-05-11T23:03:03.060Z",
+      "createdBy": "Вы",
+      "updatedAt": "2026-05-11T23:03:03.060Z",
       "updatedBy": "Вы"
     }
   ],
@@ -2366,6 +2417,28 @@
       "createdAt": "2026-05-11T15:33:34.522Z",
       "updatedAt": "2026-05-11T15:33:34.522Z",
       "id": "K9tUhd1k9X8"
+    },
+    {
+      "nodeId": "9_gk3OoC2WQ",
+      "projectId": "combat-prototype",
+      "page": {
+        "name": "test",
+        "blocks": [
+          {
+            "id": "c7ab1c34-25c6-4356-bf15-5685284aa6d1",
+            "type": "TEXT",
+            "details": {
+              "value": ""
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-05-11T23:02:58.395Z",
+      "updatedAt": "2026-05-11T23:02:58.395Z",
+      "id": "SOVkgZ7tjPM"
     }
   ],
   "canvasPages": [
@@ -11154,6 +11227,95 @@
       ],
       "createdAt": "2026-05-07T16:49:35.683Z",
       "updatedAt": "2026-05-07T16:49:35.683Z"
+    },
+    {
+      "id": "2VvE0bwAs14",
+      "projectId": "projectId",
+      "members": [
+        {
+          "id": "user-1",
+          "name": "Мятный уголок",
+          "role": "Game Designer",
+          "color": "#0f8f72"
+        },
+        {
+          "id": "user-2",
+          "name": "Светлая башня",
+          "role": "Developer",
+          "color": "#4263eb"
+        },
+        {
+          "id": "user-3",
+          "name": "Тихий контур",
+          "role": "QA",
+          "color": "#9b5de5"
+        },
+        {
+          "id": "user-4",
+          "name": "Новый игрок",
+          "role": "Narrative",
+          "color": "#c47f17"
+        }
+      ],
+      "roles": [
+        "Game Designer",
+        "Developer",
+        "QA",
+        "Narrative"
+      ],
+      "taskTypes": [
+        "Task",
+        "Bug",
+        "Story",
+        "Epic"
+      ],
+      "priorities": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+      ],
+      "statuses": [
+        "to-do",
+        "in-progress",
+        "in-review",
+        "done"
+      ],
+      "tags": [
+        "combat",
+        "economy",
+        "ux",
+        "level",
+        "balance"
+      ],
+      "columns": [
+        {
+          "id": "column-1",
+          "title": "To do",
+          "status": "to-do",
+          "tasks": []
+        },
+        {
+          "id": "column-2",
+          "title": "In progress",
+          "status": "in-progress",
+          "tasks": []
+        },
+        {
+          "id": "column-3",
+          "title": "In review",
+          "status": "in-review",
+          "tasks": []
+        },
+        {
+          "id": "column-4",
+          "title": "Done",
+          "status": "done",
+          "tasks": []
+        }
+      ],
+      "createdAt": "2026-05-11T23:18:20.956Z",
+      "updatedAt": "2026-05-11T23:18:20.956Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

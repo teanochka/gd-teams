@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { RouterLink } from "vue-router";
 import IconChevronRight from "~icons/carbon/chevron-right";
 import IconFolder from "~icons/carbon/folder";
 import IconStar from "~icons/carbon/star";
 import IconTrashCan from "~icons/carbon/trash-can";
-import TagManager from "./TagManager.vue";
+import TagManager from "@/components/TagManager.vue";
 
 type FolderNode = {
   id: string;
@@ -19,11 +20,12 @@ type TagItem = {
 };
 
 defineProps<{
+  projectId: string;
   projectName: string;
   folders: FolderNode[];
   tags: TagItem[];
   activeTagIds?: string[];
-  specialView?: 'trash' | 'favorites' | null;
+  specialView?: "trash" | "favorites" | null;
 }>();
 
 const emit = defineEmits<{
@@ -32,7 +34,10 @@ const emit = defineEmits<{
   (event: "open-favorites"): void;
   (event: "open-trash"): void;
   (event: "create-tag", payload: { name: string; color: string }): void;
-  (event: "update-tag", payload: { id: string; name: string; color: string }): void;
+  (
+    event: "update-tag",
+    payload: { id: string; name: string; color: string },
+  ): void;
   (event: "delete-tag", id: string): void;
 }>();
 
@@ -41,10 +46,13 @@ const rootExpanded = ref(true);
 
 <template>
   <aside class="workspace-left-sidebar" aria-label="Дерево проекта">
-    <button class="sidebar-button" type="button">
+    <RouterLink
+      class="sidebar-button"
+      :to="{ name: 'project-kanban', params: { projectId } }"
+    >
       <IconStar aria-hidden="true" />
       <span>Agile Board</span>
-    </button>
+    </RouterLink>
     <button class="sidebar-button" type="button">
       <IconTrashCan aria-hidden="true" />
       <span>Чат</span>
@@ -88,8 +96,8 @@ const rootExpanded = ref(true);
       </div>
     </div>
     <nav class="sidebar-section" aria-label="Быстрые разделы">
-      <button 
-        class="sidebar-link" 
+      <button
+        class="sidebar-link"
         :class="{ active: specialView === 'favorites' }"
         type="button"
         @click="emit('open-favorites')"
@@ -97,8 +105,8 @@ const rootExpanded = ref(true);
         <IconStar aria-hidden="true" />
         <span>Избранное</span>
       </button>
-      <button 
-        class="sidebar-link" 
+      <button
+        class="sidebar-link"
         :class="{ active: specialView === 'trash' }"
         type="button"
         @click="emit('open-trash')"
@@ -159,6 +167,7 @@ const rootExpanded = ref(true);
   color: white;
   font: inherit;
   text-align: left;
+  text-decoration: none;
 }
 
 .project-root {

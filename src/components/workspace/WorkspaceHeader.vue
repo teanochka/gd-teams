@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import IconArrowLeft from '~icons/carbon/arrow-left'
-import IconArrowRight from '~icons/carbon/arrow-right'
-import IconArrowUp from '~icons/carbon/arrow-up'
-import IconChevronRight from '~icons/carbon/chevron-right'
-import IconRenew from '~icons/carbon/renew'
-import WorkspaceSearch from './WorkspaceSearch.vue'
+import { useRouter } from "vue-router";
+import IconArrowLeft from "~icons/carbon/arrow-left";
+import IconArrowRight from "~icons/carbon/arrow-right";
+import IconArrowUp from "~icons/carbon/arrow-up";
+import IconChevronRight from "~icons/carbon/chevron-right";
+import IconRenew from "~icons/carbon/renew";
+import WorkspaceSearch from "@/components/WorkspaceSearch.vue";
 
 defineProps<{
-  breadcrumbs: string[]
-  tags: { id: string; name: string }[]
-  users: string[]
-}>()
+  breadcrumbs: string[];
+  tags: { id: string; name: string }[];
+  users: string[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'reload'): void
-}>()
+  (event: "reload"): void;
+}>();
 
-const search = defineModel<string>({ default: '' })
-const router = useRouter()
+const search = defineModel<string>({ default: "" });
+const router = useRouter();
 </script>
 
 <template>
@@ -33,15 +33,26 @@ const router = useRouter()
       <BButton variant="light" aria-label="Вверх">
         <IconArrowUp aria-hidden="true" />
       </BButton>
-      <BButton variant="light" aria-label="Перезагрузить" @click="emit('reload')">
+      <BButton
+        variant="light"
+        aria-label="Перезагрузить"
+        @click="emit('reload')"
+      >
         <IconRenew aria-hidden="true" />
       </BButton>
     </BButtonGroup>
 
     <nav class="directory-path" aria-label="Текущая директория">
-      <span v-for="(crumb, index) in breadcrumbs" :key="`${crumb}-${index}`" class="path-item">
+      <span
+        v-for="(crumb, index) in breadcrumbs"
+        :key="`${crumb}-${index}`"
+        class="path-item"
+      >
         <span>{{ crumb }}</span>
-        <IconChevronRight v-if="index < breadcrumbs.length - 1" aria-hidden="true" />
+        <IconChevronRight
+          v-if="index < breadcrumbs.length - 1"
+          aria-hidden="true"
+        />
       </span>
     </nav>
 
