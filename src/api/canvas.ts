@@ -1,5 +1,13 @@
 import { apiRequest } from '@/api/http'
-import type { CanvasData, CanvasObject, CanvasPage, Node, NodeId, ProjectId } from '@/types/domain'
+import type {
+  CanvasData,
+  CanvasDocumentCard,
+  CanvasObject,
+  CanvasPage,
+  Node,
+  NodeId,
+  ProjectId,
+} from '@/types/domain'
 
 type RawNode = Omit<Node, 'tags'> & {
   tagIds: string[]
@@ -10,6 +18,7 @@ const getCurrentDate = () => new Date().toISOString()
 
 export const createDefaultCanvasData = (): CanvasData => ({
   objects: [],
+  documentCards: [],
 })
 
 const cloneCanvasObjects = (objects: CanvasObject[]): CanvasObject[] => {
@@ -20,13 +29,59 @@ const cloneCanvasObjects = (objects: CanvasObject[]): CanvasObject[] => {
   })
 }
 
+const isFiniteNumber = (value: unknown): value is number => {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+const cloneCanvasDocumentCards = (cards: unknown): CanvasDocumentCard[] => {
+  if (!Array.isArray(cards)) {
+    return []
+  }
+
+  return cards
+    .map((card) => {
+      if (!card || typeof card !== 'object') {
+        return null
+      }
+
+      const candidate = card as Partial<CanvasDocumentCard>
+
+      if (
+        candidate.type !== 'document-card' ||
+        typeof candidate.id !== 'string' ||
+        typeof candidate.documentId !== 'string' ||
+        typeof candidate.projectId !== 'string' ||
+        !isFiniteNumber(candidate.x) ||
+        !isFiniteNumber(candidate.y) ||
+        !isFiniteNumber(candidate.width) ||
+        !isFiniteNumber(candidate.height)
+      ) {
+        return null
+      }
+
+      return {
+        id: candidate.id,
+        type: 'document-card',
+        documentId: candidate.documentId,
+        projectId: candidate.projectId,
+        title: typeof candidate.title === 'string' ? candidate.title : 'Document',
+        x: candidate.x,
+        y: candidate.y,
+        width: candidate.width,
+        height: candidate.height,
+      }
+    })
+    .filter((card): card is CanvasDocumentCard => card !== null)
+}
+
 export const cloneCanvasData = (data?: Partial<CanvasData> | null): CanvasData => {
-  if (!data || !Array.isArray(data.objects)) {
+  if (!data) {
     return createDefaultCanvasData()
   }
 
   return {
-    objects: cloneCanvasObjects(data.objects),
+    objects: Array.isArray(data.objects) ? cloneCanvasObjects(data.objects) : [],
+    documentCards: cloneCanvasDocumentCards(data.documentCards),
   }
 }
 
