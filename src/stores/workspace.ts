@@ -4,10 +4,20 @@ import {
   copyNodes as apiCopyNodes,
   createNode as apiCreateNode,
   deleteNodes as apiDeleteNodes,
+  getDeletedNodes as apiGetDeletedNodes,
+  getFavoriteNodes as apiGetFavoriteNodes,
   getFolderContent,
   moveNodes as apiMoveNodes,
   renameNode as apiRenameNode,
+  restoreNodes as apiRestoreNodes,
+  toggleFavorite as apiToggleFavorite,
+  permanentDeleteNodes as apiPermanentDeleteNodes,
 } from '@/api/nodes'
+import {
+  createTag as apiCreateTag,
+  updateTag as apiUpdateTag,
+  deleteTag as apiDeleteTag,
+} from '@/api/tags'
 import type {
   Breadcrumb,
   ClipboardState,
@@ -39,6 +49,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const loadingByFolderId = ref<Record<NodeId, boolean>>({})
   const errorByFolderId = ref<Record<NodeId, string | null>>({})
   const loadedFolderIds = ref<Record<NodeId, boolean>>({})
+
+  // Special view mode: null = normal folder view, 'trash' = recycle bin, 'favorites' = starred items
+  const specialView = ref<'trash' | 'favorites' | null>(null)
+  const specialViewItems = ref<Node[]>([])
+  const specialViewLoading = ref(false)
 
   const currentFolder = computed(() => {
     if (!currentFolderId.value) {
@@ -95,6 +110,94 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     return errorByFolderId.value[currentFolderId.value] ?? null
   })
+
+  async function loadTrash() {
+    if (!projectId.value) return
+    specialView.value = 'trash'
+    specialViewLoading.value = true
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+    try {
+      specialViewItems.value = await apiGetDeletedNodes(projectId.value)
+    } finally {
+      specialViewLoading.value = false
+    }
+  }
+
+  async function loadFavorites() {
+    if (!projectId.value) return
+    specialView.value = 'favorites'
+    specialViewLoading.value = true
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+    try {
+      specialViewItems.value = await apiGetFavoriteNodes(projectId.value)
+    } finally {
+      specialViewLoading.value = false
+    }
+  }
+
+  function exitSpecialView() {
+    specialView.value = null
+    specialViewItems.value = []
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+  }
+
+  async function restoreSelected() {
+    if (!selectedNodeIds.value.length) return []
+    const restored = await apiRestoreNodes(selectedNodeIds.value)
+    cacheNodes(restored)
+    // Remove from special view items
+    const restoredIds = new Set(restored.map(n => n.id))
+    specialViewItems.value = specialViewItems.value.filter(n => !restoredIds.has(n.id))
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+    rebuildFoldersTree()
+    return restored
+  }
+
+  async function restoreAll() {
+    if (!specialViewItems.value.length) return []
+    const allIds = specialViewItems.value.map(n => n.id)
+    const restored = await apiRestoreNodes(allIds)
+    cacheNodes(restored)
+    specialViewItems.value = []
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+    rebuildFoldersTree()
+    return restored
+  }
+
+  async function permanentDeleteSelected() {
+    if (!selectedNodeIds.value.length) return []
+    await apiPermanentDeleteNodes(selectedNodeIds.value)
+    
+    for (const nodeId of selectedNodeIds.value) {
+      delete nodesById.value[nodeId]
+    }
+    
+    const deletedIds = new Set(selectedNodeIds.value)
+    specialViewItems.value = specialViewItems.value.filter(n => !deletedIds.has(n.id))
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+    return Array.from(deletedIds)
+  }
+
+  async function emptyTrash() {
+    if (!specialViewItems.value.length) return []
+    const allIds = specialViewItems.value.map(n => n.id)
+    await apiPermanentDeleteNodes(allIds)
+    
+    for (const nodeId of allIds) {
+      delete nodesById.value[nodeId]
+    }
+    
+    specialViewItems.value = []
+    selectedNodeIds.value = []
+    selectionAnchorId.value = null
+    return allIds
+  }
 
   function cacheNodes(nodes: Node[]) {
     for (const node of nodes) {
@@ -363,6 +466,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return node
   }
 
+  async function toggleFavorite(nodeId: NodeId, isFavorite: boolean) {
+    const node = await apiToggleFavorite(nodeId, isFavorite)
+    cacheNodes([node])
+    return node
+  }
+
   async function moveSelected(parentId: NodeId) {
     if (!selectedNodeIds.value.length) {
       return []
@@ -448,6 +557,33 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return deletedIds
   }
 
+  async function createProjectTag(name: string, color: string) {
+    if (!projectId.value) return null
+    const tag = await apiCreateTag({ projectId: projectId.value, name, color })
+    tagsById.value[tag.id] = tag
+    return tag
+  }
+
+  async function updateProjectTag(tagId: string, name: string, color: string) {
+    const tag = await apiUpdateTag(tagId, { name, color })
+    tagsById.value[tag.id] = tag
+    return tag
+  }
+
+  async function deleteProjectTag(tagId: string) {
+    await apiDeleteTag(tagId)
+    delete tagsById.value[tagId]
+    // Remove tag from all nodes that reference it
+    for (const node of Object.values(nodesById.value)) {
+      if (node.tags.some(t => t.id === tagId)) {
+        nodesById.value[node.id] = {
+          ...node,
+          tags: node.tags.filter(t => t.id !== tagId),
+        }
+      }
+    }
+  }
+
   return {
     projectId,
     currentFolderId,
@@ -484,5 +620,19 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     moveSelected,
     pasteClipboard,
     deleteSelected,
+    toggleFavorite,
+    specialView,
+    specialViewItems,
+    specialViewLoading,
+    loadTrash,
+    loadFavorites,
+    exitSpecialView,
+    restoreSelected,
+    restoreAll,
+    permanentDeleteSelected,
+    emptyTrash,
+    createProjectTag,
+    updateProjectTag,
+    deleteProjectTag,
   }
 })

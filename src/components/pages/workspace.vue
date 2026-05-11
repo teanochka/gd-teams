@@ -20,7 +20,12 @@ import WorkspaceHeader from '@/components/WorkspaceHeader.vue'
 import WorkspaceLeftSidebar from '@/components/WorkspaceLeftSidebar.vue'
 import WorkspaceListItem from '@/components/WorkspaceListItem.vue'
 import WorkspaceRightSidebar from '@/components/WorkspaceRightSidebar.vue'
+import ContextMenu from '@/components/ContextMenu.vue'
 import { useWorkspacePage } from '@/composables/useWorkspacePage'
+import IconStar from '~icons/carbon/star'
+import IconOpenPanelTop from '~icons/carbon/open-panel-top'
+import IconTag from '~icons/carbon/tag'
+import { ref } from 'vue'
 
 const {
   breadcrumbLabels,
@@ -62,12 +67,66 @@ const {
   startRenameSelected,
   startCreateNode,
   tags,
+  users,
   toggleTagId,
   toggleSortOrder,
+  toggleFavorite,
   typeLabels,
   viewMode,
   viewModeLabel,
+  specialView,
+  specialViewItems,
+  specialViewLoading,
+  loadTrash,
+  loadFavorites,
+  exitSpecialView,
+  restoreSelected,
+  restoreAll,
+  permanentDeleteSelected,
+  emptyTrash,
+  createTag,
+  updateTag,
+  deleteTag,
 } = useWorkspacePage()
+
+import IconArrowLeft from '~icons/carbon/arrow-left'
+import IconReset from '~icons/carbon/reset'
+
+const contextMenuRef = ref<InstanceType<typeof ContextMenu> | null>(null)
+const contextMenuOptions = ref<any[]>([])
+
+const handleContextMenu = (e: MouseEvent, item: any) => {
+  e.preventDefault()
+  
+  if (!selectedIdSet.value.has(item.id)) {
+    handleItemSelect({ id: item.id, event: e as any })
+  }
+
+  contextMenuOptions.value = [
+    { label: 'Открыть', action: () => openItem(item), icon: IconOpenPanelTop },
+    { label: 'Переименовать', action: () => startRenameSelected(), icon: IconEdit, disabled: !canRenameSelection.value },
+    { label: 'Дублировать', action: () => { copySelected(); pasteClipboard() }, icon: IconCopy },
+    { label: 'Переместить', action: () => cutSelected(), icon: IconCut },
+    { label: item.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное', action: () => toggleFavorite(item.id, !item.isFavorite), icon: IconStar },
+    { label: 'Редактировать теги', action: () => console.log('Edit tags'), icon: IconTag },
+    { divider: true },
+    { label: 'Удалить', action: () => deleteSelected(), icon: IconTrashCan }
+  ]
+
+  contextMenuRef.value?.show(e)
+}
+
+const handleEmptyContextMenu = (e: MouseEvent) => {
+  e.preventDefault()
+  contextMenuOptions.value = [
+    { label: 'Создать папку', action: () => startCreateNode('folder'), icon: IconFolder },
+    { label: 'Создать документ', action: () => startCreateNode('document'), icon: IconDocument },
+    { label: 'Создать холст', action: () => startCreateNode('canvas'), icon: IconPaintBrush },
+    { divider: true },
+    { label: 'Вставить', action: () => pasteClipboard(), icon: IconPaste, disabled: !clipboardHasContent.value }
+  ]
+  contextMenuRef.value?.show(e)
+}
 </script>
 
 <template>
@@ -75,6 +134,8 @@ const {
     <WorkspaceHeader
       v-model="searchQuery"
       :breadcrumbs="breadcrumbLabels"
+      :tags="tags"
+      :users="users"
       @reload="reloadCurrentFolder"
     />
 
@@ -84,8 +145,14 @@ const {
         :folders="folders"
         :tags="tags"
         :active-tag-ids="selectedTagIds"
-        @open-folder="openFolder"
+        :special-view="specialView"
+        @open-folder="(id) => { exitSpecialView(); openFolder(id) }"
         @toggle-tag="toggleTagId"
+        @create-tag="createTag($event.name, $event.color)"
+        @update-tag="updateTag($event.id, $event.name, $event.color)"
+        @delete-tag="deleteTag"
+        @open-favorites="loadFavorites"
+        @open-trash="loadTrash"
       />
 
       <main class="workspace-main">
@@ -200,6 +267,111 @@ const {
           </BDropdown>
         </section>
 
+        <!-- Special view: Trash / Favorites -->
+        <template v-if="specialView">
+          <section class="special-view-header">
+            <button class="special-view-back" @click="exitSpecialView">
+              <IconArrowLeft aria-hidden="true" />
+              <span>Назад к файлам</span>
+            </button>
+            <h2 v-if="specialView === 'trash'">
+              <IconTrashCan aria-hidden="true" />
+              Корзина
+            </h2>
+            <h2 v-else>
+              <IconStar aria-hidden="true" />
+              Избранное
+            </h2>
+            <div v-if="specialView === 'trash'" class="special-view-actions">
+              <template v-if="hasSelection">
+                <BButton variant="outline-dark" size="sm" @click="restoreSelected">
+                  <IconReset aria-hidden="true" />
+                  Восстановить выбранные
+                </BButton>
+                <BButton variant="danger" size="sm" @click="permanentDeleteSelected">
+                  <IconTrashCan aria-hidden="true" />
+                  Удалить навсегда
+                </BButton>
+              </template>
+              <template v-else>
+                <BButton variant="outline-dark" size="sm" :disabled="!specialViewItems.length" @click="restoreAll">
+                  <IconReset aria-hidden="true" />
+                  Восстановить все
+                </BButton>
+                <BButton variant="danger" size="sm" :disabled="!specialViewItems.length" @click="emptyTrash">
+                  <IconTrashCan aria-hidden="true" />
+                  Очистить корзину
+                </BButton>
+              </template>
+            </div>
+          </section>
+
+          <section v-if="specialViewLoading" class="workspace-state" aria-live="polite">
+            <IconFolder aria-hidden="true" />
+            <h2>Загружаем...</h2>
+          </section>
+
+          <section v-else-if="!specialViewItems.length" class="workspace-state" aria-live="polite">
+            <IconFolder aria-hidden="true" />
+            <h2 v-if="specialView === 'trash'">Корзина пуста</h2>
+            <h2 v-else>Нет избранных элементов</h2>
+            <p v-if="specialView === 'trash'">Удалённые элементы будут отображаться здесь.</p>
+            <p v-else>Добавьте элементы в избранное, нажав на звёздочку.</p>
+          </section>
+
+          <section
+            v-else
+            class="workspace-content"
+            :class="[viewMode]"
+          >
+            <WorkspaceCard
+              v-if="viewMode === 'grid'"
+              v-for="node in specialViewItems"
+              :key="node.id"
+              :item="{
+                id: node.id,
+                name: node.title,
+                type: node.type,
+                tags: node.tags.map(t => t.name),
+                createdAt: node.createdAt,
+                createdBy: node.createdBy,
+                updatedAt: node.updatedAt,
+                updatedBy: node.updatedBy,
+                isFavorite: node.isFavorite,
+              }"
+              :selected="selectedIdSet.has(node.id)"
+              @select="handleItemSelect"
+              @open="openItem"
+              @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
+            />
+
+            <WorkspaceListItem
+              v-else
+              v-for="node in specialViewItems"
+              :key="node.id"
+              :item="{
+                id: node.id,
+                name: node.title,
+                type: node.type,
+                tags: node.tags.map(t => t.name),
+                createdAt: node.createdAt,
+                createdBy: node.createdBy,
+                updatedAt: node.updatedAt,
+                updatedBy: node.updatedBy,
+                isFavorite: node.isFavorite,
+              }"
+              :selected="selectedIdSet.has(node.id)"
+              :type-label="typeLabels[node.type]"
+              @select="handleItemSelect"
+              @open="openItem"
+              @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
+            />
+          </section>
+        </template>
+
+        <!-- Normal folder view -->
+        <template v-else>
+
         <section v-if="isLoading" class="workspace-state" aria-live="polite">
           <IconFolder aria-hidden="true" />
           <h2>Загружаем папку</h2>
@@ -225,6 +397,7 @@ const {
           :class="[viewMode, { selecting: isDragSelecting }]"
           aria-label="Содержимое папки"
           @pointerdown="handleContentPointerDown"
+          @contextmenu="handleEmptyContextMenu"
         >
           <WorkspaceCard
             v-if="viewMode === 'grid'"
@@ -236,8 +409,10 @@ const {
             :editing="editingItemId === item.id"
             :draft-name="draftItemName"
             :is-saving-name="isSavingItemName"
+            @contextmenu.stop="handleContextMenu($event, item)"
             @open="openItem"
             @select="handleItemSelect"
+            @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
             @update:draft-name="draftItemName = $event"
             @finish-name="finishItemName"
             @cancel-name="cancelItemName"
@@ -254,8 +429,10 @@ const {
             :editing="editingItemId === item.id"
             :draft-name="draftItemName"
             :is-saving-name="isSavingItemName"
+            @contextmenu.stop="handleContextMenu($event, item)"
             @open="openItem"
             @select="handleItemSelect"
+            @toggle-favorite="toggleFavorite($event.id, !$event.isFavorite)"
             @update:draft-name="draftItemName = $event"
             @finish-name="finishItemName"
             @cancel-name="cancelItemName"
@@ -263,10 +440,13 @@ const {
 
           <div v-if="selectionBoxStyle" class="selection-box" :style="selectionBoxStyle" />
         </section>
+        </template><!-- end normal folder view -->
       </main>
 
       <WorkspaceRightSidebar :item="selectedItem" :current-directory="currentDirectory" />
     </div>
+    
+    <ContextMenu ref="contextMenuRef" :options="contextMenuOptions" />
   </div>
 </template>
 
@@ -448,5 +628,70 @@ const {
   .workspace-content.grid {
     grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
   }
+}
+
+.special-view-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+.special-view-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 750;
+  color: #1a1a1a;
+}
+
+.special-view-header h2 svg {
+  width: 20px;
+  height: 20px;
+}
+
+.special-view-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.special-view-back:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.special-view-back svg {
+  width: 14px;
+  height: 14px;
+}
+
+.special-view-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.special-view-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.special-view-actions svg {
+  width: 14px;
+  height: 14px;
 }
 </style>

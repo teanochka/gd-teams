@@ -21,6 +21,7 @@ declare module 'vue' {
     BInputGroup: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroup']
     BInputGroupText: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroupText']
     BSpinner: typeof import('bootstrap-vue-next/components/BSpinner')['BSpinner']
+    ContextMenu: typeof import('./src/components/ContextMenu.vue')['default']
     Document: typeof import('./src/components/pages/document.vue')['default']
     DocumentCover: typeof import('./src/components/DocumentCover.vue')['default']
     DocumentTemplatePrompt: typeof import('./src/components/DocumentTemplatePrompt.vue')['default']
@@ -39,6 +40,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TableBlock: typeof import('./src/components/lotion/TableBlock.vue')['default']
+    TagManager: typeof import('./src/components/TagManager.vue')['default']
     TodoBlock: typeof import('./src/components/lotion/TodoBlock.vue')['default']
     Workspace: typeof import('./src/components/pages/workspace.vue')['default']
     WorkspaceCard: typeof import('./src/components/WorkspaceCard.vue')['default']
@@ -46,5 +48,6 @@ declare module 'vue' {
     WorkspaceLeftSidebar: typeof import('./src/components/WorkspaceLeftSidebar.vue')['default']
     WorkspaceListItem: typeof import('./src/components/WorkspaceListItem.vue')['default']
     WorkspaceRightSidebar: typeof import('./src/components/WorkspaceRightSidebar.vue')['default']
+    WorkspaceSearch: typeof import('./src/components/WorkspaceSearch.vue')['default']
   }
 }

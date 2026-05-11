@@ -5,10 +5,12 @@ import IconArrowRight from '~icons/carbon/arrow-right'
 import IconArrowUp from '~icons/carbon/arrow-up'
 import IconChevronRight from '~icons/carbon/chevron-right'
 import IconRenew from '~icons/carbon/renew'
-import IconSearch from '~icons/carbon/search'
+import WorkspaceSearch from './WorkspaceSearch.vue'
 
 defineProps<{
   breadcrumbs: string[]
+  tags: { id: string; name: string }[]
+  users: string[]
 }>()
 
 const emit = defineEmits<{
@@ -43,17 +45,12 @@ const router = useRouter()
       </span>
     </nav>
 
-    <BInputGroup class="workspace-search">
-      <BInputGroupText>
-        <IconSearch aria-hidden="true" />
-      </BInputGroupText>
-      <BFormInput
-        v-model="search"
-        type="search"
-        placeholder="Поиск в текущей папке"
-        aria-label="Поиск в текущей папке"
-      />
-    </BInputGroup>
+    <WorkspaceSearch
+      v-model="search"
+      class="workspace-search"
+      :tags="tags"
+      :users="users"
+    />
   </header>
 </template>
 

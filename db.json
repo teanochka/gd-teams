@@ -64,7 +64,7 @@
       "owner": "Анна",
       "teamId": "team-art",
       "teamName": "Команда арта",
-      "isFavorite": false,
+      "isFavorite": true,
       "isDeleted": false,
       "filesCount": 57,
       "imageUrl": "https://picsum.photos/seed/world-bible/900/520",
@@ -273,12 +273,12 @@
       "tagIds": [
         "core"
       ],
-      "isFavorite": false,
+      "isFavorite": true,
       "isDeleted": false,
       "createdAt": "2026-04-09T00:00:00.000Z",
       "createdBy": "Анна",
-      "updatedAt": "2026-04-20T11:20:00.000Z",
-      "updatedBy": "Марк"
+      "updatedAt": "2026-05-10T17:22:37.482Z",
+      "updatedBy": "Вы"
     },
     {
       "id": "systems",
@@ -291,12 +291,12 @@
         "core",
         "balance"
       ],
-      "isFavorite": true,
+      "isFavorite": false,
       "isDeleted": false,
       "createdAt": "2026-04-10T00:00:00.000Z",
       "createdBy": "Анна",
-      "updatedAt": "2026-04-20T11:20:00.000Z",
-      "updatedBy": "Марк"
+      "updatedAt": "2026-05-10T17:59:07.094Z",
+      "updatedBy": "Вы"
     },
     {
       "id": "quests",
@@ -325,12 +325,12 @@
       "tagIds": [
         "art"
       ],
-      "isFavorite": false,
+      "isFavorite": true,
       "isDeleted": false,
       "createdAt": "2026-04-08T00:00:00.000Z",
       "createdBy": "Саша",
-      "updatedAt": "2026-04-19T09:30:00.000Z",
-      "updatedBy": "Игорь"
+      "updatedAt": "2026-05-10T17:23:07.148Z",
+      "updatedBy": "Вы"
     },
     {
       "id": "characters",
@@ -364,23 +364,6 @@
       "createdAt": "2026-04-09T00:00:00.000Z",
       "createdBy": "Саша",
       "updatedAt": "2026-04-12T11:10:00.000Z",
-      "updatedBy": "Игорь"
-    },
-    {
-      "id": "prototypes",
-      "projectId": "village-quest",
-      "parentId": "village-root",
-      "type": "folder",
-      "title": "Прототипы",
-      "icon": null,
-      "tagIds": [
-        "draft"
-      ],
-      "isFavorite": false,
-      "isDeleted": false,
-      "createdAt": "2026-04-07T00:00:00.000Z",
-      "createdBy": "Игорь",
-      "updatedAt": "2026-04-11T07:40:00.000Z",
       "updatedBy": "Игорь"
     },
     {
@@ -605,21 +588,6 @@
       "updatedBy": "Вы"
     },
     {
-      "id": "WmjKYZgiGt4",
-      "projectId": "village-quest",
-      "parentId": "docs",
-      "type": "folder",
-      "title": "ППППП копия",
-      "icon": null,
-      "tagIds": [],
-      "isFavorite": false,
-      "isDeleted": true,
-      "createdAt": "2026-04-21T17:48:01.985Z",
-      "createdBy": "Вы",
-      "updatedAt": "2026-04-21T17:48:13.400Z",
-      "updatedBy": "Вы"
-    },
-    {
       "id": "ZtlRj-XxmIg",
       "projectId": "village-quest",
       "parentId": "docs",
@@ -809,11 +777,11 @@
       "title": "Новый шаблон",
       "icon": null,
       "tagIds": [],
-      "isFavorite": false,
+      "isFavorite": true,
       "isDeleted": false,
       "createdAt": "2026-05-03T20:20:52.445Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-03T20:20:52.445Z",
+      "updatedAt": "2026-05-10T17:05:44.482Z",
       "updatedBy": "Вы"
     },
     {
@@ -828,7 +796,7 @@
       "isDeleted": false,
       "createdAt": "2026-05-03T20:21:24.394Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-03T20:21:24.394Z",
+      "updatedAt": "2026-05-10T17:29:21.039Z",
       "updatedBy": "Вы"
     },
     {
@@ -918,7 +886,7 @@
       "isDeleted": false,
       "createdAt": "2026-05-03T21:29:20.822Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-03T21:29:20.822Z",
+      "updatedAt": "2026-05-10T18:02:45.267Z",
       "updatedBy": "Вы"
     },
     {

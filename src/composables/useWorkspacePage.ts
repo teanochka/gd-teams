@@ -80,6 +80,7 @@ const toWorkspaceItem = (node: Node): WorkspaceItem => ({
   createdBy: node.createdBy,
   updatedAt: node.updatedAt,
   updatedBy: node.updatedBy,
+  isFavorite: node.isFavorite,
 })
 
 const toDraftWorkspaceItem = (draft: PendingNodeDraft): WorkspaceItem => ({
@@ -91,6 +92,7 @@ const toDraftWorkspaceItem = (draft: PendingNodeDraft): WorkspaceItem => ({
   createdBy: draft.createdBy,
   updatedAt: draft.updatedAt,
   updatedBy: draft.updatedBy,
+  isFavorite: false,
   isDraft: true,
 })
 
@@ -129,6 +131,9 @@ export function useWorkspacePage() {
     isCurrentFolderLoading,
     selectedItems,
     selectedNodeIds,
+    specialView,
+    specialViewItems,
+    specialViewLoading,
     tags,
   } = storeToRefs(workspaceStore)
 
@@ -200,7 +205,7 @@ export function useWorkspacePage() {
 
   const projectName = computed(() => currentProject.value?.title ?? 'Проект')
   const breadcrumbLabels = computed(() => breadcrumbs.value.map((item) => item.title))
-  const sidebarTags = computed(() => tags.value.map((tag) => ({ id: tag.id, name: tag.name })))
+  const sidebarTags = computed(() => tags.value.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })))
   const activeTagNames = computed(() =>
     tags.value
       .filter((tag) => activeTagIds.value.includes(tag.id))
@@ -232,11 +237,43 @@ export function useWorkspacePage() {
       createdBy: '',
       updatedAt: '',
       updatedBy: '',
+      isFavorite: false,
     }
+  })
+
+  const parsedSearchQuery = computed(() => {
+    const query = searchQuery.value
+    const result = { name: '', tags: [] as string[], type: '', createdBy: '', date: '' }
+    
+    const regex = /(name:|tags:|type:|created_by:|date:)?\s*([^:]+?)(?=\s*(name:|tags:|type:|created_by:|date:)|$)/g
+    let match;
+    let hasTokens = false
+    while ((match = regex.exec(query)) !== null) {
+      const key = match[1]
+      const val = (match && match[2]) ? match[2].trim() : ''
+      if (!val) continue
+
+      if (key === 'name:') { result.name = val.toLowerCase(); hasTokens = true }
+      else if (key === 'tags:') { result.tags = val.split(',').map(s => s.trim().toLowerCase()).filter(Boolean); hasTokens = true }
+      else if (key === 'type:') { result.type = val.toLowerCase(); hasTokens = true }
+      else if (key === 'created_by:') { result.createdBy = val.toLowerCase(); hasTokens = true }
+      else if (key === 'date:') { result.date = val.toLowerCase(); hasTokens = true }
+      else if (!key && !hasTokens) { result.name = val.toLowerCase() }
+    }
+    return result
+  })
+
+  const users = computed(() => {
+    const allUsers = new Set<string>()
+    currentItems.value.forEach((node) => {
+      if (node.createdBy) allUsers.add(node.createdBy)
+    })
+    return Array.from(allUsers)
   })
 
   const visibleItems = computed(() => {
     const query = searchQuery.value.trim().toLowerCase()
+    const parsedQuery = parsedSearchQuery.value
     const selectedTags = activeTagIds.value
 
     const filtered = currentItems.value.filter((node) => {
@@ -248,11 +285,21 @@ export function useWorkspacePage() {
         return true
       }
 
-      const haystack = [node.title, node.type, ...node.tags.map((tag) => tag.name)]
-        .join(' ')
-        .toLowerCase()
+      if (parsedQuery.name && !node.title.toLowerCase().includes(parsedQuery.name)) return false;
+      if (parsedQuery.type && !typeLabels[node.type].toLowerCase().includes(parsedQuery.type) && !node.type.toLowerCase().includes(parsedQuery.type)) return false;
+      if (parsedQuery.createdBy && !node.createdBy.toLowerCase().includes(parsedQuery.createdBy)) return false;
+      if (parsedQuery.tags.length > 0) {
+        const nodeTags = node.tags.map(t => t.name.toLowerCase());
+        const hasAllTags = parsedQuery.tags.every(pt => nodeTags.some(nt => nt.includes(pt)));
+        if (!hasAllTags) return false;
+      }
+      if (parsedQuery.date) {
+        // Date format handling can be improved, simple includes for now
+        const createdAt = new Date(node.createdAt).toLocaleDateString('ru-RU')
+        if (!createdAt.includes(parsedQuery.date)) return false;
+      }
 
-      return haystack.includes(query)
+      return true
     })
 
     const direction = sortOrder.value === 'asc' ? 1 : -1
@@ -655,10 +702,25 @@ export function useWorkspacePage() {
     startRenameSelected,
     startCreateNode,
     tags: sidebarTags,
+    users,
     toggleTagId,
     toggleSortOrder,
     typeLabels,
     viewMode,
     viewModeLabel,
+    toggleFavorite: workspaceStore.toggleFavorite,
+    specialView,
+    specialViewItems,
+    specialViewLoading,
+    loadTrash: workspaceStore.loadTrash,
+    loadFavorites: workspaceStore.loadFavorites,
+    exitSpecialView: workspaceStore.exitSpecialView,
+    restoreSelected: workspaceStore.restoreSelected,
+    restoreAll: workspaceStore.restoreAll,
+    permanentDeleteSelected: workspaceStore.permanentDeleteSelected,
+    emptyTrash: workspaceStore.emptyTrash,
+    createTag: workspaceStore.createProjectTag,
+    updateTag: workspaceStore.updateProjectTag,
+    deleteTag: workspaceStore.deleteProjectTag,
   }
 }

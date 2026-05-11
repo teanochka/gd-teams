@@ -147,6 +147,21 @@ export const renameNode = async (nodeId: NodeId, title: string): Promise<Node> =
   return mapNode(node, tags)
 }
 
+export const toggleFavorite = async (nodeId: NodeId, isFavorite: boolean): Promise<Node> => {
+  const savedAt = getCurrentDate()
+  const node = await apiRequest<RawNode>(`/nodes/${nodeId}`, {
+    method: 'PATCH',
+    body: {
+      isFavorite,
+      updatedAt: savedAt,
+      updatedBy: 'Вы',
+    },
+  })
+  const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: node.projectId } })
+
+  return mapNode(node, tags)
+}
+
 export const moveNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
   const savedAt = getCurrentDate()
   const movedNodes = await Promise.all(
@@ -226,3 +241,54 @@ export const deleteNodes = async (nodeIds: NodeId[]): Promise<NodeId[]> => {
 
   return [...nodeIds]
 }
+
+export const restoreNodes = async (nodeIds: NodeId[]): Promise<Node[]> => {
+  const savedAt = getCurrentDate()
+  const restored = await Promise.all(
+    nodeIds.map((nodeId) =>
+      apiRequest<RawNode>(`/nodes/${nodeId}`, {
+        method: 'PATCH',
+        body: {
+          isDeleted: false,
+          updatedAt: savedAt,
+          updatedBy: 'Вы',
+        },
+      }),
+    ),
+  )
+  const projectId = restored[0]?.projectId
+  const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
+
+  return restored.map((node) => mapNode(node, tags))
+}
+
+export const getDeletedNodes = async (projectId: ProjectId): Promise<Node[]> => {
+  const [rawNodes, tags] = await Promise.all([
+    apiRequest<RawNode[]>('/nodes', { query: { projectId, isDeleted: true } }),
+    apiRequest<Tag[]>('/tags', { query: { projectId } }),
+  ])
+
+  return rawNodes
+    .map((node) => mapNode(node, tags))
+    .filter((node) => node.isDeleted)
+}
+
+export const getFavoriteNodes = async (projectId: ProjectId): Promise<Node[]> => {
+  const [rawNodes, tags] = await Promise.all([
+    apiRequest<RawNode[]>('/nodes', { query: { projectId, isFavorite: true } }),
+    apiRequest<Tag[]>('/tags', { query: { projectId } }),
+  ])
+
+  return rawNodes
+    .map((node) => mapNode(node, tags))
+    .filter((node) => node.isFavorite && !node.isDeleted)
+}
+
+export const permanentDeleteNodes = async (nodeIds: NodeId[]): Promise<void> => {
+  await Promise.all(
+    nodeIds.map((nodeId) =>
+      apiRequest(`/nodes/${nodeId}`, { method: 'DELETE' }),
+    ),
+  )
+}
+

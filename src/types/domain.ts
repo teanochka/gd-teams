@@ -110,6 +110,7 @@ export type WorkspaceItem = {
   createdBy: string
   updatedAt: string
   updatedBy: string
+  isFavorite: boolean
   isDraft?: boolean
 }
 

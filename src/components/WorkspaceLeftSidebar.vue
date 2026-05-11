@@ -3,8 +3,8 @@ import { ref } from "vue";
 import IconChevronRight from "~icons/carbon/chevron-right";
 import IconFolder from "~icons/carbon/folder";
 import IconStar from "~icons/carbon/star";
-import IconTag from "~icons/carbon/tag";
 import IconTrashCan from "~icons/carbon/trash-can";
+import TagManager from "./TagManager.vue";
 
 type FolderNode = {
   id: string;
@@ -15,6 +15,7 @@ type FolderNode = {
 type TagItem = {
   id: string;
   name: string;
+  color: string;
 };
 
 defineProps<{
@@ -22,11 +23,17 @@ defineProps<{
   folders: FolderNode[];
   tags: TagItem[];
   activeTagIds?: string[];
+  specialView?: 'trash' | 'favorites' | null;
 }>();
 
 const emit = defineEmits<{
   (event: "open-folder", id: string): void;
   (event: "toggle-tag", id: string): void;
+  (event: "open-favorites"): void;
+  (event: "open-trash"): void;
+  (event: "create-tag", payload: { name: string; color: string }): void;
+  (event: "update-tag", payload: { id: string; name: string; color: string }): void;
+  (event: "delete-tag", id: string): void;
 }>();
 
 const rootExpanded = ref(true);
@@ -81,29 +88,35 @@ const rootExpanded = ref(true);
       </div>
     </div>
     <nav class="sidebar-section" aria-label="Быстрые разделы">
-      <button class="sidebar-link" type="button">
+      <button 
+        class="sidebar-link" 
+        :class="{ active: specialView === 'favorites' }"
+        type="button"
+        @click="emit('open-favorites')"
+      >
         <IconStar aria-hidden="true" />
         <span>Избранное</span>
       </button>
-      <button class="sidebar-link" type="button">
+      <button 
+        class="sidebar-link" 
+        :class="{ active: specialView === 'trash' }"
+        type="button"
+        @click="emit('open-trash')"
+      >
         <IconTrashCan aria-hidden="true" />
         <span>Корзина</span>
       </button>
     </nav>
 
-    <section v-if="tags.length" class="sidebar-section tags-section">
-      <h2>Тэги</h2>
-      <button
-        v-for="tag in tags"
-        :key="tag.id"
-        class="sidebar-link tag-link"
-        :class="{ active: activeTagIds?.includes(tag.id) }"
-        type="button"
-        @click="emit('toggle-tag', tag.id)"
-      >
-        <IconTag aria-hidden="true" />
-        <span>{{ tag.name }}</span>
-      </button>
+    <section class="sidebar-section tags-section">
+      <TagManager
+        :tags="tags"
+        :active-tag-ids="activeTagIds"
+        @create="emit('create-tag', $event)"
+        @update="emit('update-tag', $event)"
+        @delete="emit('delete-tag', $event)"
+        @toggle-tag="emit('toggle-tag', $event)"
+      />
     </section>
   </aside>
 </template>

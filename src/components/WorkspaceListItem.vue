@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import IconDocument from '~icons/carbon/document'
 import IconFolder from '~icons/carbon/folder'
 import IconPaintBrush from '~icons/carbon/paint-brush'
+import IconStar from '~icons/carbon/star'
+import IconStarFilled from '~icons/carbon/star-filled'
 import IconTag from '~icons/carbon/tag'
 import IconTemplate from '~icons/carbon/template'
 import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
@@ -26,6 +28,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'select', payload: WorkspaceItemSelectPayload): void
   (event: 'open', item: WorkspaceItem): void
+  (event: 'toggle-favorite', item: WorkspaceItem): void
   (event: 'update:draftName', value: string): void
   (event: 'finish-name'): void
   (event: 'cancel-name'): void
@@ -73,6 +76,15 @@ const handleDoubleClick = () => {
       <IconDocument v-else-if="item.type === 'document'" aria-hidden="true" />
       <IconPaintBrush v-else-if="item.type === 'canvas'" aria-hidden="true" />
       <IconTemplate v-else aria-hidden="true" />
+      <button 
+        class="favorite-btn" 
+        :class="{ active: item.isFavorite }" 
+        @click.stop="emit('toggle-favorite', item)"
+        type="button"
+      >
+        <IconStarFilled v-if="item.isFavorite" aria-hidden="true" class="star-filled" />
+        <IconStar v-else aria-hidden="true" />
+      </button>
     </span>
 
     <span class="item-main">
@@ -137,6 +149,7 @@ const handleDoubleClick = () => {
 }
 
 .item-icon {
+  position: relative;
   display: grid;
   place-items: center;
   width: 42px;
@@ -150,6 +163,45 @@ const handleDoubleClick = () => {
 .item-icon svg {
   width: 23px;
   height: 23px;
+}
+
+.favorite-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  display: none;
+}
+
+.workspace-list-item:hover .favorite-btn, .favorite-btn.active {
+  display: grid;
+  place-items: center;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.favorite-btn:hover {
+  color: #333;
+}
+
+.favorite-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.star-filled {
+  color: #f5b041;
+}
+
+.favorite-btn:hover .star-filled {
+  color: #f39c12;
 }
 
 .item-main {
