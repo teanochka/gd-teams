@@ -302,7 +302,20 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function loadFolder(nextProjectId: ProjectId, folderId?: NodeId | null, force = false) {
+    const isNewProject = projectId.value !== nextProjectId
     projectId.value = nextProjectId
+
+    if (isNewProject) {
+      // Clear project-specific state when switching projects
+      currentProject.value = null
+      nodesById.value = {}
+      childrenByFolderId.value = {}
+      breadcrumbsByFolderId.value = {}
+      tagsById.value = {}
+      foldersTree.value = []
+      loadedFolderIds.value = {}
+      errorByFolderId.value = {}
+    }
 
     if (folderId && folderId !== 'root' && loadedFolderIds.value[folderId] && !force) {
       currentFolderId.value = folderId

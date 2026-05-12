@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import IconAdd from "~icons/carbon/add";
 import IconCheckmark from "~icons/carbon/checkmark";
 import IconChevronDown from "~icons/carbon/chevron-down";
@@ -15,6 +16,11 @@ import IconSortAscending from "~icons/carbon/sort-ascending";
 import IconTemplate from "~icons/carbon/template";
 import IconTrashCan from "~icons/carbon/trash-can";
 import IconView from "~icons/carbon/view";
+import IconStar from "~icons/carbon/star";
+import IconOpenPanelTop from "~icons/carbon/open-panel-top";
+import IconTag from "~icons/carbon/tag";
+import IconArrowLeft from "~icons/carbon/arrow-left";
+import IconRenew from "~icons/carbon/renew";
 import WorkspaceCard from "@/components/workspace/WorkspaceCard.vue";
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader.vue";
 import WorkspaceLeftSidebar from "@/components/workspace/WorkspaceLeftSidebar.vue";
@@ -22,10 +28,6 @@ import WorkspaceListItem from "@/components/workspace/WorkspaceListItem.vue";
 import WorkspaceRightSidebar from "@/components/workspace/WorkspaceRightSidebar.vue";
 import ContextMenu from "@/components/ContextMenu.vue";
 import { useWorkspacePage } from "@/composables/useWorkspacePage";
-import IconStar from "~icons/carbon/star";
-import IconOpenPanelTop from "~icons/carbon/open-panel-top";
-import IconTag from "~icons/carbon/tag";
-import { ref } from "vue";
 
 const {
   breadcrumbLabels,
@@ -53,6 +55,7 @@ const {
   items,
   openFolder,
   openItem,
+  parentUrl,
   pasteClipboard,
   projectId,
   projectName,
@@ -89,9 +92,6 @@ const {
   updateTag,
   deleteTag,
 } = useWorkspacePage();
-
-import IconArrowLeft from "~icons/carbon/arrow-left";
-import IconReset from "~icons/carbon/reset";
 
 const contextMenuRef = ref<InstanceType<typeof ContextMenu> | null>(null);
 const contextMenuOptions = ref<any[]>([]);
@@ -174,6 +174,7 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
       :breadcrumbs="breadcrumbLabels"
       :tags="tags"
       :users="users"
+      :parent-url="parentUrl"
       @reload="reloadCurrentFolder"
     />
 

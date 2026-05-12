@@ -7,10 +7,11 @@ import IconChevronRight from "~icons/carbon/chevron-right";
 import IconRenew from "~icons/carbon/renew";
 import WorkspaceSearch from "@/components/WorkspaceSearch.vue";
 
-defineProps<{
+const props = defineProps<{
   breadcrumbs: string[];
   tags: { id: string; name: string }[];
   users: string[];
+  parentUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -19,6 +20,12 @@ const emit = defineEmits<{
 
 const search = defineModel<string>({ default: "" });
 const router = useRouter();
+
+const goUp = () => {
+  if (props.parentUrl) {
+    router.push(props.parentUrl);
+  }
+};
 </script>
 
 <template>
@@ -30,7 +37,12 @@ const router = useRouter();
       <BButton variant="light" aria-label="Вперед" @click="router.forward()">
         <IconArrowRight aria-hidden="true" />
       </BButton>
-      <BButton variant="light" aria-label="Вверх">
+      <BButton
+        variant="light"
+        aria-label="Вверх"
+        :disabled="!parentUrl"
+        @click="goUp"
+      >
         <IconArrowUp aria-hidden="true" />
       </BButton>
       <BButton

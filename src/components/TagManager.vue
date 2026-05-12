@@ -5,6 +5,7 @@ import IconClose from '~icons/carbon/close'
 import IconEdit from '~icons/carbon/edit'
 import IconTrashCan from '~icons/carbon/trash-can'
 import IconCheckmark from '~icons/carbon/checkmark'
+import IconSearch from '~icons/carbon/search'
 
 type TagItem = {
   id: string
@@ -31,7 +32,8 @@ const TAG_COLORS = [
   '#d946ef', '#ec4899', '#f43f5e', '#78716c',
 ]
 
-const isCreating = ref(false)
+const isSearching = ref(false)
+const searchQuery = ref('')
 const editingId = ref<string | null>(null)
 const newTagName = ref('')
 const newTagColor = ref(TAG_COLORS[0]!)
@@ -43,29 +45,46 @@ const editShowColorPicker = ref(false)
 const canCreate = computed(() => newTagName.value.trim().length > 0)
 const canSaveEdit = computed(() => editTagName.value.trim().length > 0)
 
-function startCreate() {
-  isCreating.value = true
-  editingId.value = null
-  newTagName.value = ''
-  newTagColor.value = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)]!
-  showColorPicker.value = false
+const filteredTags = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim()
+  if (!query) return props.tags
+  return props.tags.filter(t => t.name.toLowerCase().includes(query))
+})
+
+const showCreateOption = computed(() => {
+  const query = searchQuery.value.trim()
+  if (!query) return false
+  return !props.tags.some(t => t.name.toLowerCase() === query.toLowerCase())
+})
+
+function toggleSearch() {
+  isSearching.value = !isSearching.value
+  if (!isSearching.value) {
+    searchQuery.value = ''
+  }
 }
 
-function cancelCreate() {
-  isCreating.value = false
-  newTagName.value = ''
-  showColorPicker.value = false
+function startCreateFromSearch() {
+  newTagName.value = searchQuery.value.trim()
+  newTagColor.value = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)]!
+  isSearching.value = false
+  searchQuery.value = ''
+  // In a real app we might just emit create directly, 
+  // but let's show the color picker for a better UX
+  submitCreate() 
 }
 
 function submitCreate() {
-  if (!canCreate.value) return
-  emit('create', { name: newTagName.value.trim(), color: newTagColor.value })
-  cancelCreate()
+  const name = newTagName.value.trim() || searchQuery.value.trim()
+  if (!name) return
+  emit('create', { name, color: newTagColor.value })
+  newTagName.value = ''
+  isSearching.value = false
+  searchQuery.value = ''
 }
 
 function startEdit(tag: TagItem) {
   editingId.value = tag.id
-  isCreating.value = false
   editTagName.value = tag.name
   editTagColor.value = tag.color || TAG_COLORS[0]!
   editShowColorPicker.value = false
@@ -89,127 +108,135 @@ function confirmDelete(id: string) {
     cancelEdit()
   }
 }
+
+function getContrastColor(hexColor: string | undefined) {
+  if (!hexColor) return '#000000'
+  const hex = hexColor.replace('#', '')
+  if (hex.length < 6) return '#000000'
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '#000000'
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
+  return (yiq >= 128) ? '#000000' : '#ffffff'
+}
 </script>
 
 <template>
   <div class="tag-manager">
     <div class="tag-manager-header">
-      <h3>Управление тегами</h3>
-      <button v-if="!isCreating" class="tag-add-btn" @click="startCreate" type="button">
-        <IconAdd aria-hidden="true" />
-      </button>
-      <button v-else class="tag-add-btn" @click="cancelCreate" type="button">
-        <IconClose aria-hidden="true" />
+      <h3>Теги</h3>
+      <button class="tag-add-btn" :class="{ active: isSearching }" @click="toggleSearch" type="button">
+        <IconAdd v-if="!isSearching" aria-hidden="true" />
+        <IconClose v-else aria-hidden="true" />
       </button>
     </div>
 
-    <!-- Create form -->
-    <div v-if="isCreating" class="tag-form">
-      <div class="tag-form-row">
-        <button
-          class="color-swatch"
-          :style="{ background: newTagColor }"
-          type="button"
-          @click="showColorPicker = !showColorPicker"
-        />
+    <div v-if="isSearching" class="tag-search-container">
+      <div class="search-input-wrapper">
+        <IconSearch class="search-icon" aria-hidden="true" />
         <input
-          v-model="newTagName"
-          class="tag-input"
-          placeholder="Название тега..."
-          @keydown.enter.prevent="submitCreate"
-          @keydown.esc.prevent="cancelCreate"
+          v-model="searchQuery"
+          class="tag-search-input"
+          placeholder="Поиск или создание..."
+          autofocus
+          @keydown.enter.prevent="showCreateOption && submitCreate()"
         />
-        <button class="tag-action-btn save" :disabled="!canCreate" @click="submitCreate" type="button">
-          <IconCheckmark aria-hidden="true" />
+      </div>
+      
+      <div class="search-results">
+        <div 
+          v-for="tag in filteredTags" 
+          :key="tag.id" 
+          class="search-result-item"
+          @click="emit('toggle-tag', tag.id)"
+        >
+          <span class="tag-dot" :style="{ background: tag.color }" />
+          <span class="tag-name">{{ tag.name }}</span>
+          <IconCheckmark v-if="activeTagIds?.includes(tag.id)" class="check-icon" />
+        </div>
+        <div v-if="showCreateOption" class="create-option" @click="submitCreate">
+          <IconAdd aria-hidden="true" />
+          <span>Создать "{{ searchQuery }}"</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tag-cloud">
+      <div 
+        v-for="tag in tags" 
+        :key="tag.id" 
+        class="tag-badge"
+        :class="{ active: activeTagIds?.includes(tag.id) }"
+        :style="{ 
+          backgroundColor: activeTagIds?.includes(tag.id) ? tag.color : '#f0f0f0',
+          color: activeTagIds?.includes(tag.id) ? getContrastColor(tag.color) : '#444'
+        }"
+        @click="emit('toggle-tag', tag.id)"
+      >
+        <span class="tag-text">{{ tag.name }}</span>
+        <button class="tag-edit-small" @click.stop="startEdit(tag)">
+          <IconEdit aria-hidden="true" />
         </button>
       </div>
-      <div v-if="showColorPicker" class="color-grid">
-        <button
-          v-for="color in TAG_COLORS"
-          :key="color"
-          class="color-option"
-          :class="{ selected: color === newTagColor }"
-          :style="{ background: color }"
-          type="button"
-          @click="newTagColor = color"
-        />
+    </div>
+
+    <!-- Edit Modal (Simplified as a dropdown/overlay) -->
+    <div v-if="editingId" class="tag-edit-overlay" @click.self="cancelEdit">
+      <div class="tag-edit-card">
+        <div class="tag-edit-header">
+          <h4>Редактировать тег</h4>
+          <button @click="cancelEdit"><IconClose /></button>
+        </div>
+        <div class="tag-edit-body">
+          <div class="tag-form-row">
+            <button
+              class="color-swatch"
+              :style="{ background: editTagColor }"
+              type="button"
+              @click="editShowColorPicker = !editShowColorPicker"
+            />
+            <input v-model="editTagName" class="tag-input" />
+          </div>
+          <div v-if="editShowColorPicker" class="color-grid">
+            <button
+              v-for="color in TAG_COLORS"
+              :key="color"
+              class="color-option"
+              :class="{ selected: color === editTagColor }"
+              :style="{ background: color }"
+              @click="editTagColor = color"
+            />
+          </div>
+        </div>
+        <div class="tag-edit-footer">
+          <button class="btn-delete" @click="confirmDelete(editingId!)">
+            <IconTrashCan />
+          </button>
+          <button class="btn-save" :disabled="!canSaveEdit" @click="submitEdit">
+            Сохранить
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Tag list -->
-    <div class="tag-list">
-      <div v-for="tag in tags" :key="tag.id" class="tag-item">
-        <template v-if="editingId === tag.id">
-          <div class="tag-form">
-            <div class="tag-form-row">
-              <button
-                class="color-swatch"
-                :style="{ background: editTagColor }"
-                type="button"
-                @click="editShowColorPicker = !editShowColorPicker"
-              />
-              <input
-                v-model="editTagName"
-                class="tag-input"
-                @keydown.enter.prevent="submitEdit"
-                @keydown.esc.prevent="cancelEdit"
-              />
-              <button class="tag-action-btn save" :disabled="!canSaveEdit" @click="submitEdit" type="button">
-                <IconCheckmark aria-hidden="true" />
-              </button>
-              <button class="tag-action-btn cancel" @click="cancelEdit" type="button">
-                <IconClose aria-hidden="true" />
-              </button>
-            </div>
-            <div v-if="editShowColorPicker" class="color-grid">
-              <button
-                v-for="color in TAG_COLORS"
-                :key="color"
-                class="color-option"
-                :class="{ selected: color === editTagColor }"
-                :style="{ background: color }"
-                type="button"
-                @click="editTagColor = color"
-              />
-            </div>
-          </div>
-        </template>
-
-        <template v-else>
-          <div class="tag-display" :class="{ active: activeTagIds?.includes(tag.id) }">
-            <div class="tag-toggle-area" @click="emit('toggle-tag', tag.id)">
-              <span class="tag-color-dot" :style="{ background: tag.color || '#78716c' }" />
-              <span class="tag-name">{{ tag.name }}</span>
-            </div>
-            <div class="tag-actions">
-              <button class="tag-action-btn" @click="startEdit(tag)" type="button">
-                <IconEdit aria-hidden="true" />
-              </button>
-              <button class="tag-action-btn danger" @click="confirmDelete(tag.id)" type="button">
-                <IconTrashCan aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <p v-if="!tags.length && !isCreating" class="tag-empty">
-      Нет тегов. Нажмите <strong>+</strong> чтобы создать.
+    <p v-if="!tags.length && !isSearching" class="tag-empty">
+      Нет тегов. Нажмите <strong>+</strong> чтобы добавить.
     </p>
   </div>
 </template>
 
 <style scoped>
 .tag-manager {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .tag-manager-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 
 .tag-manager-header h3 {
@@ -218,236 +245,302 @@ function confirmDelete(id: string) {
   font-weight: 750;
   color: #707070;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.05em;
 }
 
 .tag-add-btn {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   background: white;
   color: #555;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 
-.tag-add-btn:hover {
-  background: #f0f0f0;
-  border-color: #999;
-  color: #222;
+.tag-add-btn:hover, .tag-add-btn.active {
+  background: #f5f5f5;
+  border-color: #bbb;
+  color: #111;
 }
 
-.tag-add-btn svg {
+.tag-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
   width: 14px;
   height: 14px;
+  color: #888;
 }
 
-.tag-form {
-  margin-bottom: 8px;
+.tag-search-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px 0 32px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+.tag-search-input:focus {
+  border-color: #999;
+}
+
+.search-results {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-result-item, .create-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.search-result-item:hover, .create-option:hover {
+  background: #f0f0f0;
+}
+
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.check-icon {
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
+  color: #16a34a;
+}
+
+.create-option {
+  color: #3b82f6;
+  font-weight: 600;
+  border-top: 1px solid #eee;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.tag-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tag-badge.active {
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.tag-edit-small {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  border-radius: 4px;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.tag-edit-small:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.1);
+}
+
+.tag-edit-small svg {
+  width: 10px;
+  height: 10px;
+}
+
+.tag-edit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+}
+
+.tag-edit-card {
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.tag-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.tag-edit-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.tag-edit-header button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.tag-edit-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .tag-form-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
 }
 
 .color-swatch {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 2px solid white;
-  border-radius: 6px;
+  box-shadow: 0 0 0 1px #ddd;
   cursor: pointer;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
-  transition: transform 0.1s;
-}
-
-.color-swatch:hover {
-  transform: scale(1.1);
 }
 
 .tag-input {
   flex: 1;
-  min-width: 0;
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #222;
-  background: white;
-  outline: none;
-}
-
-.tag-input:focus {
-  border-color: #333;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 .color-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 8px;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 8px;
 }
 
 .color-option {
-  width: 22px;
-  height: 22px;
-  border: 2px solid transparent;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  border: 2px solid transparent;
   cursor: pointer;
-  transition: transform 0.1s, border-color 0.1s;
-}
-
-.color-option:hover {
-  transform: scale(1.15);
 }
 
 .color-option.selected {
-  border-color: #1f1f1f;
-  box-shadow: 0 0 0 2px white, 0 0 0 3px #1f1f1f;
+  border-color: #333;
+  transform: scale(1.1);
 }
 
-.tag-list {
-  display: grid;
-  gap: 2px;
-}
-
-.tag-display {
+.tag-edit-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  transition: background 0.1s;
+  padding: 12px 16px;
+  background: #fcfcfc;
+  border-top: 1px solid #eee;
 }
 
-.tag-display:hover {
-  background: #f0f0f0;
-}
-
-.tag-display.active {
-  background: #202020;
-  color: #ffffff;
-}
-
-.tag-display.active .tag-name {
-  color: #ffffff;
-}
-
-.tag-display.active .tag-action-btn {
-  color: #a0a0a0;
-}
-
-.tag-display.active .tag-action-btn:hover {
-  background: #404040;
-  color: #ffffff;
-}
-
-.tag-display.active .tag-action-btn.danger:hover {
-  background: #401010;
-  color: #ff6060;
-}
-
-.tag-toggle-area {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
-}
-
-.tag-color-dot {
-  flex-shrink: 0;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
-}
-
-.tag-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-  color: #333;
-}
-
-.tag-actions {
-  display: none;
-  gap: 2px;
-}
-
-.tag-display:hover .tag-actions {
-  display: flex;
-}
-
-.tag-action-btn {
+.btn-delete {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: #777;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ffdada;
+  background: #fff5f5;
+  color: #ff4d4d;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.1s;
 }
 
-.tag-action-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+.btn-delete:hover {
+  background: #ffebeb;
 }
 
-.tag-action-btn.save {
-  color: #16a34a;
+.btn-save {
+  height: 36px;
+  padding: 0 20px;
+  background: #171717;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 650;
+  cursor: pointer;
 }
 
-.tag-action-btn.save:hover {
-  background: #dcfce7;
-}
-
-.tag-action-btn.save:disabled {
-  color: #bbb;
+.btn-save:disabled {
+  background: #ccc;
   cursor: not-allowed;
 }
 
-.tag-action-btn.cancel:hover {
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-.tag-action-btn.danger:hover {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.tag-action-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
 .tag-empty {
-  margin: 8px 0 0;
   font-size: 12px;
   color: #888;
-}
-
-.tag-empty strong {
-  color: #555;
+  text-align: center;
+  padding: 10px 0;
 }
 </style>

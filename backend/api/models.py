@@ -1,75 +1,90 @@
-from mongoengine import Document, StringField, BooleanField, DateTimeField, ListField, ReferenceField, DictField, DynamicField, IntField
-import datetime
 import uuid
+from django.db import models
+from django.utils import timezone
 
-class Project(Document):
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
-    title = StringField(required=True)
-    description = StringField()
-    banner = StringField()
-    created_at = DateTimeField(default=datetime.datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.datetime.utcnow)
-    created_by = StringField()
-    team_id = StringField()
-    team_name = StringField()
-    image_url = StringField()
-    root_folder_id = StringField()
-    files_count = IntField(default=0)
-    is_favorite = BooleanField(default=False)
-    is_deleted = BooleanField(default=False)
+def generate_id():
+    return str(uuid.uuid4())
 
-    meta = {'collection': 'projects'}
+class Project(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    banner = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, null=True)
+    team_id = models.CharField(max_length=50, blank=True, null=True)
+    team_name = models.CharField(max_length=255, blank=True, null=True)
+    image_url = models.TextField(blank=True, null=True)
+    root_folder_id = models.CharField(max_length=50, blank=True, null=True)
+    files_count = models.IntegerField(default=0)
+    is_favorite = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
 
-class Team(Document):
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = StringField(required=True)
+    class Meta:
+        db_table = 'projects'
 
-    meta = {'collection': 'teams'}
+class Team(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    name = models.CharField(max_length=255)
 
-class Tag(Document):
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
-    project_id = StringField(required=True)
-    name = StringField(required=True)
-    color = DynamicField() # Can be hex string or dict
+    class Meta:
+        db_table = 'teams'
 
-    meta = {'collection': 'tags'}
+class Tag(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    project_id = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
+    color = models.JSONField(default=dict)
 
-class Node(Document):
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
-    project_id = StringField(required=True)
-    parent_id = StringField(null=True)
-    type = StringField(required=True, choices=['folder', 'document', 'canvas', 'template'])
+    class Meta:
+        db_table = 'tags'
+
+class Node(models.Model):
+    TYPE_CHOICES = [
+        ('folder', 'folder'),
+        ('document', 'document'),
+        ('canvas', 'canvas'),
+        ('template', 'template'),
+    ]
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    project_id = models.CharField(max_length=50)
+    parent_id = models.CharField(max_length=50, null=True, blank=True)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     
-    title = StringField(required=True)
-    icon = StringField(null=True)
-    tag_ids = ListField(StringField(), default=list)
+    title = models.CharField(max_length=255)
+    icon = models.CharField(max_length=255, null=True, blank=True)
+    tag_ids = models.JSONField(default=list, blank=True)
     
-    is_favorite = BooleanField(default=False)
-    is_deleted = BooleanField(default=False)
+    is_favorite = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
     
-    created_at = DateTimeField(default=datetime.datetime.utcnow)
-    created_by = StringField()
-    updated_at = DateTimeField(default=datetime.datetime.utcnow)
-    updated_by = StringField()
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, null=True)
+    updated_at = models.DateTimeField(default=timezone.now)
+    updated_by = models.CharField(max_length=255, blank=True, null=True)
     
-    deleted_at = DateTimeField(null=True)
-    deleted_by = StringField(null=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.CharField(max_length=255, null=True, blank=True)
 
-    meta = {'collection': 'nodes'}
+    class Meta:
+        db_table = 'nodes'
 
-class DocumentPage(Document):
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
-    node_id = StringField(required=True)
-    project_id = StringField()
-    page = DictField() # LotionPage: name, coverUrl, blocks, card
-    created_at = DateTimeField(default=datetime.datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.datetime.utcnow)
+class DocumentPage(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    node_id = models.CharField(max_length=50, unique=True)
+    project_id = models.CharField(max_length=50, null=True, blank=True)
+    page = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
 
-    meta = {'collection': 'document_pages'}
+    class Meta:
+        db_table = 'document_pages'
 
-class CanvasDraft(Document):
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
-    node_id = StringField(required=True)
-    elements = ListField(DynamicField(), default=list)
+class CanvasDraft(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    node_id = models.CharField(max_length=50, unique=True)
+    elements = models.JSONField(default=list)
 
-    meta = {'collection': 'canvas_drafts'}
+    class Meta:
+        db_table = 'canvas_drafts'

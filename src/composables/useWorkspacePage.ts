@@ -124,6 +124,7 @@ export function useWorkspacePage() {
     breadcrumbs,
     clipboard,
     currentFolder,
+    currentFolderId,
     currentFolderError,
     currentItems,
     currentProject,
@@ -222,6 +223,46 @@ export function useWorkspacePage() {
   })
   const clipboardHasContent = computed(() => clipboard.value !== null)
   const viewModeLabel = computed(() => (viewMode.value === 'grid' ? 'Значки' : 'Список'))
+
+  const parentUrl = computed(() => {
+    if (specialView.value) return null
+
+    const rootId = currentProject.value?.rootFolderId
+    const currentId = currentFolderId.value
+
+    // If we are at root, there is no "up"
+    if (!rootId || currentId === rootId) {
+      return null
+    }
+
+    const breadcrumbList = breadcrumbs.value
+    if (breadcrumbList.length === 0) {
+      // If we are not at root but have no breadcrumbs, parent must be root
+      return router.resolve({
+        name: 'project',
+        params: { projectId: projectId.value },
+      }).href
+    }
+
+    // Identify the parent crumb. If the last crumb is the current folder, take the one before it.
+    let parentCrumb = breadcrumbList[breadcrumbList.length - 1]
+    if (parentCrumb && parentCrumb.id === currentId) {
+      parentCrumb = breadcrumbList[breadcrumbList.length - 2]
+    }
+
+    // If no parent crumb found (e.g. only current folder in breadcrumbs), go to root
+    if (!parentCrumb || parentCrumb.id === rootId) {
+      return router.resolve({
+        name: 'project',
+        params: { projectId: projectId.value },
+      }).href
+    }
+
+    return router.resolve({
+      name: 'project-folder',
+      params: { projectId: projectId.value, folderId: parentCrumb.id },
+    }).href
+  })
 
   const currentDirectory = computed<WorkspaceItem>(() => {
     if (currentFolder.value) {
@@ -688,6 +729,7 @@ export function useWorkspacePage() {
     items: visibleItems,
     openFolder,
     openItem,
+    parentUrl,
     pasteClipboard: workspaceStore.pasteClipboard,
     projectId,
     projectName,

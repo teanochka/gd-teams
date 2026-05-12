@@ -25,12 +25,31 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 
 ## Project Setup
 
+### 1. База данных (MongoDB)
+Для работы бэкенда необходим запущенный сервер MongoDB на `localhost:27017`.
+- **Вариант А (Docker):** Выполните `docker-compose up -d` в корне проекта.
+- **Вариант Б (Локально):** Установите и запустите [MongoDB Community Server](https://www.mongodb.com/try/download/community).
+
+### 2. Установка зависимостей
 ```sh
+# Фронтенд
 npm install
+
+# Бэкенд (Python)
+cd backend
+python -m venv venv
+.\venv\Scripts\activate
+pip install django djangorestframework django-cors-headers mongoengine python-dateutil
 ```
 
-### Compile and Hot-Reload for Development
+### 3. Перенос данных (из db.json)
+Если вы хотите перенести существующие проекты в новую базу данных:
+```sh
+cd backend
+.\venv\Scripts\python.exe migrate_data.py
+```
 
+### 4. Запуск приложения
 ```sh
 npm run dev:all
 ```
