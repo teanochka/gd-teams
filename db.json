@@ -1057,7 +1057,7 @@
       "isDeleted": false,
       "createdAt": "2026-05-11T23:02:17.935Z",
       "createdBy": "Вы",
-      "updatedAt": "2026-05-11T23:02:17.935Z",
+      "updatedAt": "2026-05-12T01:07:58.587Z",
       "updatedBy": "Вы"
     },
     {
@@ -10834,6 +10834,457 @@
       "createdAt": "2026-05-11T15:35:11.512Z",
       "updatedAt": "2026-05-11T15:47:20.671Z",
       "id": "G81uaTNOfwc"
+    },
+    {
+      "nodeId": "9WQtDPhy6zo",
+      "projectId": "combat-prototype",
+      "data": {
+        "elements": [
+          {
+            "id": "1cf6121a-46e7-4790-9465-71c1a91f7daf",
+            "type": "document-card",
+            "x": 264,
+            "y": 189,
+            "width": 360,
+            "height": 260,
+            "parentId": null
+          },
+          {
+            "id": "876d44c7-584a-4142-8bcd-8a82ae331815",
+            "type": "document-card",
+            "x": 891,
+            "y": 285,
+            "width": 325,
+            "height": 188,
+            "parentId": null,
+            "documentId": "pFUf28lzuSU",
+            "projectId": "combat-prototype",
+            "title": "Новый документ"
+          },
+          {
+            "id": "bb457fad-07e6-461f-9f07-1d6c1dadb2de",
+            "type": "circle-shape",
+            "x": 1501,
+            "y": 229,
+            "width": 235,
+            "height": 251,
+            "parentId": null,
+            "backgroundColor": "#3b82f6",
+            "borderColor": "#1d4ed8"
+          },
+          {
+            "id": "7039f6cf-5a93-42a7-8266-ad947aab9483",
+            "type": "flowchart-process",
+            "x": 154,
+            "y": 429,
+            "width": 170,
+            "height": 80,
+            "parentId": null,
+            "content": "Процесс",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "89e88c56-7b3d-4b40-aed3-22e944a36235",
+            "type": "flowchart-decision",
+            "x": 203,
+            "y": 673,
+            "width": 152,
+            "height": 136,
+            "parentId": null,
+            "content": "Условие?",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "c6fe2e3d-d81c-48ae-b36a-93f547280839",
+            "type": "flowchart-process",
+            "x": 296,
+            "y": 796,
+            "width": 170,
+            "height": 80,
+            "parentId": null,
+            "content": "Процесс",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "20f497fc-5396-461c-b288-104266aef59f",
+            "type": "flowchart-start-end",
+            "x": 301,
+            "y": 589,
+            "width": 170,
+            "height": 80,
+            "parentId": null,
+            "content": "Начало",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "b1bba424-78c9-49a4-9e3e-5a641aa7638d",
+            "type": "flowchart-input-output",
+            "x": 572,
+            "y": 862,
+            "width": 180,
+            "height": 80,
+            "parentId": null,
+            "content": "Ввод/вывод",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "2c87ea89-bc91-45f0-ab10-19512d5c9da4",
+            "type": "flowchart-decision",
+            "x": 765,
+            "y": 778,
+            "width": 150,
+            "height": 120,
+            "parentId": null,
+            "content": "Условие?",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "1f3b9480-83c6-4306-8f6f-8557d6167c3f",
+            "type": "uml-node",
+            "x": 1034,
+            "y": 558,
+            "width": 160,
+            "height": 100,
+            "parentId": null,
+            "content": "Node",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "1c410736-2d05-4946-807d-795ab57a67db",
+            "type": "uml-class",
+            "x": 1034,
+            "y": 668,
+            "width": 188,
+            "height": 371,
+            "parentId": null,
+            "content": "ClassName",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "fields": [
+              {
+                "id": "className",
+                "value": "ClassName"
+              },
+              {
+                "id": "attributes",
+                "value": "+ attribute: Type\n\n\n\n\n\n\n\n\n"
+              },
+              {
+                "id": "methods",
+                "value": "+ method(): Type"
+              }
+            ]
+          },
+          {
+            "id": "6186cfdb-7892-4c78-a227-cbefc6ecb655",
+            "type": "uml-class",
+            "x": 559,
+            "y": 482,
+            "width": 206,
+            "height": 144,
+            "parentId": null,
+            "content": "ClassName",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "fields": [
+              {
+                "id": "className",
+                "value": "ClassName"
+              },
+              {
+                "id": "attributes",
+                "value": "+ attribute: Type"
+              },
+              {
+                "id": "methods",
+                "value": "+ method(): Type"
+              }
+            ]
+          },
+          {
+            "id": "97da57be-931d-4fc1-82e2-81b9d903f5b9",
+            "type": "uml-node",
+            "x": 61,
+            "y": 565,
+            "width": 160,
+            "height": 100,
+            "parentId": null,
+            "content": "Node",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "b48a4e7c-0eb7-4570-a50e-23e5f5f103f1",
+            "type": "uml-note",
+            "x": 44,
+            "y": 919,
+            "width": 170,
+            "height": 120,
+            "parentId": null,
+            "content": "Note...",
+            "backgroundColor": "#fffacd",
+            "borderColor": "#6b7280"
+          },
+          {
+            "id": "9a4b78e2-7723-4ed3-86a2-04f410b02aa3",
+            "type": "star-shape",
+            "x": 1466,
+            "y": 455,
+            "width": 208,
+            "height": 123,
+            "parentId": null,
+            "backgroundColor": "#fbbf24",
+            "borderColor": "#f59e0b"
+          },
+          {
+            "id": "3625715c-6748-4f72-8a26-b374dcaa33a8",
+            "type": "diamond-shape",
+            "x": 1843,
+            "y": 994,
+            "width": 244,
+            "height": 111,
+            "parentId": null,
+            "backgroundColor": "#8b5cf6",
+            "borderColor": "#7c3aed"
+          },
+          {
+            "id": "9a520358-1e15-49de-ae5d-f33df2ebd057",
+            "type": "diamond-shape",
+            "x": 652,
+            "y": 406,
+            "width": 315,
+            "height": 175,
+            "parentId": null,
+            "backgroundColor": "#8b5cf6",
+            "borderColor": "#7c3aed"
+          },
+          {
+            "id": "dd74e45f-5e0f-46e5-a500-813f96c7025b",
+            "type": "star-shape",
+            "x": 1799,
+            "y": 495,
+            "width": 250,
+            "height": 183,
+            "parentId": null,
+            "backgroundColor": "#fbbf24",
+            "borderColor": "#f59e0b"
+          },
+          {
+            "id": "828296ee-46c1-4dcb-89b8-69ce376a9034",
+            "type": "flowchart-process",
+            "x": 1461,
+            "y": 699,
+            "width": 232,
+            "height": 89,
+            "parentId": null,
+            "content": "Процесс",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1
+          },
+          {
+            "id": "c9c1fefb-310d-405b-99d5-2a8e9999b8ae",
+            "type": "flowchart-start-end",
+            "x": 1399,
+            "y": 861,
+            "width": 170,
+            "height": 80,
+            "parentId": null,
+            "content": "Начало",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1,
+            "borderRadius": 100
+          },
+          {
+            "id": "a704107b-395b-42ad-b3ad-b4177b0e9043",
+            "type": "flowchart-input-output",
+            "x": 1678,
+            "y": 953,
+            "width": 180,
+            "height": 80,
+            "parentId": null,
+            "content": "Ввод/вывод",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1
+          },
+          {
+            "id": "11827c40-9aaf-4c5a-a74f-79941b183d24",
+            "type": "flowchart-decision",
+            "x": 1950,
+            "y": 678,
+            "width": 215,
+            "height": 98,
+            "parentId": null,
+            "content": "Условие?",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1
+          },
+          {
+            "id": "7f4794ff-8592-4a00-97d9-b53147468216",
+            "type": "uml-use-case",
+            "x": 221,
+            "y": 1024,
+            "width": 170,
+            "height": 90,
+            "parentId": null,
+            "content": "Use case",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1
+          },
+          {
+            "id": "998c4ea3-1bc8-44ea-acad-cf544c5ab707",
+            "type": "uml-interface",
+            "x": 355,
+            "y": 960,
+            "width": 180,
+            "height": 140,
+            "parentId": null,
+            "content": "Interface",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1
+          },
+          {
+            "id": "80c3aa97-31b9-455d-bb8f-0f82f1781131",
+            "type": "uml-class",
+            "x": 715,
+            "y": 934,
+            "width": 190,
+            "height": 170,
+            "parentId": null,
+            "content": "ClassName",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1,
+            "fields": [
+              {
+                "id": "className",
+                "value": "ClassName"
+              },
+              {
+                "id": "attributes",
+                "value": "+ attribute: Type"
+              },
+              {
+                "id": "methods",
+                "value": "+ method(): Type"
+              }
+            ]
+          },
+          {
+            "id": "656dcf0d-39eb-4570-85ff-8ed43629b7a6",
+            "type": "uml-state",
+            "x": 1060,
+            "y": 1070,
+            "width": 160,
+            "height": 90,
+            "parentId": null,
+            "content": "State",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#6b7280",
+            "borderWidth": 1,
+            "borderRadius": 20
+          },
+          {
+            "id": "8878e372-fd0d-4078-99e4-49ad84066892",
+            "type": "document-card",
+            "x": 1601,
+            "y": 253,
+            "width": 360,
+            "height": 260,
+            "parentId": null,
+            "documentId": "9_gk3OoC2WQ",
+            "projectId": "combat-prototype",
+            "title": "test"
+          }
+        ],
+        "connections": [
+          {
+            "id": "29c02929-7a00-4f89-9cda-1fe6f0dcc87b",
+            "sourceId": "876d44c7-584a-4142-8bcd-8a82ae331815",
+            "targetId": null,
+            "sourceHandle": "top",
+            "targetHandle": null,
+            "targetPoint": {
+              "x": 719,
+              "y": 256
+            },
+            "type": "straight",
+            "markerEnd": "arrow"
+          },
+          {
+            "id": "0f62d5ba-f394-42eb-b3b6-4e2682e11c5b",
+            "sourceId": "876d44c7-584a-4142-8bcd-8a82ae331815",
+            "targetId": null,
+            "sourceHandle": "left",
+            "targetHandle": null,
+            "targetPoint": {
+              "x": 1280,
+              "y": 608
+            },
+            "type": "straight",
+            "markerEnd": "arrow"
+          },
+          {
+            "id": "fa862ef6-ab77-427b-b0ec-9e658641c4aa",
+            "sourceId": "3625715c-6748-4f72-8a26-b374dcaa33a8",
+            "targetId": null,
+            "sourceHandle": "right",
+            "targetHandle": null,
+            "targetPoint": {
+              "x": 1440,
+              "y": 644
+            },
+            "type": "straight",
+            "markerEnd": "arrow"
+          },
+          {
+            "id": "bb6e207d-169e-4bce-b08b-dd7c4528e24a",
+            "sourceId": "a704107b-395b-42ad-b3ad-b4177b0e9043",
+            "targetId": null,
+            "sourceHandle": "top",
+            "targetHandle": null,
+            "targetPoint": {
+              "x": 2050,
+              "y": 729
+            },
+            "type": "straight",
+            "markerEnd": "arrow"
+          },
+          {
+            "id": "acdf1740-0f59-4b1d-ac04-718bd9006062",
+            "sourceId": "876d44c7-584a-4142-8bcd-8a82ae331815",
+            "targetId": "1f3b9480-83c6-4306-8f6f-8557d6167c3f",
+            "sourceHandle": "bottom",
+            "targetHandle": "top",
+            "type": "orthogonal",
+            "markerEnd": "arrow"
+          },
+          {
+            "id": "fa1c76f5-912e-4146-b448-ada378bc8067",
+            "sourceId": "876d44c7-584a-4142-8bcd-8a82ae331815",
+            "targetId": "9a520358-1e15-49de-ae5d-f33df2ebd057",
+            "sourceHandle": "left",
+            "targetHandle": "top",
+            "type": "orthogonal",
+            "markerEnd": "arrow"
+          }
+        ]
+      },
+      "createdAt": "2026-05-12T00:17:32.458Z",
+      "updatedAt": "2026-05-12T01:07:58.587Z",
+      "id": "5cr37vjiIC8"
     }
   ],
   "kanbanBoards": [

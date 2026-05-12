@@ -82,6 +82,7 @@ const toWorkspaceItem = (node: Node): WorkspaceItem => ({
   createdBy: node.createdBy,
   updatedAt: node.updatedAt,
   updatedBy: node.updatedBy,
+  isFavorite: node.isFavorite,
 });
 
 const projectName = computed(() => currentProject.value?.title ?? "Проект");

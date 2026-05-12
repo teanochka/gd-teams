@@ -1,3 +1,13 @@
+import type { CanvasData } from './canvas'
+
+export type {
+  CanvasConnection,
+  CanvasData,
+  CanvasElement,
+  CanvasElementId,
+  CanvasHandlePosition,
+} from './canvas'
+
 export type ProjectId = string
 export type NodeId = string
 export type TeamId = string
@@ -89,28 +99,6 @@ export type DocumentPage = {
   page: LotionPage
   createdAt: string
   updatedAt: string
-}
-
-export type CanvasObject = Record<string, unknown> & {
-  id: string
-  type: string
-}
-
-export type CanvasDocumentCard = {
-  id: string
-  type: 'document-card'
-  documentId: NodeId
-  projectId: ProjectId
-  title: string
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-export type CanvasData = {
-  objects: CanvasObject[]
-  documentCards: CanvasDocumentCard[]
 }
 
 export type CanvasPage = {

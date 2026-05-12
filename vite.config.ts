@@ -19,13 +19,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    vue({
-      template: {
-        compilerOptions: {
-          isCustomElement: (tag) => tag === 'canvas-drawing-editor',
-        },
-      },
-    }),
+    vue(),
     vueDevTools(),
     Components({
       resolvers: [BootstrapVueNextResolver()],

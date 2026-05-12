@@ -3,29 +3,31 @@ import { computed, watch } from 'vue'
 import IconDocument from '~icons/carbon/document'
 import CanvasCardBlockRenderer from '@/components/canvas/CanvasCardBlockRenderer.vue'
 import { useDocumentsStore } from '@/stores/documents'
-import type { CanvasDocumentCard, LotionBlock } from '@/types/domain'
+import type { CanvasElement } from '@/types/canvas'
+import type { LotionBlock } from '@/types/domain'
 
 const props = defineProps<{
-  card: CanvasDocumentCard
-}>()
-
-const emit = defineEmits<{
-  (event: 'start-move', payload: { card: CanvasDocumentCard; event: PointerEvent }): void
+  element: CanvasElement
 }>()
 
 const documentsStore = useDocumentsStore()
 
-const sourcePage = computed(() => documentsStore.pagesById[props.card.documentId] ?? null)
-const isLoading = computed(() => Boolean(documentsStore.isLoadingById[props.card.documentId]))
-const error = computed(() => documentsStore.errorById[props.card.documentId] ?? null)
-const title = computed(() => sourcePage.value?.name || props.card.title)
-
-const cardStyle = computed(() => ({
-  left: `${props.card.x}px`,
-  top: `${props.card.y}px`,
-  width: `${props.card.width}px`,
-  minHeight: `${props.card.height}px`,
-}))
+const documentId = computed(() => {
+  return typeof props.element.documentId === 'string' ? props.element.documentId : ''
+})
+const projectId = computed(() => {
+  return typeof props.element.projectId === 'string' ? props.element.projectId : ''
+})
+const sourcePage = computed(() =>
+  documentId.value ? (documentsStore.pagesById[documentId.value] ?? null) : null,
+)
+const isLoading = computed(() =>
+  documentId.value ? Boolean(documentsStore.isLoadingById[documentId.value]) : false,
+)
+const error = computed(() =>
+  documentId.value ? (documentsStore.errorById[documentId.value] ?? null) : null,
+)
+const title = computed(() => sourcePage.value?.name || props.element.title || 'Документ')
 
 const cardBlocks = computed(() => {
   const page = sourcePage.value
@@ -39,30 +41,22 @@ const cardBlocks = computed(() => {
     .filter((block): block is LotionBlock => block !== null)
 })
 
-const startMove = (event: PointerEvent) => {
-  emit('start-move', { card: props.card, event })
-}
-
 watch(
-  () => [props.card.documentId, props.card.projectId] as const,
-  async ([documentId, projectId]) => {
-    if (!documentId || !projectId) {
+  [documentId, projectId],
+  async ([nextDocumentId, nextProjectId]) => {
+    if (!nextDocumentId || !nextProjectId) {
       return
     }
 
-    await documentsStore.loadDocument(documentId, projectId)
+    await documentsStore.loadDocument(nextDocumentId, nextProjectId)
   },
   { immediate: true },
 )
 </script>
 
 <template>
-  <article
-    class="canvas-document-card"
-    :data-canvas-document-card-id="card.id"
-    :style="cardStyle"
-  >
-    <header class="document-card-header" @pointerdown="startMove">
+  <article class="canvas-document-card">
+    <header class="document-card-header">
       <IconDocument aria-hidden="true" />
       <strong>{{ title }}</strong>
       <span>Карточка</span>
@@ -87,15 +81,15 @@ watch(
 
 <style scoped>
 .canvas-document-card {
-  position: absolute;
-  z-index: 24;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border: 1px solid #d7dce3;
   border-radius: 8px;
   background: #ffffff;
   color: #171717;
-  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.16);
-  pointer-events: auto;
 }
 
 .document-card-header {
@@ -107,7 +101,6 @@ watch(
   padding: 0 12px;
   border-bottom: 1px solid #e2e5ea;
   background: #f8f8f8;
-  cursor: move;
   user-select: none;
 }
 
@@ -133,7 +126,7 @@ watch(
 }
 
 .document-card-body {
-  max-height: 360px;
+  min-height: 0;
   overflow: auto;
   padding: 14px 16px 18px;
 }
