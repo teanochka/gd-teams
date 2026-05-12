@@ -25,10 +25,10 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 
 ## Project Setup
 
-### 1. База данных (MongoDB)
-Для работы бэкенда необходим запущенный сервер MongoDB на `localhost:27017`.
+### 1. База данных (PostgreSQL)
+Для работы бэкенда необходим запущенный сервер PostgreSQL на `localhost:5432`.
 - **Вариант А (Docker):** Выполните `docker-compose up -d` в корне проекта.
-- **Вариант Б (Локально):** Установите и запустите [MongoDB Community Server](https://www.mongodb.com/try/download/community).
+- **Вариант Б (Локально):** Установите PostgreSQL и создайте базу данных `gd_teams`.
 
 ### 2. Установка зависимостей
 ```sh
@@ -37,20 +37,28 @@ npm install
 
 # Бэкенд (Python)
 cd backend
-python -m venv venv
-.\venv\Scripts\activate
-pip install django djangorestframework django-cors-headers mongoengine python-dateutil
+python -m venv .venv
+# Windows:
+.\.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+pip install -r requirements.txt
 ```
 
-### 3. Перенос данных (из db.json)
-Если вы хотите перенести существующие проекты в новую базу данных:
+### 3. Настройка базы данных и перенос данных
 ```sh
 cd backend
-.\venv\Scripts\python.exe migrate_data.py
+# Применение миграций Django
+python manage.py migrate
+
+# (Опционально) Перенос существующих данных из db.json
+python migrate_data.py
 ```
 
 ### 4. Запуск приложения
 ```sh
+# Из корня проекта
 npm run dev:all
 ```
 
