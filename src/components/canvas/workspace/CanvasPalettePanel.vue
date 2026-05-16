@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import IconChevronDown from "~icons/carbon/chevron-down";
-import IconDocument from "~icons/carbon/document";
 import { canvasComponentRegistry } from "@/components/canvas/componentRegistry";
 
 const emit = defineEmits<{
@@ -51,18 +50,22 @@ const toggleCategory = (categoryId: string) => {
             draggable="true"
             @dragstart="emit('element-drag-start', type.id, $event)"
           >
+            <component
+              :is="type.icon"
+              v-if="type.icon"
+              class="palette-icon"
+              :style="{ color: type.previewBorder ?? '#202020' }"
+              aria-hidden="true"
+            />
             <span
+              v-else
               class="palette-preview"
               :style="{
                 backgroundColor: type.previewBg ?? '#f3f3f3',
                 borderColor: type.previewBorder ?? '#d7dce3',
               }"
             >
-              <IconDocument
-                v-if="type.id === 'document-card'"
-                aria-hidden="true"
-              />
-              <span v-else>{{ type.name.slice(0, 2) }}</span>
+              <span>{{ type.name.slice(0, 2) }}</span>
             </span>
             <span>{{ type.name }}</span>
           </button>
@@ -173,8 +176,14 @@ const toggleCategory = (categoryId: string) => {
   font-weight: 750;
 }
 
+.palette-icon,
 .palette-preview svg {
   width: 18px;
   height: 18px;
+}
+
+.palette-icon {
+  flex: 0 0 34px;
+  margin: 0 8px;
 }
 </style>

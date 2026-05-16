@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import type { CanvasElement, CanvasHandlePosition } from '@/types/canvas'
+import type { CanvasElement, CanvasHandlePosition } from "@/types/canvas";
 
 defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
 defineEmits<{
-  (event: 'connect-start', handle: CanvasHandlePosition, pointerEvent: MouseEvent): void
-  (event: 'connect-end', handle: CanvasHandlePosition): void
-}>()
+  (
+    event: "connect-start",
+    handle: CanvasHandlePosition,
+    pointerEvent: MouseEvent,
+  ): void;
+  (event: "connect-end", handle: CanvasHandlePosition): void;
+}>();
 
-const handles: CanvasHandlePosition[] = ['top', 'right', 'bottom', 'left']
+const handles: CanvasHandlePosition[] = ["top", "right", "bottom", "left"];
 </script>
 
 <template>
@@ -40,7 +44,7 @@ const handles: CanvasHandlePosition[] = ['top', 'right', 'bottom', 'left']
 <style scoped>
 .connection-handles {
   position: absolute;
-  z-index: 14;
+  z-index: 1002;
   pointer-events: none;
 }
 

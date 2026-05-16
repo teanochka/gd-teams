@@ -14,6 +14,8 @@ export type CanvasElement = {
   y: number;
   width: number;
   height: number;
+  layerName?: string;
+  isHidden?: boolean;
 
   /** Basic cards, text blocks, labels, and similar editable content. */
   content?: string;

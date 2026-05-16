@@ -91,7 +91,12 @@ const toggleShadow = (event: Event) => {
 </script>
 
 <template>
-  <section class="properties-panel" aria-label="Свойства элемента">
+  <section
+    class="properties-panel"
+    aria-label="Свойства элемента"
+    @mousedown.stop
+    @click.stop
+  >
     <header class="properties-header">
       <strong>Свойства</strong>
       <span>{{ element ? (elementName ?? element.type) : "Нет выбора" }}</span>

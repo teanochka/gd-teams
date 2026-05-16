@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import CanvasConnectionHandles from "@/components/canvas/CanvasConnectionHandles.vue";
 import CanvasConnectionLayer from "@/components/canvas/CanvasConnectionLayer.vue";
 import CanvasElementFrame from "@/components/canvas/CanvasElementFrame.vue";
+import CanvasElementPropertiesPanel from "@/components/canvas/panels/CanvasElementPropertiesPanel.vue";
 import { canvasComponentRegistry } from "@/components/canvas/componentRegistry";
 import {
   getElementHandlePoints,
@@ -26,6 +27,7 @@ import {
 
 const canvasElementDragType = "application/x-gdteams-canvas-element";
 const connectionSnapDistance = 28;
+const pasteOffset = 24;
 
 type DraftCanvasConnection = {
   sourceId: CanvasElementId;
@@ -33,6 +35,11 @@ type DraftCanvasConnection = {
   targetPoint: CanvasPoint;
   targetElementId?: CanvasElementId | null;
   targetHandle?: CanvasHandlePosition | null;
+};
+
+type SelectionBox = {
+  start: CanvasPoint;
+  current: CanvasPoint;
 };
 
 type SnapTarget = {
@@ -55,9 +62,65 @@ const workspaceRef = ref<HTMLElement | null>(null);
 const selectedElementIds = ref<Set<CanvasElementId>>(new Set());
 const isDocumentDropActive = ref(false);
 const draftConnection = ref<DraftCanvasConnection | null>(null);
+const selectionBox = ref<SelectionBox | null>(null);
+const clipboardElements = ref<CanvasElement[]>([]);
 
 const elements = computed(() => props.data.elements);
 const connections = computed(() => props.data.connections);
+const visibleElements = computed(() =>
+  elements.value.filter((element) => !element.isHidden),
+);
+const visibleElementIds = computed(
+  () => new Set(visibleElements.value.map((element) => element.id)),
+);
+const visibleConnections = computed(() =>
+  connections.value.filter(
+    (connection) =>
+      visibleElementIds.value.has(connection.sourceId) &&
+      (!connection.targetId ||
+        visibleElementIds.value.has(connection.targetId)),
+  ),
+);
+const selectedElements = computed(() =>
+  elements.value.filter((element) => selectedElementIds.value.has(element.id)),
+);
+const selectedElement = computed(() =>
+  selectedElements.value.length === 1 ? selectedElements.value[0] : null,
+);
+const layerElements = computed(() => [...elements.value].reverse());
+
+const selectionBoxStyle = computed(() => {
+  const box = selectionBox.value;
+
+  if (!box) {
+    return {};
+  }
+
+  const left = Math.min(box.start.x, box.current.x);
+  const top = Math.min(box.start.y, box.current.y);
+  const width = Math.abs(box.current.x - box.start.x);
+  const height = Math.abs(box.current.y - box.start.y);
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${width}px`,
+    height: `${height}px`,
+  };
+});
+
+const styleMenuStyle = computed(() => {
+  const element = selectedElement.value;
+
+  if (!element) {
+    return {};
+  }
+
+  return {
+    left: `${element.x + element.width + 14}px`,
+    top: `${element.y}px`,
+  };
+});
 
 const emitData = (nextData: CanvasData) => {
   emit("update:data", {
@@ -73,17 +136,56 @@ const setElements = (nextElements: CanvasElement[]) => {
   });
 };
 
-const addElement = (element: CanvasElement) => {
-  setElements([...elements.value, element]);
-  selectedElementIds.value = new Set([element.id]);
-};
-
-const createConnectionId = () => {
+const createId = (prefix: string) => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
 
-  return `connection-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const createLayerName = (
+  type: string,
+  sourceElements: CanvasElement[] = elements.value,
+) => {
+  const count = sourceElements.filter(
+    (element) => element.type === type,
+  ).length;
+  return count === 0 ? type : `${type} ${count + 1}`;
+};
+
+const assignMissingLayerNames = (sourceElements: CanvasElement[]) => {
+  const typeCounts: Record<string, number> = {};
+  let changed = false;
+
+  const nextElements = sourceElements.map((element) => {
+    typeCounts[element.type] = (typeCounts[element.type] ?? 0) + 1;
+
+    if (element.layerName) {
+      return element;
+    }
+
+    changed = true;
+    const count = typeCounts[element.type];
+
+    return {
+      ...element,
+      layerName: count === 1 ? element.type : `${element.type} ${count}`,
+    };
+  });
+
+  return changed ? nextElements : sourceElements;
+};
+
+const withLayerName = (element: CanvasElement) => ({
+  ...element,
+  layerName: element.layerName ?? createLayerName(element.type),
+});
+
+const addElement = (element: CanvasElement) => {
+  const nextElement = withLayerName(element);
+  setElements([...elements.value, nextElement]);
+  selectedElementIds.value = new Set([nextElement.id]);
 };
 
 const addConnection = (connection: CanvasConnection) => {
@@ -97,6 +199,32 @@ const updateElement = (nextElement: CanvasElement) => {
   setElements(
     elements.value.map((element) =>
       element.id === nextElement.id ? { ...element, ...nextElement } : element,
+    ),
+  );
+};
+
+const moveSelectedElements = ({ dx, dy }: { dx: number; dy: number }) => {
+  if (!selectedElementIds.value.size) {
+    return;
+  }
+
+  const movingElements = elements.value.filter((element) =>
+    selectedElementIds.value.has(element.id),
+  );
+  const minX = Math.min(...movingElements.map((element) => element.x));
+  const minY = Math.min(...movingElements.map((element) => element.y));
+  const adjustedDx = Math.round(minX + dx) < 0 ? -minX : Math.round(dx);
+  const adjustedDy = Math.round(minY + dy) < 0 ? -minY : Math.round(dy);
+
+  setElements(
+    elements.value.map((element) =>
+      selectedElementIds.value.has(element.id)
+        ? {
+            ...element,
+            x: Math.max(0, Math.round(element.x + adjustedDx)),
+            y: Math.max(0, Math.round(element.y + adjustedDy)),
+          }
+        : element,
     ),
   );
 };
@@ -150,16 +278,93 @@ const selectElement = ({
   selectedElementIds.value = new Set([element.id]);
 };
 
-const selectLayerElement = (elementId: CanvasElementId) => {
-  selectedElementIds.value = new Set([elementId]);
-};
+const selectLayerElement = ({
+  elementId,
+  selectionEvent,
+}: {
+  elementId: CanvasElementId;
+  selectionEvent: Pick<
+    MouseEvent | KeyboardEvent,
+    "shiftKey" | "ctrlKey" | "metaKey"
+  >;
+}) => {
+  if (selectionEvent.shiftKey && selectedElementIds.value.size) {
+    const firstSelectedIndex = layerElements.value.findIndex((element) =>
+      selectedElementIds.value.has(element.id),
+    );
+    const clickedIndex = layerElements.value.findIndex(
+      (element) => element.id === elementId,
+    );
 
-const clearSelection = (event: MouseEvent) => {
-  if ((event.target as HTMLElement).closest(".canvas-element-frame")) {
+    if (firstSelectedIndex !== -1 && clickedIndex !== -1) {
+      const [from, to] = [
+        Math.min(firstSelectedIndex, clickedIndex),
+        Math.max(firstSelectedIndex, clickedIndex),
+      ];
+      selectedElementIds.value = new Set(
+        layerElements.value.slice(from, to + 1).map((element) => element.id),
+      );
+      return;
+    }
+  }
+
+  if (selectionEvent.ctrlKey || selectionEvent.metaKey) {
+    const nextSelection = new Set(selectedElementIds.value);
+
+    if (nextSelection.has(elementId)) {
+      nextSelection.delete(elementId);
+    } else {
+      nextSelection.add(elementId);
+    }
+
+    selectedElementIds.value = nextSelection;
     return;
   }
 
-  selectedElementIds.value = new Set();
+  selectedElementIds.value = new Set([elementId]);
+};
+
+const reorderSelectedLayers = ({
+  targetId,
+  position,
+}: {
+  targetId: CanvasElementId;
+  position: "before" | "after";
+}) => {
+  if (
+    !selectedElementIds.value.size ||
+    selectedElementIds.value.has(targetId)
+  ) {
+    return;
+  }
+
+  const panelOrder = layerElements.value;
+  const moving = panelOrder.filter((element) =>
+    selectedElementIds.value.has(element.id),
+  );
+  const remaining = panelOrder.filter(
+    (element) => !selectedElementIds.value.has(element.id),
+  );
+  const targetIndex = remaining.findIndex((element) => element.id === targetId);
+
+  if (targetIndex === -1) {
+    return;
+  }
+
+  const insertIndex = position === "before" ? targetIndex : targetIndex + 1;
+  const nextPanelOrder = [...remaining];
+  nextPanelOrder.splice(insertIndex, 0, ...moving);
+  setElements([...nextPanelOrder].reverse());
+};
+
+const toggleElementVisibility = (elementId: CanvasElementId) => {
+  setElements(
+    elements.value.map((element) =>
+      element.id === elementId
+        ? { ...element, isHidden: !element.isHidden }
+        : element,
+    ),
+  );
 };
 
 const handlePaletteDragStart = (typeId: string, event: DragEvent) => {
@@ -279,6 +484,111 @@ const handleWorkspaceDrop = (event: DragEvent) => {
   }
 };
 
+const intersectsSelectionBox = (element: CanvasElement, box: SelectionBox) => {
+  const left = Math.min(box.start.x, box.current.x);
+  const right = Math.max(box.start.x, box.current.x);
+  const top = Math.min(box.start.y, box.current.y);
+  const bottom = Math.max(box.start.y, box.current.y);
+  const elementRight = element.x + element.width;
+  const elementBottom = element.y + element.height;
+
+  return !(
+    elementRight < left ||
+    element.x > right ||
+    elementBottom < top ||
+    element.y > bottom
+  );
+};
+
+const startAreaSelection = (event: MouseEvent) => {
+  if (
+    (event.target as HTMLElement).closest(
+      ".canvas-element-frame, .canvas-style-menu",
+    )
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  const start = getWorkspacePoint(event);
+  selectionBox.value = { start, current: start };
+
+  const onMove = (moveEvent: MouseEvent) => {
+    if (!selectionBox.value) {
+      return;
+    }
+
+    selectionBox.value = {
+      ...selectionBox.value,
+      current: getWorkspacePoint(moveEvent),
+    };
+  };
+
+  const onUp = () => {
+    const box = selectionBox.value;
+    selectionBox.value = null;
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+
+    if (!box) {
+      return;
+    }
+
+    const width = Math.abs(box.current.x - box.start.x);
+    const height = Math.abs(box.current.y - box.start.y);
+
+    if (width < 4 && height < 4) {
+      selectedElementIds.value = new Set();
+      return;
+    }
+
+    selectedElementIds.value = new Set(
+      visibleElements.value
+        .filter((element) => intersectsSelectionBox(element, box))
+        .map((element) => element.id),
+    );
+  };
+
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+};
+
+const copySelectedElements = () => {
+  clipboardElements.value = selectedElements.value.map((element) =>
+    JSON.parse(JSON.stringify(element)),
+  ) as CanvasElement[];
+};
+
+const pasteElements = () => {
+  if (!clipboardElements.value.length) {
+    return;
+  }
+
+  const nextElements = [...elements.value];
+  const pastedElements = clipboardElements.value.map((element) => {
+    const nextElement = {
+      ...element,
+      id: createId("element"),
+      x: element.x + pasteOffset,
+      y: element.y + pasteOffset,
+      layerName: createLayerName(element.type, nextElements),
+      isHidden: false,
+    };
+    nextElements.push(nextElement);
+    return nextElement;
+  });
+
+  setElements(nextElements);
+  selectedElementIds.value = new Set(
+    pastedElements.map((element) => element.id),
+  );
+};
+
+const cutSelectedElements = () => {
+  copySelectedElements();
+  deleteSelectedElements();
+};
+
 const getPointDistance = (left: CanvasPoint, right: CanvasPoint) => {
   return Math.hypot(left.x - right.x, left.y - right.y);
 };
@@ -289,7 +599,7 @@ const getNearestConnectionHandle = (
 ): SnapTarget | null => {
   let nearest: SnapTarget | null = null;
 
-  for (const element of elements.value) {
+  for (const element of visibleElements.value) {
     if (element.id === sourceId) {
       continue;
     }
@@ -379,7 +689,7 @@ const finishDraftConnectionAtPoint = (event: MouseEvent) => {
     target.targetHandle;
 
   addConnection({
-    id: createConnectionId(),
+    id: createId("connection"),
     sourceId: draft.sourceId,
     sourceHandle: draft.sourceHandle,
     targetId: hasElementTarget ? target.targetElementId : null,
@@ -446,7 +756,7 @@ const endConnection = ({
 
   if (!hasSameConnection) {
     addConnection({
-      id: createConnectionId(),
+      id: createId("connection"),
       sourceId: draft.sourceId,
       targetId: element.id,
       sourceHandle: draft.sourceHandle,
@@ -459,29 +769,39 @@ const endConnection = ({
   stopDraftConnection();
 };
 
-const moveLayer = (elementId: CanvasElementId, direction: -1 | 1) => {
-  const index = elements.value.findIndex((element) => element.id === elementId);
-  const nextIndex = index + direction;
-
-  if (index === -1 || nextIndex < 0 || nextIndex >= elements.value.length) {
-    return;
-  }
-
-  const nextElements = [...elements.value];
-  const [element] = nextElements.splice(index, 1);
-
-  if (!element) {
-    return;
-  }
-
-  nextElements.splice(nextIndex, 0, element);
-  setElements(nextElements);
-};
-
 const handleKeyDown = (event: KeyboardEvent) => {
   const target = event.target as HTMLElement;
 
   if (target.matches('input, textarea, [contenteditable="true"]')) {
+    return;
+  }
+
+  const isModifier = event.ctrlKey || event.metaKey;
+  const key = event.key.toLowerCase();
+
+  if (isModifier && key === "a") {
+    event.preventDefault();
+    selectedElementIds.value = new Set(
+      visibleElements.value.map((element) => element.id),
+    );
+    return;
+  }
+
+  if (isModifier && key === "c") {
+    event.preventDefault();
+    copySelectedElements();
+    return;
+  }
+
+  if (isModifier && key === "x") {
+    event.preventDefault();
+    cutSelectedElements();
+    return;
+  }
+
+  if (isModifier && key === "v") {
+    event.preventDefault();
+    pasteElements();
     return;
   }
 
@@ -494,6 +814,18 @@ const handleKeyDown = (event: KeyboardEvent) => {
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
 });
+
+watch(
+  elements,
+  (nextElements) => {
+    const namedElements = assignMissingLayerNames(nextElements);
+
+    if (namedElements !== nextElements) {
+      setElements(namedElements);
+    }
+  },
+  { immediate: true },
+);
 
 onBeforeUnmount(() => {
   stopDraftConnection();
@@ -510,31 +842,37 @@ onBeforeUnmount(() => {
       class="canvas-workspace"
       :class="{ 'document-drop-active': isDocumentDropActive }"
       aria-label="Холст"
-      @mousedown="clearSelection"
+      @mousedown="startAreaSelection"
       @dragover="handleWorkspaceDragOver"
       @dragleave="handleWorkspaceDragLeave"
       @drop="handleWorkspaceDrop"
     >
       <div class="canvas-grid" />
       <CanvasConnectionLayer
-        :elements="elements"
-        :connections="connections"
+        :elements="visibleElements"
+        :connections="visibleConnections"
         :draft-connection="draftConnection"
       />
 
       <CanvasElementFrame
-        v-for="element in elements"
+        v-for="(element, index) in elements"
+        v-show="!element.isHidden"
         :key="element.id"
         class="canvas-element-frame"
         :element="element"
         :selected="selectedElementIds.has(element.id)"
+        :multi-selected="
+          selectedElementIds.has(element.id) && selectedElementIds.size > 1
+        "
+        :z-index="index + 2"
         :workspace-element="workspaceRef"
         @select="selectElement"
+        @move-selected="moveSelectedElements"
         @update:element="updateElement"
       />
 
       <CanvasConnectionHandles
-        v-for="element in elements.filter(
+        v-for="element in visibleElements.filter(
           (item) => draftConnection || selectedElementIds.has(item.id),
         )"
         :key="`handles-${element.id}`"
@@ -543,6 +881,21 @@ onBeforeUnmount(() => {
           (handle, event) => startConnection({ element, handle, event })
         "
         @connect-end="(handle) => endConnection({ element, handle })"
+      />
+
+      <CanvasElementPropertiesPanel
+        v-if="selectedElement && !selectedElement.isHidden"
+        class="canvas-style-menu"
+        :style="styleMenuStyle"
+        :element="selectedElement"
+        :element-name="selectedElement.layerName ?? selectedElement.type"
+        @update:element="updateElement"
+      />
+
+      <div
+        v-if="selectionBox"
+        class="selection-box"
+        :style="selectionBoxStyle"
       />
 
       <div v-if="isDocumentDropActive" class="drop-hint">
@@ -554,9 +907,9 @@ onBeforeUnmount(() => {
       :elements="elements"
       :selected-element-ids="selectedElementIds"
       @select-element="selectLayerElement"
-      @move-layer="moveLayer"
+      @reorder-selected="reorderSelectedLayers"
+      @toggle-visibility="toggleElementVisibility"
       @delete-selected="deleteSelectedElements"
-      @update:element="updateElement"
     />
   </section>
 </template>
@@ -591,10 +944,6 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.canvas-element-frame {
-  z-index: 2;
-}
-
 .drop-hint {
   position: sticky;
   left: 50%;
@@ -611,6 +960,24 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 650;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.selection-box {
+  position: absolute;
+  z-index: 1000;
+  border: 1px solid #202020;
+  background: rgba(32, 32, 32, 0.08);
+  pointer-events: none;
+}
+
+.canvas-style-menu {
+  position: absolute;
+  z-index: 1001;
+  width: 280px;
+  max-width: 280px;
+  border: 1px solid #d7dce3;
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
 }
 
 .canvas-workspace.document-drop-active::after {

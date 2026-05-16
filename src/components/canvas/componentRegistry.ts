@@ -30,7 +30,7 @@ export type CanvasElementTypeMeta = {
   previewBg?: string;
   previewBorder?: string;
   defaultProps?: Record<string, unknown>;
-  icon?: string;
+  icon?: Component;
 };
 
 export type CanvasElementCategory = {
