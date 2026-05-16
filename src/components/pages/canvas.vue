@@ -1,190 +1,100 @@
 <script setup lang="ts">
-import "canvas-drawing-editor";
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import IconArrowDown from "~icons/carbon/arrow-down";
-import IconArrowLeft from "~icons/carbon/arrow-left";
-import IconArrowUp from "~icons/carbon/arrow-up";
-import CanvasDocumentCard from "@/components/canvas/CanvasDocumentCard.vue";
-import CanvasProjectExplorer from "@/components/canvas/CanvasProjectExplorer.vue";
-import { cloneCanvasData, createDefaultCanvasData } from "@/api/canvas";
-import { useCanvasesStore } from "@/stores/canvases";
-import {
-  hasCanvasDocumentDragPayload,
-  parseCanvasDocumentDragPayload,
-} from "@/utils/canvasDocumentDrag";
-import type {
-  CanvasData,
-  CanvasDocumentCard as CanvasDocumentCardData,
-  CanvasObject,
-  Node,
-  NodeType,
-} from "@/types/domain";
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import IconArrowDown from '~icons/carbon/arrow-down'
+import IconArrowLeft from '~icons/carbon/arrow-left'
+import IconArrowUp from '~icons/carbon/arrow-up'
+import CanvasProjectExplorer from '@/components/canvas/CanvasProjectExplorer.vue'
+import CanvasWorkspace from '@/components/canvas/CanvasWorkspace.vue'
+import { cloneCanvasData, createDefaultCanvasData } from '@/api/canvas'
+import { useCanvasesStore } from '@/stores/canvases'
+import type { CanvasData, Node, NodeType } from '@/types/domain'
 
-type EditorChangeEvent = CustomEvent<{
-  objects?: CanvasObject[];
-}>;
+const route = useRoute()
+const router = useRouter()
+const canvasesStore = useCanvasesStore()
 
-type MovingCardState = {
-  cardId: string;
-  startClientX: number;
-  startClientY: number;
-  startX: number;
-  startY: number;
-};
-
-const route = useRoute();
-const router = useRouter();
-const canvasesStore = useCanvasesStore();
-
-const currentCanvasData = ref<CanvasData>(createDefaultCanvasData());
-const initialDataJson = ref(
-  JSON.stringify({ objects: currentCanvasData.value.objects }),
-);
-const editorRenderKey = ref("canvas-editor-empty");
-const canScheduleSave = ref(false);
-const isExplorerOpen = ref(false);
-const isDocumentDropActive = ref(false);
-const canvasPageRef = ref<HTMLElement | null>(null);
-
-const cardDefaultWidth = 360;
-const cardDefaultHeight = 260;
-const cardViewportPadding = 16;
-
-let movingCardState: MovingCardState | null = null;
+const currentCanvasData = ref<CanvasData>(createDefaultCanvasData())
+const canScheduleSave = ref(false)
+const isExplorerOpen = ref(false)
 
 const projectId = computed(() => {
-  const value = route.params.projectId;
+  const value = route.params.projectId
 
-  return Array.isArray(value) ? String(value[0] ?? "") : String(value ?? "");
-});
+  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
+})
 
 const canvasId = computed(() => {
-  const value = route.params.canvasId;
+  const value = route.params.canvasId
 
-  return Array.isArray(value) ? String(value[0] ?? "") : String(value ?? "");
-});
+  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
+})
 
 const isLoading = computed(() => {
   return canvasId.value
     ? Boolean(canvasesStore.isLoadingById[canvasId.value])
-    : false;
-});
+    : false
+})
 
 const isSaving = computed(() => {
   return canvasId.value
     ? Boolean(canvasesStore.isSavingById[canvasId.value])
-    : false;
-});
+    : false
+})
 
 const isDirty = computed(() => {
   return canvasId.value
     ? Boolean(canvasesStore.isDirtyById[canvasId.value])
-    : false;
-});
+    : false
+})
 
 const error = computed(() => {
-  return canvasId.value ? canvasesStore.errorById[canvasId.value] : null;
-});
+  return canvasId.value ? canvasesStore.errorById[canvasId.value] : null
+})
 
 const saveStatusLabel = computed(() => {
   if (isSaving.value) {
-    return "Сохранение...";
+    return 'Сохранение...'
   }
 
   if (isDirty.value) {
-    return "Есть несохраненные изменения";
+    return 'Есть несохраненные изменения'
   }
 
-  return "Сохранено";
-});
+  return 'Сохранено'
+})
 
-const canvasDocumentCards = computed(
-  () => currentCanvasData.value.documentCards,
-);
-
-const createCanvasDocumentCardId = () => {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `document-card-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
-
-const clamp = (value: number, min: number, max: number) => {
-  if (max < min) {
-    return min;
-  }
-
-  return Math.min(max, Math.max(min, value));
-};
-
-const setInitialData = async (data: CanvasData | null | undefined) => {
-  const nextData = cloneCanvasData(data ?? createDefaultCanvasData());
-
-  currentCanvasData.value = nextData;
-  initialDataJson.value = JSON.stringify({ objects: nextData.objects });
-  editorRenderKey.value = `${canvasId.value}-${Date.now()}`;
-
-  await nextTick();
-  canScheduleSave.value = true;
-};
-
-const scheduleCanvasSave = (data: CanvasData) => {
-  if (!canvasId.value) {
-    return;
-  }
-
-  const nextData = cloneCanvasData(data);
-
-  currentCanvasData.value = nextData;
-  canvasesStore.scheduleSave(canvasId.value, nextData);
-};
-
-const handleEditorChange = (event: Event) => {
-  if (!canScheduleSave.value || !canvasId.value) {
-    return;
-  }
-
-  const objects = (event as EditorChangeEvent).detail?.objects;
-
-  scheduleCanvasSave({
-    ...currentCanvasData.value,
-    objects: Array.isArray(objects) ? objects : [],
-  });
-};
+const nodeRouteParams: Partial<Record<NodeType, string>> = {
+  document: 'documentId',
+  canvas: 'canvasId',
+  template: 'templateId',
+}
 
 const goBack = () => {
   if (window.history.length > 1) {
-    router.back();
-    return;
+    router.back()
+    return
   }
 
   void router.push({
-    name: "project",
+    name: 'project',
     params: { projectId: projectId.value },
-  });
-};
+  })
+}
 
 const toggleExplorer = () => {
-  isExplorerOpen.value = !isExplorerOpen.value;
-};
-
-const nodeRouteParams: Partial<Record<NodeType, string>> = {
-  document: "documentId",
-  canvas: "canvasId",
-  template: "templateId",
-};
+  isExplorerOpen.value = !isExplorerOpen.value
+}
 
 const openExplorerNode = (node: Node) => {
-  if (node.type === "folder") {
-    return;
+  if (node.type === 'folder') {
+    return
   }
 
-  const paramName = nodeRouteParams[node.type];
+  const paramName = nodeRouteParams[node.type]
 
   if (!paramName) {
-    return;
+    return
   }
 
   void router.push({
@@ -193,228 +103,66 @@ const openExplorerNode = (node: Node) => {
       projectId: projectId.value,
       [paramName]: node.id,
     },
-  });
-};
+  })
+}
 
-const getSafeCardPosition = (
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) => {
-  const rect = canvasPageRef.value?.getBoundingClientRect();
+const setCurrentCanvasData = (data: CanvasData | null | undefined) => {
+  currentCanvasData.value = cloneCanvasData(data ?? createDefaultCanvasData())
+}
 
-  if (!rect) {
-    return { x, y };
+const handleCanvasDataUpdate = (data: CanvasData) => {
+  const nextData = cloneCanvasData(data)
+
+  currentCanvasData.value = nextData
+
+  if (!canScheduleSave.value || !canvasId.value) {
+    return
   }
 
-  return {
-    x: clamp(x, cardViewportPadding, rect.width - width - cardViewportPadding),
-    y: clamp(
-      y,
-      cardViewportPadding,
-      rect.height - height - cardViewportPadding,
-    ),
-  };
-};
-
-const addDocumentCard = (event: DragEvent) => {
-  const payload = parseCanvasDocumentDragPayload(event.dataTransfer);
-  const rect = canvasPageRef.value?.getBoundingClientRect();
-
-  if (!payload || !rect || !canvasId.value) {
-    return;
-  }
-
-  const position = getSafeCardPosition(
-    event.clientX - rect.left - cardDefaultWidth / 2,
-    event.clientY - rect.top - 24,
-    cardDefaultWidth,
-    cardDefaultHeight,
-  );
-
-  const card: CanvasDocumentCardData = {
-    id: createCanvasDocumentCardId(),
-    type: "document-card",
-    documentId: payload.nodeId,
-    projectId: payload.projectId,
-    title: payload.title,
-    x: position.x,
-    y: position.y,
-    width: cardDefaultWidth,
-    height: cardDefaultHeight,
-  };
-
-  scheduleCanvasSave({
-    ...currentCanvasData.value,
-    documentCards: [...currentCanvasData.value.documentCards, card],
-  });
-};
-
-const handleCanvasDragEnter = (event: DragEvent) => {
-  if (!hasCanvasDocumentDragPayload(event.dataTransfer)) {
-    return;
-  }
-
-  event.preventDefault();
-  isDocumentDropActive.value = true;
-
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = "copy";
-  }
-};
-
-const handleCanvasDragOver = (event: DragEvent) => {
-  if (!hasCanvasDocumentDragPayload(event.dataTransfer)) {
-    return;
-  }
-
-  event.preventDefault();
-  isDocumentDropActive.value = true;
-
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = "copy";
-  }
-};
-
-const handleCanvasDragLeave = (event: DragEvent) => {
-  if (event.currentTarget === event.target) {
-    isDocumentDropActive.value = false;
-  }
-};
-
-const handleCanvasDrop = (event: DragEvent) => {
-  if (!hasCanvasDocumentDragPayload(event.dataTransfer)) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-  isDocumentDropActive.value = false;
-  addDocumentCard(event);
-};
-
-const setDocumentCards = (
-  cards: CanvasDocumentCardData[],
-  shouldSave = false,
-) => {
-  const nextData = cloneCanvasData({
-    ...currentCanvasData.value,
-    documentCards: cards,
-  });
-
-  currentCanvasData.value = nextData;
-
-  if (shouldSave) {
-    scheduleCanvasSave(nextData);
-  }
-};
-
-const updateMovingCard = (event: PointerEvent) => {
-  if (!movingCardState) {
-    return;
-  }
-
-  const card = currentCanvasData.value.documentCards.find(
-    (item) => item.id === movingCardState?.cardId,
-  );
-
-  if (!card) {
-    return;
-  }
-
-  const position = getSafeCardPosition(
-    movingCardState.startX + event.clientX - movingCardState.startClientX,
-    movingCardState.startY + event.clientY - movingCardState.startClientY,
-    card.width,
-    card.height,
-  );
-
-  setDocumentCards(
-    currentCanvasData.value.documentCards.map((item) =>
-      item.id === card.id ? { ...item, ...position } : item,
-    ),
-  );
-};
-
-const stopMovingCard = () => {
-  if (movingCardState) {
-    scheduleCanvasSave(currentCanvasData.value);
-  }
-
-  movingCardState = null;
-  window.removeEventListener("pointermove", updateMovingCard);
-  window.removeEventListener("pointerup", stopMovingCard);
-};
-
-const startDocumentCardMove = ({
-  card,
-  event,
-}: {
-  card: CanvasDocumentCardData;
-  event: PointerEvent;
-}) => {
-  event.preventDefault();
-  event.stopPropagation();
-
-  movingCardState = {
-    cardId: card.id,
-    startClientX: event.clientX,
-    startClientY: event.clientY,
-    startX: card.x,
-    startY: card.y,
-  };
-
-  window.addEventListener("pointermove", updateMovingCard);
-  window.addEventListener("pointerup", stopMovingCard);
-};
+  canvasesStore.scheduleSave(canvasId.value, nextData)
+}
 
 watch(
   [projectId, canvasId],
   async ([nextProjectId, nextCanvasId], previousValues) => {
-    const previousCanvasId = previousValues?.[1];
+    const previousCanvasId = previousValues?.[1]
 
-    canScheduleSave.value = false;
+    canScheduleSave.value = false
 
-    if (previousCanvasId) {
-      await canvasesStore.flushCanvas(previousCanvasId);
+    if (previousCanvasId && previousCanvasId !== nextCanvasId) {
+      await canvasesStore.flushCanvas(previousCanvasId)
     }
 
     if (!nextProjectId || !nextCanvasId) {
-      await setInitialData(null);
-      return;
+      setCurrentCanvasData(null)
+      canScheduleSave.value = true
+      return
     }
 
-    const data = await canvasesStore.loadCanvas(nextCanvasId, nextProjectId);
+    const data = await canvasesStore.loadCanvas(nextCanvasId, nextProjectId)
 
-    await setInitialData(data);
+    setCurrentCanvasData(data)
+    canScheduleSave.value = true
   },
   { immediate: true },
-);
+)
 
 onBeforeUnmount(() => {
-  canScheduleSave.value = false;
-  stopMovingCard();
+  canScheduleSave.value = false
 
   if (canvasId.value) {
-    void canvasesStore.flushCanvas(canvasId.value);
+    void canvasesStore.flushCanvas(canvasId.value)
   }
-});
+})
 </script>
 
 <template>
-  <main
-    ref="canvasPageRef"
-    class="canvas-page"
-    :class="{
-      'explorer-open': isExplorerOpen,
-      'document-drop-active': isDocumentDropActive,
-    }"
-    @dragenter.capture="handleCanvasDragEnter"
-    @dragover.capture="handleCanvasDragOver"
-    @dragleave.capture="handleCanvasDragLeave"
-    @drop.capture="handleCanvasDrop"
-  >
+  <main class="canvas-page" :class="{ 'explorer-open': isExplorerOpen }">
+    <button class="canvas-back-button" type="button" @click="goBack">
+      <IconArrowLeft aria-hidden="true" />
+      <span>Назад</span>
+    </button>
+
     <button
       class="explorer-handle"
       type="button"
@@ -423,7 +171,7 @@ onBeforeUnmount(() => {
       @click="toggleExplorer"
     >
       <span class="handle-content">
-        <span>{{ isExplorerOpen ? "Спрятать" : "Проводник" }}</span>
+        <span>{{ isExplorerOpen ? 'Спрятать' : 'Проводник' }}</span>
         <IconArrowDown v-if="isExplorerOpen" aria-hidden="true" />
         <IconArrowUp v-else aria-hidden="true" />
       </span>
@@ -449,31 +197,12 @@ onBeforeUnmount(() => {
       <div class="canvas-save-state" aria-live="polite">
         {{ saveStatusLabel }}
       </div>
-      <canvas-drawing-editor
-        :key="editorRenderKey"
-        class="canvas-editor"
-        title="Canvas Editor"
-        lang="en"
-        theme-color="#202020"
-        max-image-size="500kb"
-        :initial-data="initialDataJson"
-        @editor-change="handleEditorChange"
+      <CanvasWorkspace
+        class="canvas-workspace-view"
+        :data="currentCanvasData"
+        :project-id="projectId"
+        @update:data="handleCanvasDataUpdate"
       />
-
-      <div
-        class="canvas-document-layer"
-        aria-label="Карточки документов на холсте"
-      >
-        <CanvasDocumentCard
-          v-for="card in canvasDocumentCards"
-          :key="card.id"
-          :card="card"
-          @start-move="startDocumentCardMove"
-        />
-        <div v-if="isDocumentDropActive" class="canvas-drop-hint">
-          Отпустите документ, чтобы добавить карточку на холст
-        </div>
-      </div>
     </template>
   </main>
 </template>
@@ -491,17 +220,16 @@ onBeforeUnmount(() => {
   color: #171717;
 }
 
-.canvas-editor {
-  display: block;
+.canvas-workspace-view {
   width: 100%;
   height: 100%;
 }
 
 .canvas-back-button {
   position: fixed;
-  top: 76px;
+  top: 18px;
   left: 18px;
-  z-index: 30;
+  z-index: 38;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -594,42 +322,9 @@ onBeforeUnmount(() => {
   transform: translateX(0);
 }
 
-.canvas-document-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 23;
-  pointer-events: none;
-}
-
-.canvas-drop-hint {
-  position: fixed;
-  left: 50%;
-  bottom: 28px;
-  z-index: 28;
-  padding: 10px 14px;
-  border: 1px solid #d7dce3;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #202020;
-  font-size: 14px;
-  font-weight: 650;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
-  transform: translateX(-50%);
-}
-
-.document-drop-active::after {
-  position: fixed;
-  inset: 12px;
-  z-index: 21;
-  border: 2px dashed rgba(32, 32, 32, 0.32);
-  border-radius: 12px;
-  content: "";
-  pointer-events: none;
-}
-
 .canvas-save-state {
   position: fixed;
-  right: 24px;
+  right: 284px;
   bottom: 20px;
   z-index: 20;
   color: #7a828e;
@@ -640,7 +335,7 @@ onBeforeUnmount(() => {
 }
 
 .explorer-open .canvas-save-state {
-  right: calc(var(--explorer-width) + 24px);
+  right: calc(var(--explorer-width) + 284px);
 }
 
 .canvas-state {
@@ -653,19 +348,21 @@ onBeforeUnmount(() => {
   color: #b42318;
 }
 
+@media (max-width: 1100px) {
+  .canvas-save-state,
+  .explorer-open .canvas-save-state {
+    right: 24px;
+  }
+}
+
 @media (max-width: 720px) {
   .canvas-page {
     --explorer-width: calc(100vw - 52px);
   }
 
   .canvas-back-button {
-    top: 72px;
+    top: 12px;
     left: 12px;
-  }
-
-  .canvas-save-state,
-  .explorer-open .canvas-save-state {
-    right: 16px;
   }
 
   .explorer-handle {
