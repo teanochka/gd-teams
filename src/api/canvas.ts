@@ -1,11 +1,6 @@
 import { apiRequest } from '@/api/http'
 import type { CanvasConnection, CanvasData, CanvasElement } from '@/types/canvas'
-import type { CanvasPage, Node, NodeId, ProjectId } from '@/types/domain'
-
-type RawNode = Omit<Node, 'tags'> & {
-  tagIds: string[]
-  icon?: string | null
-}
+import type { CanvasPage, NodeId, ProjectId } from '@/types/domain'
 
 type LegacyCanvasDocumentCard = {
   id?: unknown
@@ -23,6 +18,11 @@ type LegacyCanvasData = Partial<CanvasData> & {
   cards?: unknown
   documentCards?: unknown
   objects?: unknown
+}
+
+type RawCanvasPage = Partial<Omit<CanvasPage, 'data'>> & {
+  data?: LegacyCanvasData | null
+  elements?: unknown
 }
 
 const getCurrentDate = () => new Date().toISOString()
@@ -170,116 +170,66 @@ export const cloneCanvasData = (data?: LegacyCanvasData | null): CanvasData => {
   }
 }
 
-const createCanvasPage = async (node: Pick<Node, 'id' | 'projectId'>): Promise<CanvasPage> => {
+const getCanvasEndpoint = (projectId: ProjectId, canvasId: NodeId) =>
+  `/projects/${projectId}/canvases/${canvasId}`
+
+const getRawCanvasData = (record: RawCanvasPage): LegacyCanvasData | null => {
+  if (record.data) {
+    return record.data
+  }
+
+  if (Array.isArray(record.elements)) {
+    return { elements: record.elements }
+  }
+
+  if (isRecord(record.elements)) {
+    return record.elements as LegacyCanvasData
+  }
+
+  return null
+}
+
+const normalizeCanvasPage = (
+  record: RawCanvasPage,
+  canvasId: NodeId,
+  projectId: ProjectId,
+): CanvasPage => {
   const savedAt = getCurrentDate()
 
-  return apiRequest<CanvasPage>('/canvasPages', {
-    method: 'POST',
-    body: {
-      nodeId: node.id,
-      projectId: node.projectId,
-      data: createDefaultCanvasData(),
-      createdAt: savedAt,
-      updatedAt: savedAt,
-    },
-  })
+  return {
+    id: record.id ?? canvasId,
+    nodeId: record.nodeId ?? canvasId,
+    projectId: record.projectId ?? projectId,
+    data: cloneCanvasData(getRawCanvasData(record)),
+    createdAt: record.createdAt ?? savedAt,
+    updatedAt: record.updatedAt ?? savedAt,
+  }
 }
 
 export const getCanvasPage = async (
   canvasId: NodeId,
   projectId: ProjectId,
 ): Promise<CanvasPage> => {
-  const pages = await apiRequest<CanvasPage[]>('/canvasPages', {
-    query: { nodeId: canvasId },
-  })
-  const existingPage = pages[0]
+  const record = await apiRequest<RawCanvasPage>(getCanvasEndpoint(projectId, canvasId))
 
-  if (existingPage) {
-    if (existingPage.projectId !== projectId) {
-      throw new Error('Canvas not found')
-    }
-
-    return {
-      ...existingPage,
-      data: cloneCanvasData(existingPage.data),
-    }
-  }
-
-  const node = await apiRequest<RawNode>(`/nodes/${canvasId}`)
-
-  if (node.type !== 'canvas' || node.projectId !== projectId) {
-    throw new Error('Canvas not found')
-  }
-
-  return createCanvasPage({
-    id: node.id,
-    projectId: node.projectId,
-  })
+  return normalizeCanvasPage(record, canvasId, projectId)
 }
 
 export const saveCanvasPage = async (
   canvasId: NodeId,
+  projectId: ProjectId,
   data: CanvasData,
 ): Promise<CanvasPage> => {
   const savedAt = getCurrentDate()
   const nextData = cloneCanvasData(data)
-  const pages = await apiRequest<CanvasPage[]>('/canvasPages', {
-    query: { nodeId: canvasId },
+  const record = await apiRequest<RawCanvasPage>(getCanvasEndpoint(projectId, canvasId), {
+    method: 'PATCH',
+    body: {
+      data: nextData,
+      updatedAt: savedAt,
+      updatedBy: 'user',
+    },
   })
-  const canvasPageId = pages[0]?.id
 
-  if (!canvasPageId) {
-    const node = await apiRequest<RawNode>(`/nodes/${canvasId}`)
-
-    if (node.type !== 'canvas') {
-      throw new Error('Canvas not found')
-    }
-
-    const [canvasPage] = await Promise.all([
-      apiRequest<CanvasPage>('/canvasPages', {
-        method: 'POST',
-        body: {
-          nodeId: node.id,
-          projectId: node.projectId,
-          data: nextData,
-          createdAt: savedAt,
-          updatedAt: savedAt,
-        },
-      }),
-      apiRequest<RawNode>(`/nodes/${canvasId}`, {
-        method: 'PATCH',
-        body: {
-          updatedAt: savedAt,
-          updatedBy: 'Вы',
-        },
-      }),
-    ])
-
-    return {
-      ...canvasPage,
-      data: cloneCanvasData(canvasPage.data),
-    }
-  }
-
-  const [canvasPage] = await Promise.all([
-    apiRequest<CanvasPage>(`/canvasPages/${canvasPageId}`, {
-      method: 'PATCH',
-      body: {
-        data: nextData,
-        updatedAt: savedAt,
-      },
-    }),
-    apiRequest<RawNode>(`/nodes/${canvasId}`, {
-      method: 'PATCH',
-      body: {
-        updatedAt: savedAt,
-        updatedBy: 'Вы',
-      },
-    }),
-  ])
-
-  return {
-    ...canvasPage,
-    data: cloneCanvasData(canvasPage.data),
-  }
+  return normalizeCanvasPage(record, canvasId, projectId)
 }

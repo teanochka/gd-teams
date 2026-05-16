@@ -1,57 +1,69 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import IconDocument from '~icons/carbon/document'
-import CanvasCardBlockRenderer from '@/components/canvas/CanvasCardBlockRenderer.vue'
-import { useDocumentsStore } from '@/stores/documents'
-import type { CanvasElement } from '@/types/canvas'
-import type { LotionBlock } from '@/types/domain'
+import { computed, watch } from "vue";
+import IconDocument from "~icons/carbon/document";
+import CanvasCardBlockRenderer from "@/components/canvas/document-card/CanvasCardBlockRenderer.vue";
+import { useDocumentsStore } from "@/stores/documents";
+import type { CanvasElement } from "@/types/canvas";
+import type { LotionBlock } from "@/types/domain";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
-const documentsStore = useDocumentsStore()
+const documentsStore = useDocumentsStore();
 
 const documentId = computed(() => {
-  return typeof props.element.documentId === 'string' ? props.element.documentId : ''
-})
+  return typeof props.element.documentId === "string"
+    ? props.element.documentId
+    : "";
+});
 const projectId = computed(() => {
-  return typeof props.element.projectId === 'string' ? props.element.projectId : ''
-})
+  return typeof props.element.projectId === "string"
+    ? props.element.projectId
+    : "";
+});
 const sourcePage = computed(() =>
-  documentId.value ? (documentsStore.pagesById[documentId.value] ?? null) : null,
-)
+  documentId.value
+    ? (documentsStore.pagesById[documentId.value] ?? null)
+    : null,
+);
 const isLoading = computed(() =>
-  documentId.value ? Boolean(documentsStore.isLoadingById[documentId.value]) : false,
-)
+  documentId.value
+    ? Boolean(documentsStore.isLoadingById[documentId.value])
+    : false,
+);
 const error = computed(() =>
-  documentId.value ? (documentsStore.errorById[documentId.value] ?? null) : null,
-)
-const title = computed(() => sourcePage.value?.name || props.element.title || 'Документ')
+  documentId.value
+    ? (documentsStore.errorById[documentId.value] ?? null)
+    : null,
+);
+const title = computed(
+  () => sourcePage.value?.name || props.element.title || "Документ",
+);
 
 const cardBlocks = computed(() => {
-  const page = sourcePage.value
+  const page = sourcePage.value;
 
   if (!page) {
-    return []
+    return [];
   }
 
   return (page.card?.blockIds ?? [])
     .map((blockId) => page.blocks.find((block) => block.id === blockId) ?? null)
-    .filter((block): block is LotionBlock => block !== null)
-})
+    .filter((block): block is LotionBlock => block !== null);
+});
 
 watch(
   [documentId, projectId],
   async ([nextDocumentId, nextProjectId]) => {
     if (!nextDocumentId || !nextProjectId) {
-      return
+      return;
     }
 
-    await documentsStore.loadDocument(nextDocumentId, nextProjectId)
+    await documentsStore.loadDocument(nextDocumentId, nextProjectId);
   },
   { immediate: true },
-)
+);
 </script>
 
 <template>

@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import CanvasCardImageBlock from '@/components/canvas/CanvasCardImageBlock.vue'
-import CanvasCardTableBlock from '@/components/canvas/CanvasCardTableBlock.vue'
-import CanvasCardTodoBlock from '@/components/canvas/CanvasCardTodoBlock.vue'
-import type { LotionBlock } from '@/types/domain'
+import { computed } from "vue";
+import CanvasCardImageBlock from "@/components/canvas/document-card/CanvasCardImageBlock.vue";
+import CanvasCardTableBlock from "@/components/canvas/document-card/CanvasCardTableBlock.vue";
+import CanvasCardTodoBlock from "@/components/canvas/document-card/CanvasCardTodoBlock.vue";
+import type { LotionBlock } from "@/types/domain";
 
 const props = defineProps<{
-  block: LotionBlock
-}>()
+  block: LotionBlock;
+}>();
 
 const htmlValue = computed(() => {
-  const value = props.block.details.value
+  const value = props.block.details.value;
 
-  return typeof value === 'string' ? value : ''
-})
+  return typeof value === "string" ? value : "";
+});
 
 const headingTag = computed(() => {
-  if (props.block.type === 'H1') {
-    return 'h1'
+  if (props.block.type === "H1") {
+    return "h1";
   }
 
-  if (props.block.type === 'H2') {
-    return 'h2'
+  if (props.block.type === "H2") {
+    return "h2";
   }
 
-  return 'h3'
-})
+  return "h3";
+});
 </script>
 
 <template>
@@ -39,9 +39,13 @@ const headingTag = computed(() => {
       v-html="htmlValue"
     />
 
-    <blockquote v-else-if="block.type === 'QUOTE'" class="card-quote" v-html="htmlValue" />
+    <blockquote
+      v-else-if="block.type === 'QUOTE'"
+      class="card-quote"
+      v-html="htmlValue"
+    />
 
-    <hr v-else-if="block.type === 'DIVIDER'" class="card-divider">
+    <hr v-else-if="block.type === 'DIVIDER'" class="card-divider" />
 
     <CanvasCardTodoBlock v-else-if="block.type === 'TODO'" :block="block" />
 

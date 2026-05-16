@@ -71,8 +71,15 @@ export const useCanvasesStore = defineStore('canvases', () => {
     errorById.value[canvasId] = null
 
     try {
-      const record = await apiSaveCanvasPage(canvasId, data)
       const workspaceStore = useWorkspaceStore()
+      const projectId = recordsById.value[canvasId]?.projectId
+        ?? workspaceStore.nodesById[canvasId]?.projectId
+
+      if (!projectId) {
+        throw new Error('Canvas project is unknown')
+      }
+
+      const record = await apiSaveCanvasPage(canvasId, projectId, data)
       const cachedNode = workspaceStore.nodesById[canvasId]
 
       if (cachedNode) {

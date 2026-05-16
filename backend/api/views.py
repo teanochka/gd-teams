@@ -9,6 +9,46 @@ from .serializers import (
     TagSerializer, DocumentPageSerializer, CanvasDraftSerializer
 )
 
+def get_query_param(request, *names, default=None):
+    for name in names:
+        value = request.query_params.get(name)
+        if value is not None:
+            return value
+    return default
+
+def parse_bool_query(value, default=False):
+    if value is None:
+        return default
+    return str(value).lower() in ('1', 'true', 'yes')
+
+def normalize_canvas_data(value):
+    if isinstance(value, dict):
+        return {
+            'elements': value.get('elements') if isinstance(value.get('elements'), list) else [],
+            'connections': value.get('connections') if isinstance(value.get('connections'), list) else [],
+        }
+
+    if isinstance(value, list):
+        return {
+            'elements': value,
+            'connections': [],
+        }
+
+    return {
+        'elements': [],
+        'connections': [],
+    }
+
+def serialize_canvas_draft(draft, node):
+    return {
+        'id': draft.id,
+        'nodeId': draft.node_id,
+        'projectId': node.project_id,
+        'data': normalize_canvas_data(draft.elements),
+        'createdAt': node.created_at,
+        'updatedAt': node.updated_at,
+    }
+
 # ----------------- Утилиты -----------------
 def copy_node_recursive(node_id, new_parent_id, project_id, title_suffix=None):
     """
@@ -125,14 +165,17 @@ class ProjectDetailView(APIView):
 
 class GlobalNodeListCreateView(APIView):
     def get(self, request):
-        project_id = request.query_params.get('projectId')
-        is_deleted = request.query_params.get('is_deleted', 'false').lower() == 'true'
-        is_favorite = request.query_params.get('is_favorite')
+        project_id = get_query_param(request, 'projectId', 'project_id')
+        is_deleted = parse_bool_query(
+            get_query_param(request, 'isDeleted', 'is_deleted'),
+            default=False,
+        )
+        is_favorite = get_query_param(request, 'isFavorite', 'is_favorite')
         
         query = {}
         if project_id: query['project_id'] = project_id
-        if is_deleted is not None: query['is_deleted'] = is_deleted
-        if is_favorite == 'true': query['is_favorite'] = True
+        query['is_deleted'] = is_deleted
+        if parse_bool_query(is_favorite): query['is_favorite'] = True
         
         nodes = Node.objects.filter(**query)
         return Response(NodeSerializer(nodes, many=True).data)
@@ -255,11 +298,14 @@ class GlobalTagDetailView(APIView):
 
 class NodeListCreateView(APIView):
     def get(self, request, project_id):
-        parent_id = request.query_params.get('parent_id')
+        parent_id = get_query_param(request, 'parentId', 'parent_id')
         search = request.query_params.get('search')
         sort = request.query_params.get('sort', 'updated_at')
         order = request.query_params.get('order', 'desc')
-        is_deleted = request.query_params.get('is_deleted', 'false').lower() == 'true'
+        is_deleted = parse_bool_query(
+            get_query_param(request, 'isDeleted', 'is_deleted'),
+            default=False,
+        )
 
         query = {'project_id': project_id, 'is_deleted': is_deleted}
         
@@ -345,10 +391,29 @@ class DocumentDetailView(APIView):
 class CanvasDetailView(APIView):
     def get(self, request, project_id, canvas_id):
         try:
-            draft = CanvasDraft.objects.get(node_id=canvas_id)
-            return Response(CanvasDraftSerializer(draft).data)
-        except CanvasDraft.DoesNotExist:
+            node = Node.objects.get(id=canvas_id, project_id=project_id, type='canvas')
+        except Node.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        draft, _ = CanvasDraft.objects.get_or_create(node_id=canvas_id)
+        return Response(serialize_canvas_draft(draft, node))
+
+    def patch(self, request, project_id, canvas_id):
+        try:
+            node = Node.objects.get(id=canvas_id, project_id=project_id, type='canvas')
+        except Node.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        next_data = request.data.get('data', request.data)
+        draft, _ = CanvasDraft.objects.get_or_create(node_id=canvas_id)
+        draft.elements = normalize_canvas_data(next_data)
+        draft.save()
+
+        node.updated_at = timezone.now()
+        node.updated_by = request.data.get('updatedBy', 'user')
+        node.save()
+
+        return Response(serialize_canvas_draft(draft, node))
 
 class NodeBulkDeleteView(APIView):
     def post(self, request, project_id):
