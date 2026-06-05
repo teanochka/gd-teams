@@ -2,6 +2,14 @@ import { apiRequest } from '@/api/http'
 import type { CanvasConnection, CanvasData, CanvasElement } from '@/types/canvas'
 import type { CanvasPage, NodeId, ProjectId } from '@/types/domain'
 
+type RawCanvasNode = {
+  id: NodeId
+  projectId: ProjectId
+  type: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 type LegacyCanvasDocumentCard = {
   id?: unknown
   type?: unknown
@@ -146,6 +154,12 @@ const normalizeElements = (data: LegacyCanvasData) => {
       .filter((element): element is CanvasElement => element !== null)
   }
 
+  if (Array.isArray(data.objects)) {
+    return data.objects
+      .map(normalizeCanvasElement)
+      .filter((element): element is CanvasElement => element !== null)
+  }
+
   return []
 }
 
@@ -170,9 +184,6 @@ export const cloneCanvasData = (data?: LegacyCanvasData | null): CanvasData => {
   }
 }
 
-const getCanvasEndpoint = (projectId: ProjectId, canvasId: NodeId) =>
-  `/projects/${projectId}/canvases/${canvasId}`
-
 const getRawCanvasData = (record: RawCanvasPage): LegacyCanvasData | null => {
   if (record.data) {
     return record.data
@@ -187,6 +198,31 @@ const getRawCanvasData = (record: RawCanvasPage): LegacyCanvasData | null => {
   }
 
   return null
+}
+
+const getCanvasPages = (canvasId: NodeId) => {
+  return apiRequest<RawCanvasPage[]>('/canvasPages', {
+    query: { nodeId: canvasId },
+  })
+}
+
+const createCanvasPageRecord = (
+  canvasId: NodeId,
+  projectId: ProjectId,
+  data: CanvasData,
+  savedAt = getCurrentDate(),
+) => {
+  return apiRequest<RawCanvasPage>('/canvasPages', {
+    method: 'POST',
+    body: {
+      id: `${canvasId}-canvas-page`,
+      nodeId: canvasId,
+      projectId,
+      data: cloneCanvasData(data),
+      createdAt: savedAt,
+      updatedAt: savedAt,
+    },
+  })
 }
 
 const normalizeCanvasPage = (
@@ -210,7 +246,20 @@ export const getCanvasPage = async (
   canvasId: NodeId,
   projectId: ProjectId,
 ): Promise<CanvasPage> => {
-  const record = await apiRequest<RawCanvasPage>(getCanvasEndpoint(projectId, canvasId))
+  const pages = await getCanvasPages(canvasId)
+  const existingPage = pages[0]
+
+  if (existingPage) {
+    return normalizeCanvasPage(existingPage, canvasId, projectId)
+  }
+
+  const node = await apiRequest<RawCanvasNode>(`/nodes/${canvasId}`)
+
+  if (node.type !== 'canvas' || node.projectId !== projectId) {
+    throw new Error('Canvas not found')
+  }
+
+  const record = await createCanvasPageRecord(canvasId, projectId, createDefaultCanvasData())
 
   return normalizeCanvasPage(record, canvasId, projectId)
 }
@@ -222,14 +271,18 @@ export const saveCanvasPage = async (
 ): Promise<CanvasPage> => {
   const savedAt = getCurrentDate()
   const nextData = cloneCanvasData(data)
-  const record = await apiRequest<RawCanvasPage>(getCanvasEndpoint(projectId, canvasId), {
-    method: 'PATCH',
-    body: {
-      data: nextData,
-      updatedAt: savedAt,
-      updatedBy: 'user',
-    },
-  })
+  const pages = await getCanvasPages(canvasId)
+  const canvasPageId = pages.find((page) => page.id)?.id
+  const record = canvasPageId
+    ? await apiRequest<RawCanvasPage>(`/canvasPages/${canvasPageId}`, {
+        method: 'PATCH',
+        body: {
+          data: nextData,
+          updatedAt: savedAt,
+          updatedBy: 'user',
+        },
+      })
+    : await createCanvasPageRecord(canvasId, projectId, nextData, savedAt)
 
   return normalizeCanvasPage(record, canvasId, projectId)
 }

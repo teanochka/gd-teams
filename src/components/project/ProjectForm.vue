@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import IconImage from '~icons/carbon/image'
 import IconUpload from '~icons/carbon/upload'
 import type { CreateProjectPayload, Team } from '@/types/domain'
@@ -30,9 +31,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   submit: [payload: CreateProjectPayload]
-  cancel: []
 }>()
 
+const router = useRouter()
 const title = ref('')
 const description = ref('')
 const selectedTeamId = ref('')
@@ -123,6 +124,10 @@ const submitProject = () => {
     newTeamName: teamMode.value === 'new' ? newTeamName.value : undefined,
   })
 }
+
+const cancelProject = () => {
+  void router.push({ name: 'projects' })
+}
 </script>
 
 <template>
@@ -212,7 +217,7 @@ const submitProject = () => {
       </fieldset>
 
       <div class="form-actions span-full">
-        <BButton type="button" variant="light" class="cancel-button" @click="emit('cancel')">
+        <BButton type="button" variant="light" class="cancel-button" @click="cancelProject">
           Отмена
         </BButton>
         <BButton type="submit" variant="dark" class="submit-button" :disabled="!canSubmit">

@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
+import IconCheckmark from "~icons/carbon/checkmark";
+import IconChevronDown from "~icons/carbon/chevron-down";
 import IconChevronRight from "~icons/carbon/chevron-right";
 import IconFolder from "~icons/carbon/folder";
+import IconGrid from "~icons/carbon/grid";
+import IconList from "~icons/carbon/list";
 import ProjectCard from "@/components/project/ProjectCard.vue";
+import ProjectListItem from "@/components/project/ProjectListItem.vue";
 import ProjectsSidebar from "@/components/project/ProjectsSidebar.vue";
 import { useProjectsPage } from "@/composables/useProjectsPage";
+
+type ProjectsViewMode = "grid" | "list";
 
 const {
   activeItem,
@@ -14,6 +22,15 @@ const {
   setActiveItem,
   teams,
 } = useProjectsPage();
+
+const viewMode = ref<ProjectsViewMode>("grid");
+const viewModeLabel = computed(() =>
+  viewMode.value === "grid" ? "Сетка" : "Список",
+);
+
+const setViewMode = (mode: ProjectsViewMode) => {
+  viewMode.value = mode;
+};
 </script>
 
 <template>
@@ -38,10 +55,32 @@ const {
 
           <div class="toolbar-meta">
             <span>{{ filteredProjects.length }} проектов</span>
-            <BButton variant="outline-dark" class="view-button">
-              <IconFolder aria-hidden="true" />
-              <span>Сетка</span>
-            </BButton>
+            <BDropdown variant="outline-dark" class="view-dropdown">
+              <template #button-content>
+                <IconGrid v-if="viewMode === 'grid'" aria-hidden="true" />
+                <IconList v-else aria-hidden="true" />
+                <span>{{ viewModeLabel }}</span>
+                <IconChevronDown aria-hidden="true" />
+              </template>
+              <BDropdownItem @click="setViewMode('list')">
+                <IconList aria-hidden="true" />
+                Список
+                <IconCheckmark
+                  v-if="viewMode === 'list'"
+                  class="dropdown-check"
+                  aria-hidden="true"
+                />
+              </BDropdownItem>
+              <BDropdownItem @click="setViewMode('grid')">
+                <IconGrid aria-hidden="true" />
+                Сетка
+                <IconCheckmark
+                  v-if="viewMode === 'grid'"
+                  class="dropdown-check"
+                  aria-hidden="true"
+                />
+              </BDropdownItem>
+            </BDropdown>
           </div>
         </section>
 
@@ -59,14 +98,24 @@ const {
 
         <section
           v-else-if="filteredProjects.length"
-          class="projects-grid"
+          class="projects-content"
+          :class="viewMode"
           aria-label="Список проектов"
         >
-          <ProjectCard
-            v-for="project in filteredProjects"
-            :key="project.id"
-            :project="project"
-          />
+          <template v-if="viewMode === 'grid'">
+            <ProjectCard
+              v-for="project in filteredProjects"
+              :key="project.id"
+              :project="project"
+            />
+          </template>
+          <template v-else>
+            <ProjectListItem
+              v-for="project in filteredProjects"
+              :key="project.id"
+              :project="project"
+            />
+          </template>
         </section>
 
         <section v-else class="empty-state" aria-live="polite">
@@ -107,8 +156,7 @@ const {
 }
 
 .breadcrumbs,
-.toolbar-meta,
-.view-button {
+.toolbar-meta {
   display: flex;
   align-items: center;
 }
@@ -140,17 +188,40 @@ h1 {
   white-space: nowrap;
 }
 
-.view-button {
+.view-dropdown :deep(.btn) {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
   min-height: 40px;
   border-radius: 8px;
   background: #ffffff;
+  font-weight: 650;
 }
 
-.projects-grid {
+.view-dropdown :deep(.dropdown-toggle::after) {
+  display: none;
+}
+
+.view-dropdown :deep(.dropdown-item) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.dropdown-check {
+  margin-left: auto;
+}
+
+.projects-content.grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 18px;
+}
+
+.projects-content.list {
+  display: grid;
+  gap: 8px;
 }
 
 .empty-state {
@@ -208,7 +279,7 @@ h1 {
     font-size: 26px;
   }
 
-  .projects-grid {
+  .projects-content.grid {
     grid-template-columns: 1fr;
   }
 }

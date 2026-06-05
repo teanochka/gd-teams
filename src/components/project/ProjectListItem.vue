@@ -8,26 +8,20 @@ import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
 import { useProjectsStore } from '@/stores/projects'
 import { formatDateTime } from '@/utils/formatDate'
 
-const projectsStore = useProjectsStore()
-
-type ProjectCardData = {
+type ProjectListItemData = {
   id: string
   title: string
-  description: string
-  updatedAt: string
-  owner: string
-  teamName: string
+  createdAt: string
   isFavorite: boolean
-  filesCount: number
-  imageUrl: string
   isDeleted: boolean
 }
 
 const props = defineProps<{
-  project: ProjectCardData
+  project: ProjectListItemData
 }>()
 
 const projectDropdown = ref<InstanceType<typeof ProjectDropdown> | null>(null)
+const projectsStore = useProjectsStore()
 const renamingProjectId = ref<string | null>(null)
 const draftTitle = ref('')
 const isSavingTitle = ref(false)
@@ -35,13 +29,13 @@ const isRenaming = computed(() => renamingProjectId.value === props.project.id)
 const projectLinkProps = computed(() => {
   if (isRenaming.value) {
     return {
-      class: 'project-link',
+      class: 'project-list-link',
       'aria-label': props.project.title,
     }
   }
 
   return {
-    class: 'project-link',
+    class: 'project-list-link',
     to: { name: 'project', params: { projectId: props.project.id } },
     'aria-label': props.project.title,
   }
@@ -97,6 +91,10 @@ const cancelRename = () => {
   renamingProjectId.value = null
 }
 
+const toggleFavorite = () => {
+  void projectsStore.toggleFavoriteProject(props.project.id, !props.project.isFavorite)
+}
+
 const { inputRef: titleInput } = useInlineTitleEdit({
   isEditing: isRenaming,
   isBusy: isSavingTitle,
@@ -105,51 +103,49 @@ const { inputRef: titleInput } = useInlineTitleEdit({
 </script>
 
 <template>
-  <article class="project-card" @contextmenu.prevent="toggleDropdown">
+  <article class="project-list-item" @contextmenu.prevent="toggleDropdown">
     <component :is="isRenaming ? 'div' : RouterLink" v-bind="projectLinkProps">
-      <div class="project-banner">
-        <img :src="project.imageUrl" :alt="`Баннер проекта ${project.title}`" />
+      <div class="project-list-title-row">
+        <input
+          v-if="isRenaming"
+          ref="titleInput"
+          v-model="draftTitle"
+          class="form-control title-input"
+          :disabled="isSavingTitle"
+          @click.stop
+          @keydown.enter.prevent="finishRename"
+          @keydown.esc.prevent="cancelRename"
+        />
+        <h2 v-else>{{ project.title }}</h2>
       </div>
 
-      <div class="project-body">
-        <div class="project-title-row">
-          <input
-            v-if="isRenaming"
-            ref="titleInput"
-            v-model="draftTitle"
-            class="form-control title-input"
-            :disabled="isSavingTitle"
-            @click.stop
-            @keydown.enter.prevent="finishRename"
-            @keydown.esc.prevent="cancelRename"
-          />
-          <h2 v-else>{{ project.title }}</h2>
-          <IconStar v-if="project.isFavorite" class="favorite-icon" aria-label="В избранном" />
-        </div>
-
-        <p>{{ project.description }}</p>
-
-        <div class="project-footer">
-          <span class="project-date">
-            <IconTime aria-hidden="true" />
-            {{ formatDateTime(project.updatedAt) }}
-          </span>
-          <span>{{ project.filesCount }} файлов</span>
-        </div>
-
-        <div class="project-meta">
-          <BBadge variant="light">{{ project.teamName }}</BBadge>
-          <span>Владелец: {{ project.owner }}</span>
-        </div>
-      </div>
+      <span class="project-list-date">
+        <IconTime aria-hidden="true" />
+        Создан: {{ formatDateTime(project.createdAt) }}
+      </span>
     </component>
 
-    <ProjectDropdown ref="projectDropdown" :project="project" @rename="startRename" />
+    <BButton
+      variant="link"
+      class="favorite-toggle"
+      :aria-label="project.isFavorite ? 'Убрать из избранного' : 'В избранное'"
+      :aria-pressed="project.isFavorite"
+      @click.stop="toggleFavorite"
+    >
+      <IconStar aria-hidden="true" />
+    </BButton>
+
+    <ProjectDropdown
+      ref="projectDropdown"
+      :project="project"
+      placement="list"
+      @rename="startRename"
+    />
   </article>
 </template>
 
 <style scoped>
-.project-card {
+.project-list-item {
   position: relative;
   z-index: 0;
   overflow: visible;
@@ -162,64 +158,38 @@ const { inputRef: titleInput } = useInlineTitleEdit({
     transform 0.18s ease;
 }
 
-.project-card:hover {
+.project-list-item:hover {
   z-index: 20;
   border-color: #9e9e9e;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
-.project-card:focus-within {
+.project-list-item:focus-within {
   z-index: 20;
 }
 
-.project-link {
-  display: block;
-  height: 100%;
+.project-list-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
+  align-items: center;
+  gap: 18px;
+  min-height: 62px;
+  padding: 12px 100px 12px 16px;
   color: inherit;
   text-decoration: none;
 }
 
-.project-banner {
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-bottom: 1px solid #e2e2e2;
-  background: #efefef;
+.project-list-title-row {
+  min-width: 0;
 }
 
-.project-banner img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(1);
-}
-
-.project-body {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-
-.project-title-row,
-.project-footer,
-.project-meta,
-.project-date {
-  display: flex;
-  align-items: center;
-}
-
-.project-title-row {
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 28px;
-}
-
-.project-title-row h2 {
+.project-list-title-row h2 {
   min-width: 0;
   margin: 0;
   overflow: hidden;
   color: #171717;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 750;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -227,59 +197,66 @@ const { inputRef: titleInput } = useInlineTitleEdit({
 }
 
 .title-input {
+  width: min(100%, 520px);
   min-width: 0;
   height: 28px;
   padding: 2px 10px;
   border-radius: 6px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 750;
   line-height: 1.25;
 }
 
-.favorite-icon {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  color: #1c1c1c;
-}
-
-.project-body p {
-  min-height: 44px;
-  margin: 0;
-  color: #5e5e5e;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.project-footer {
-  justify-content: space-between;
-  gap: 12px;
+.project-list-date {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   color: #6a6a6a;
   font-size: 13px;
+  white-space: nowrap;
 }
 
-.project-date {
-  gap: 6px;
-  min-width: 0;
-}
-
-.project-date svg {
+.project-list-date svg {
   width: 15px;
   height: 15px;
   flex: 0 0 15px;
 }
 
-.project-meta {
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 4px;
-  color: #777777;
-  font-size: 12px;
+.favorite-toggle {
+  position: absolute;
+  top: 50%;
+  right: 54px;
+  z-index: 2;
+  display: grid !important;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1c1c1c;
+  transform: translateY(-50%);
 }
 
-.project-meta :deep(.badge) {
-  border: 1px solid #d8d8d8;
-  color: #3f3f3f;
-  font-weight: 600;
+.favorite-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.favorite-toggle[aria-pressed='false'] {
+  color: #8a8a8a;
+}
+
+@media (max-width: 720px) {
+  .project-list-link {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .project-list-date {
+    justify-content: flex-start;
+  }
 }
 </style>
