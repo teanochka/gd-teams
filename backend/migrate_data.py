@@ -2,54 +2,68 @@ import os
 import sys
 import json
 import django
+import uuid
 from dateutil import parser
 
 # --- Шаг 1: Настройка окружения Django ---
-# Это позволяет скрипту использовать модели и подключаться к базе данных
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-# --- Шаг 2: Импорт моделей (только после django.setup()) ---
-from api.models import Project, Team, Node, Tag, DocumentPage, CanvasDraft
+# --- Шаг 2: Импорт моделей ---
+from api.models import User, Project, Team, Node, Tag, DocumentPage, CanvasDraft, ProjectMember
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password
 
 def parse_date(date_str):
-    """Безопасно преобразует строку ISO в объект datetime."""
     if not date_str:
         return None
     try:
-        # isoparse более строгий и правильный для ISO 8601 формата
         return parser.isoparse(date_str)
     except (ValueError, TypeError):
         return None
 
 def migrate():
-    """Основная функция для переноса данных из db.json в PostgreSQL."""
-    
-    # --- Шаг 3: Проверка наличия db.json ---
-    db_path = 'db.json'
+    db_path = '../db.json'
     if not os.path.exists(db_path):
-        print(f"ОШИБКА: Файл {db_path} не найден!")
-        print("Пожалуйста, поместите ваш файл 'db.json' в ту же папку, где лежит этот скрипт.")
-        return
+        db_path = 'db.json'
+        if not os.path.exists(db_path):
+            print(f"ОШИБКА: Файл db.json не найден!")
+            return
 
     with open(db_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
-    print("Начинаем миграцию данных из db.json в PostgreSQL...")
+    print("Начинаем миграцию данных в новую схему...")
 
-    # --- Миграция команд (Teams) ---
-    for t_data in data.get('teams', []):
-        team, created = Team.objects.get_or_create(
-            id=t_data['id'], 
-            defaults={'name': t_data['name']}
+    # --- 1. Создание пользователей ---
+    usernames = set()
+    for p in data.get('projects', []): usernames.add(p.get('owner'))
+    for n in data.get('nodes', []): usernames.add(n.get('createdBy'))
+    
+    user_map = {}
+    
+    print("Создание пользователей...")
+    for uname in usernames:
+        if not uname: continue
+        clean_uname = uname.replace(' ', '_').lower()
+        user, created = User.objects.get_or_create(
+            username=clean_uname,
+            defaults={
+                'display_name': uname,
+                'password': make_password('password123'),
+                'email': f"{clean_uname}@example.com"
+            }
         )
+        user_map[uname] = user
         if created:
-            print(f"  [OK] Migrated team: {team.name}")
+            print(f"  [OK] User created: {uname}")
 
-    # --- Миграция проектов (Projects) ---
+    # --- 2. Миграция проектов ---
+    print("Миграция проектов...")
+    project_map = {}
     for p_data in data.get('projects', []):
+        owner = user_map.get(p_data.get('owner'))
         project, created = Project.objects.get_or_create(
             id=p_data['id'], 
             defaults={
@@ -57,9 +71,7 @@ def migrate():
                 'description': p_data.get('description', ''),
                 'created_at': parse_date(p_data.get('createdAt')) or timezone.now(),
                 'updated_at': parse_date(p_data.get('updatedAt')) or timezone.now(),
-                'created_by': p_data.get('owner', ''),
-                'team_id': p_data.get('teamId', ''),
-                'team_name': p_data.get('teamName', ''),
+                'created_by': owner,
                 'image_url': p_data.get('imageUrl', ''),
                 'root_folder_id': p_data.get('rootFolderId', ''),
                 'files_count': p_data.get('filesCount', 0),
@@ -67,28 +79,40 @@ def migrate():
                 'is_deleted': p_data.get('isDeleted', False)
             }
         )
-        if created:
-            print(f"  [OK] Migrated project: {project.title}")
+        project_map[project.id] = project
+        
+        if created and owner:
+            ProjectMember.objects.get_or_create(user=owner, project=project, defaults={'is_owner': True})
+            print(f"  [OK] Project migrated: {project.title}")
 
-    # --- Миграция тегов (Tags) ---
+    # --- 3. Миграция тегов ---
+    print("Миграция тегов...")
     for t_data in data.get('tags', []):
-        tag, created = Tag.objects.get_or_create(
+        project = project_map.get(t_data['projectId'])
+        if not project: continue
+        Tag.objects.get_or_create(
             id=t_data['id'], 
             defaults={
-                'project_id': t_data['projectId'],
+                'project': project,
                 'name': t_data['name'],
                 'color': t_data.get('color', {})
             }
         )
-        if created:
-            print(f"  [OK] Migrated tag: {tag.name}")
 
-    # --- Миграция узлов (Nodes: папки, документы, и т.д.) ---
+    # --- 4. Миграция узлов ---
+    print("Миграция узлов (папки, документы)...")
+    node_map = {}
     for n_data in data.get('nodes', []):
+        project = project_map.get(n_data['projectId'])
+        if not project: continue
+        
+        creator = user_map.get(n_data.get('createdBy'))
+        updater = user_map.get(n_data.get('updatedBy'))
+        
         node, created = Node.objects.get_or_create(
             id=n_data['id'], 
             defaults={
-                'project_id': n_data['projectId'],
+                'project': project,
                 'parent_id': n_data.get('parentId'),
                 'type': n_data['type'],
                 'title': n_data['title'],
@@ -97,41 +121,39 @@ def migrate():
                 'is_favorite': n_data.get('isFavorite', False),
                 'is_deleted': n_data.get('isDeleted', False),
                 'created_at': parse_date(n_data.get('createdAt')) or timezone.now(),
-                'created_by': n_data.get('createdBy', ''),
+                'created_by': creator,
                 'updated_at': parse_date(n_data.get('updatedAt')) or timezone.now(),
-                'updated_by': n_data.get('updatedBy', '')
+                'updated_by': updater
             }
         )
-        if created:
-            print(f"  [OK] Migrated node: {node.title}")
+        node_map[node.id] = node
 
-    # --- Миграция контента документов (DocumentPages) ---
+    # --- 5. Миграция контента ---
+    print("Миграция контента...")
     for d_data in data.get('documents', []):
-        page_content = d_data.get('page', {'blocks': []})
-        doc, created = DocumentPage.objects.get_or_create(
-            id=d_data['id'], 
+        node = node_map.get(d_data['nodeId'])
+        if not node: continue
+        DocumentPage.objects.get_or_create(
+            node=node,
             defaults={
-                'node_id': d_data['nodeId'],
-                'page': page_content
+                'id': d_data['id'],
+                'project_id': d_data.get('projectId'),
+                'page': d_data.get('page', {})
             }
         )
-        if created:
-            print(f"  [OK] Migrated document content for node: {doc.node_id}")
 
-    # --- Миграция контента канвасов (CanvasDrafts) ---
     for c_data in data.get('canvases', []):
-        canvas, created = CanvasDraft.objects.get_or_create(
-            id=c_data['id'],
+        node = node_map.get(c_data['nodeId'])
+        if not node: continue
+        CanvasDraft.objects.get_or_create(
+            node=node,
             defaults={
-                'node_id': c_data['nodeId'],
+                'id': c_data['id'],
                 'elements': c_data.get('elements', [])
             }
         )
-        if created:
-            print(f"  [OK] Migrated canvas content for node: {canvas.node_id}")
     
-    print("\nМиграция данных успешно завершена!")
+    print("\nМиграция успешно завершена!")
 
-# --- Шаг 4: Запуск скрипта ---
 if __name__ == "__main__":
     migrate()

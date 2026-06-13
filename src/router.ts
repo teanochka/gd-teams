@@ -3,6 +3,7 @@ import {
   createWebHistory,
   type RouteRecordRaw,
 } from "vue-router";
+import { useAuthStore } from "./stores/auth";
 import projectCreate from "./components/pages/project-create.vue";
 import projectEdit from "./components/pages/project-edit.vue";
 import projects from "./components/pages/projects.vue";
@@ -10,8 +11,23 @@ import workspace from "./components/pages/workspace.vue";
 import document from "./components/pages/document.vue";
 import kanban from "./components/pages/kanban.vue";
 import canvas from "./components/pages/canvas.vue";
+import login from "./components/pages/login.vue";
+import register from "./components/pages/register.vue";
+
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/projects" },
+  {
+    path: "/auth/login",
+    name: "login",
+    component: login,
+    meta: { public: true }
+  },
+  {
+    path: "/auth/register",
+    name: "register",
+    component: register,
+    meta: { public: true }
+  },
   {
     path: "/projects/new",
     name: "project-create",
@@ -68,6 +84,20 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach(async (to, from, next) => {
+  const auth = useAuthStore();
+  
+  if (!to.meta.public && !auth.isAuthenticated) {
+    return next('/auth/login');
+  }
+
+  if (auth.isAuthenticated && !auth.user) {
+    await auth.fetchCurrentUser();
+  }
+
+  next();
 });
 
 export default router;

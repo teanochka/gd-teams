@@ -4,12 +4,19 @@ import IconFolder from '~icons/carbon/folder'
 import IconGroup from '~icons/carbon/group'
 import IconStar from '~icons/carbon/star'
 import IconTrashCan from '~icons/carbon/trash-can'
+import IconLogout from '~icons/carbon/logout'
+import IconUser from '~icons/carbon/user'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 type Team = {
   id: string
   name: string
   count: number
 }
+
+const auth = useAuthStore()
+const router = useRouter()
 
 withDefaults(
   defineProps<{
@@ -24,6 +31,11 @@ withDefaults(
 const emit = defineEmits<{
   (event: 'select', value: string): void
 }>()
+
+const handleLogout = () => {
+  auth.logout()
+  router.push('/auth/login')
+}
 </script>
 
 <template>
@@ -79,17 +91,41 @@ const emit = defineEmits<{
         <BBadge variant="light" class="team-count">{{ team.count }}</BBadge>
       </button>
     </div>
+
+    <div class="sidebar-footer" v-if="auth.user">
+      <button class="sidebar-link logout-btn" @click="handleLogout">
+        <IconLogout />
+        <span>Выйти</span>
+      </button>
+    </div>
   </aside>
 </template>
 
 <style scoped>
 .projects-sidebar {
+  display: flex;
+  flex-direction: column;
   width: 264px;
   min-width: 264px;
   min-height: calc(100vh - 80px);
   padding: 24px 14px;
   border-right: 1px solid #dedede;
   background: #f7f7f7;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #dfdfdf;
+}
+
+.logout-btn {
+  color: #d32f2f;
+}
+
+.logout-btn:hover {
+  background: #ffebee;
+  border-color: #ffcdd2;
 }
 
 .sidebar-section {

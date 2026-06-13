@@ -45,9 +45,20 @@ export const apiRequest = async <T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+
+  if (options.body) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
-    headers: options.body ? { "Content-Type": "application/json" } : undefined,
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

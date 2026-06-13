@@ -5,7 +5,9 @@ import IconArrowRight from "~icons/carbon/arrow-right";
 import IconArrowUp from "~icons/carbon/arrow-up";
 import IconChevronRight from "~icons/carbon/chevron-right";
 import IconRenew from "~icons/carbon/renew";
+import IconLogout from "~icons/carbon/logout";
 import WorkspaceSearch from "@/components/WorkspaceSearch.vue";
+import { useAuthStore } from "@/stores/auth";
 
 const props = defineProps<{
   breadcrumbs: string[];
@@ -20,11 +22,17 @@ const emit = defineEmits<{
 
 const search = defineModel<string>({ default: "" });
 const router = useRouter();
+const auth = useAuthStore();
 
 const goUp = () => {
   if (props.parentUrl) {
     router.push(props.parentUrl);
   }
+};
+
+const handleLogout = () => {
+  auth.logout();
+  router.push('/auth/login');
 };
 </script>
 
@@ -68,25 +76,53 @@ const goUp = () => {
       </span>
     </nav>
 
-    <WorkspaceSearch
-      v-model="search"
-      class="workspace-search"
-      :tags="tags"
-      :users="users"
-    />
+    <div class="header-right">
+      <WorkspaceSearch
+        v-model="search"
+        class="workspace-search"
+        :tags="tags"
+        :users="users"
+      />
+      <div v-if="auth.user" class="user-profile">
+        <span class="user-name">{{ auth.user.display_name || auth.user.username }}</span>
+        <BButton variant="light" size="sm" @click="handleLogout" title="Выйти">
+          <IconLogout />
+        </BButton>
+      </div>
+    </div>
   </header>
 </template>
 
 <style scoped>
 .workspace-header {
   display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) minmax(220px, 360px);
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 14px;
   min-height: 72px;
   padding: 14px 18px;
   border-bottom: 1px solid #dcdcdc;
   background: #ffffff;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px solid #dcdcdc;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
 }
 
 .navigation-buttons {

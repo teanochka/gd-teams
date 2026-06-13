@@ -25,10 +25,13 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 
 ## Project Setup
 
-### 1. База данных (PostgreSQL)
-Для работы бэкенда необходим запущенный сервер PostgreSQL на `localhost:5432`.
-- **Вариант А (Docker):** Выполните `docker-compose up -d` в корне проекта.
-- **Вариант Б (Локально):** Установите PostgreSQL и создайте базу данных `gd_teams`.
+### 1. Настройка базы данных и перенос данных
+Для работы проекта необходим запущенный сервер PostgreSQL на `localhost:5432`.
+
+Скрипт автоматической настройки (создаст БД, применит миграции и перенесет данные из `db.json`):
+```sh
+python setup_db.py
+```
 
 ### 2. Установка зависимостей
 ```sh
@@ -46,17 +49,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Настройка базы данных и перенос данных
-```sh
-cd backend
-# Применение миграций Django
-python manage.py migrate
-
-# (Опционально) Перенос существующих данных из db.json
-python migrate_data.py
-```
-
-### 4. Запуск приложения
+### 3. Запуск приложения
 ```sh
 # Из корня проекта
 npm run dev:all

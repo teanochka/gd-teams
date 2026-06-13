@@ -61,9 +61,7 @@ export function useProjectsPage() {
   })
 
   onMounted(() => {
-    if (!projects.value.length) {
-      void projectsStore.loadProjects()
-    }
+    void projectsStore.loadProjects()
   })
 
   return {
