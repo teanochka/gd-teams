@@ -1,4 +1,4 @@
-import type { CanvasData } from './canvas'
+import type { CanvasData } from "./canvas";
 
 export type {
   CanvasConnection,
@@ -6,258 +6,258 @@ export type {
   CanvasElement,
   CanvasElementId,
   CanvasHandlePosition,
-} from './canvas'
+} from "./canvas";
 
-export type ProjectId = string
-export type NodeId = string
-export type TeamId = string
-export type UserId = string
+export type ProjectId = string;
+export type NodeId = string;
+export type TeamId = string;
+export type UserId = string;
 
-export type NodeType = 'folder' | 'document' | 'canvas' | 'template'
-export type SortField = 'title' | 'createdAt' | 'updatedAt' | 'type'
-export type SortOrder = 'asc' | 'desc'
-export type ViewMode = 'grid' | 'list'
+export type NodeType = "folder" | "document" | "canvas" | "template";
+export type SortField = "title" | "createdAt" | "updatedAt" | "type";
+export type SortOrder = "asc" | "desc";
+export type ViewMode = "grid" | "list";
 
 export type LotionTableData = {
-  rows: string[][]
-  columnWidths: number[]
-  rowHeights: number[]
-}
+  rows: string[][];
+  columnWidths: number[];
+  rowHeights: number[];
+};
 
 export type LotionBlockDetails = Record<string, unknown> & {
-  value?: unknown
-  table?: LotionTableData
-  imageUrl?: string
-  imageWidthPercent?: number
-}
+  value?: unknown;
+  table?: LotionTableData;
+  imageUrl?: string;
+  imageWidthPercent?: number;
+};
 
 export type LotionBlock = {
-  id: string
-  type: string
-  details: LotionBlockDetails
-}
+  id: string;
+  type: string;
+  details: LotionBlockDetails;
+};
 
 export type DocumentCard = {
-  blockIds: string[]
-}
+  blockIds: string[];
+};
 
 export type LotionPage = {
-  name: string
-  coverUrl?: string
-  blocks: LotionBlock[]
-  card?: DocumentCard
-}
+  name: string;
+  coverUrl?: string;
+  blocks: LotionBlock[];
+  card?: DocumentCard;
+};
 
 export type Team = {
-  id: TeamId
-  name: string
-}
+  id: TeamId;
+  name: string;
+};
 
 export type Project = {
-  id: ProjectId
-  title: string
-  description: string
-  createdAt: string
-  updatedAt: string
-  owner: string
-  teamId: TeamId
-  teamName: string
-  isFavorite: boolean
-  isDeleted: boolean
-  filesCount: number
-  imageUrl: string
-  rootFolderId: NodeId
-}
+  id: ProjectId;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  owner: string;
+  teamId: TeamId;
+  teamName: string;
+  isFavorite: boolean;
+  isDeleted: boolean;
+  filesCount: number;
+  imageUrl: string;
+  rootFolderId: NodeId;
+};
 
 export type ProjectRole = {
-  id: string
-  name: string
-  color: string | Record<string, any>
-  permissions: Record<string, any>
-  isUserSpecific: boolean
-}
+  id: string;
+  name: string;
+  color: string | Record<string, any>;
+  permissions: Record<string, any>;
+  isUserSpecific: boolean;
+};
 
 export type User = {
-  id: UserId
-  username: string
-  display_name: string
-  email: string
-}
+  id: UserId;
+  username: string;
+  display_name: string;
+  email: string;
+};
 
-export type AccessLevel = 'admin' | 'moderator' | 'user'
+export type AccessLevel = "admin" | "moderator" | "user";
 
 export type ProjectMember = {
-  id: string
-  user: User
-  roles: ProjectRole[]
-  isOwner: boolean
-  accessLevel: AccessLevel
-}
+  id: string;
+  user: User;
+  roles: ProjectRole[];
+  isOwner: boolean;
+  accessLevel: AccessLevel;
+};
 
 export type Tag = {
-  id: string
-  projectId: ProjectId
-  name: string
-  color: string
-}
+  id: string;
+  projectId: ProjectId;
+  name: string;
+  color: string;
+};
 
 export type Node = {
-  id: NodeId
-  projectId: ProjectId
-  parentId: NodeId | null
-  type: NodeType
-  title: string
-  icon?: string
-  tags: Tag[]
-  isFavorite: boolean
-  isDeleted: boolean
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
-}
+  id: NodeId;
+  projectId: ProjectId;
+  parentId: NodeId | null;
+  type: NodeType;
+  title: string;
+  icon?: string;
+  tags: Tag[];
+  isFavorite: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+};
 
 export type DocumentPage = {
-  id: NodeId
-  nodeId: NodeId
-  projectId: ProjectId
-  page: LotionPage
-  createdAt: string
-  updatedAt: string
-}
+  id: NodeId;
+  nodeId: NodeId;
+  projectId: ProjectId;
+  page: LotionPage;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type CanvasPage = {
-  id: string
-  nodeId: NodeId
-  projectId: ProjectId
-  data: CanvasData
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  nodeId: NodeId;
+  projectId: ProjectId;
+  data: CanvasData;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type PendingNodeDraft = {
-  id: NodeId
-  projectId: ProjectId
-  parentId: NodeId
-  type: NodeType
-  title: string
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
-}
+  id: NodeId;
+  projectId: ProjectId;
+  parentId: NodeId;
+  type: NodeType;
+  title: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+};
 
 export type WorkspaceItem = {
-  id: NodeId
-  name: string
-  type: NodeType
-  tags: string[]
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
-  isFavorite: boolean
-  isDraft?: boolean
-}
+  id: NodeId;
+  name: string;
+  type: NodeType;
+  tags: string[];
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  isFavorite: boolean;
+  isDraft?: boolean;
+};
 
 export type FolderTreeNode = {
-  id: NodeId
-  name: string
-  children?: FolderTreeNode[]
-}
+  id: NodeId;
+  name: string;
+  children?: FolderTreeNode[];
+};
 
 export type Breadcrumb = {
-  id: NodeId
-  title: string
-}
+  id: NodeId;
+  title: string;
+};
 
 export type FolderContentResponse = {
-  project: Project
-  currentFolder: Node
-  breadcrumbs: Breadcrumb[]
-  nodes: Node[]
-  foldersTree: FolderTreeNode[]
-  tags: Tag[]
-}
+  project: Project;
+  currentFolder: Node;
+  breadcrumbs: Breadcrumb[];
+  nodes: Node[];
+  foldersTree: FolderTreeNode[];
+  tags: Tag[];
+};
 
 export type ClipboardState = {
-  type: 'copy' | 'cut'
-  nodeIds: NodeId[]
-}
+  type: "copy" | "cut";
+  nodeIds: NodeId[];
+};
 
 export type CreateNodePayload = {
-  projectId: ProjectId
-  parentId: NodeId
-  type: NodeType
-  title: string
-  icon?: string
-  tagIds?: string[]
-}
+  projectId: ProjectId;
+  parentId: NodeId;
+  type: NodeType;
+  title: string;
+  icon?: string;
+  tagIds?: string[];
+};
 
 export type CreateProjectPayload = {
-  title: string
-  description: string
-  imageUrl?: string
-  teamId?: TeamId
-  newTeamName?: string
-}
+  title: string;
+  description: string;
+  imageUrl?: string;
+  teamId?: TeamId;
+  newTeamName?: string;
+};
 
 export type UpdateProjectPayload = {
-  title: string
-  description: string
-  imageUrl?: string
-  teamId?: TeamId
-  newTeamName?: string
-}
+  title: string;
+  description: string;
+  imageUrl?: string;
+  teamId?: TeamId;
+  newTeamName?: string;
+};
 
-export type KanbanPriority = 'Low' | 'Medium' | 'High' | 'Critical'
-export type KanbanTaskType = 'Task' | 'Bug' | 'Story' | 'Epic'
-export type KanbanStatus = 'to-do' | 'in-progress' | 'in-review' | 'done'
+export type KanbanPriority = "Low" | "Medium" | "High" | "Critical";
+export type KanbanTaskType = "Task" | "Bug" | "Story" | "Epic";
+export type KanbanStatus = "to-do" | "in-progress" | "in-review" | "done";
 
 export type KanbanMember = {
-  id: UserId
-  name: string
-  role: string
-  color: string
-}
+  id: UserId;
+  name: string;
+  role: string;
+  color: string;
+};
 
 export type KanbanTask = {
-  id: string
-  key: string
-  title: string
-  description: string
-  assigneeId: UserId
-  authorId: UserId
-  priority: KanbanPriority
-  parentId: string | null
-  dueDate: string | null
-  startDate: string | null
-  labels: string[]
-  role: string | null
-  type: KanbanTaskType
-  status: KanbanStatus
-  subtasks: string[]
-  linkedTasks: string[]
-  coverColor?: string
-}
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  assigneeId: UserId;
+  authorId: UserId;
+  priority: KanbanPriority;
+  parentId: string | null;
+  dueDate: string | null;
+  startDate: string | null;
+  labels: string[];
+  role: string | null;
+  type: KanbanTaskType;
+  status: KanbanStatus;
+  subtasks: string[];
+  linkedTasks: string[];
+  coverColor?: string;
+};
 
 export type KanbanColumn = {
-  id: string
-  title: string
-  status: KanbanStatus | string
-  tasks: KanbanTask[]
-}
+  id: string;
+  title: string;
+  status: KanbanStatus | string;
+  tasks: KanbanTask[];
+};
 
 export type KanbanBoard = {
-  id: string
-  projectId: ProjectId
-  members: KanbanMember[]
-  roles: string[]
-  taskTypes: KanbanTaskType[]
-  priorities: KanbanPriority[]
-  statuses: KanbanStatus[]
-  tags: string[]
-  columns: KanbanColumn[]
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  projectId: ProjectId;
+  members: KanbanMember[];
+  roles: string[];
+  taskTypes: KanbanTaskType[];
+  priorities: KanbanPriority[];
+  statuses: KanbanStatus[];
+  tags: string[];
+  columns: KanbanColumn[];
+  createdAt: string;
+  updatedAt: string;
+};

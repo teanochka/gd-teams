@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { getTextStyle } from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+import { computed, ref } from "vue";
+import { getTextStyle } from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:element', element: CanvasElement): void
-}>()
+  (event: "update:element", element: CanvasElement): void;
+}>();
 
-const contentInput = ref<HTMLTextAreaElement | null>(null)
-const notePath = 'M 0,0 L 85,0 L 85,15 L 100,15 L 100,100 L 0,100 Z'
-const fillColor = computed(() => props.element.backgroundColor ?? '#fffacd')
-const strokeColor = computed(() => props.element.borderColor ?? '#6b7280')
-const strokeWidth = computed(() => (props.element.borderWidth ?? 1) * 0.8)
+const contentInput = ref<HTMLTextAreaElement | null>(null);
+const notePath = "M 0,0 L 85,0 L 85,15 L 100,15 L 100,100 L 0,100 Z";
+const fillColor = computed(() => props.element.backgroundColor ?? "#fffacd");
+const strokeColor = computed(() => props.element.borderColor ?? "#6b7280");
+const strokeWidth = computed(() => (props.element.borderWidth ?? 1) * 0.8);
 const textStyle = computed(() => ({
-  ...getTextStyle(props.element, 'left'),
-  fontSize: props.element.fontSize ? `${props.element.fontSize}px` : '14px',
-}))
+  ...getTextStyle(props.element, "left"),
+  fontSize: props.element.fontSize ? `${props.element.fontSize}px` : "14px",
+}));
 
 const onInput = (event: Event) => {
-  emit('update:element', {
+  emit("update:element", {
     ...props.element,
     content: (event.target as HTMLTextAreaElement).value,
-  })
-}
+  });
+};
 </script>
 
 <template>

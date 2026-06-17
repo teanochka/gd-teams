@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import IconAdd from '~icons/carbon/add'
-import IconNotification from '~icons/carbon/notification'
-import IconSearch from '~icons/carbon/search'
-import IconUserAvatar from '~icons/carbon/user-avatar'
+import { computed } from "vue";
+import IconAdd from "~icons/carbon/add";
+import IconNotification from "~icons/carbon/notification";
+import IconSearch from "~icons/carbon/search";
+import IconUserAvatar from "~icons/carbon/user-avatar";
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: string
-    userName?: string
-    notificationCount?: number
+    modelValue?: string;
+    userName?: string;
+    notificationCount?: number;
   }>(),
   {
-    modelValue: '',
-    userName: 'Анна Командова',
+    modelValue: "",
+    userName: "Анна Командова",
     notificationCount: 3,
   },
-)
+);
 
 const emit = defineEmits<{
-  (event: 'update:modelValue', value: string): void
-  (event: 'create'): void
-}>()
+  (event: "update:modelValue", value: string): void;
+  (event: "create"): void;
+}>();
 
 const searchValue = computed({
   get: () => props.modelValue,
-  set: (value: string) => emit('update:modelValue', value),
-})
+  set: (value: string) => emit("update:modelValue", value),
+});
 </script>
 
 <template>
@@ -54,9 +54,15 @@ const searchValue = computed({
         />
       </BInputGroup>
 
-      <BButton variant="light" class="notification-button" aria-label="Уведомления">
+      <BButton
+        variant="light"
+        class="notification-button"
+        aria-label="Уведомления"
+      >
         <IconNotification aria-hidden="true" />
-        <span v-if="notificationCount" class="notification-count">{{ notificationCount }}</span>
+        <span v-if="notificationCount" class="notification-count">{{
+          notificationCount
+        }}</span>
       </BButton>
 
       <BButton variant="dark" class="create-button" @click="emit('create')">

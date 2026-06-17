@@ -182,7 +182,9 @@ function selectCell(row: number, column: number) {
 }
 
 function isColumnSelected(column: number) {
-  return selectedAxis.value?.type === "column" && selectedAxis.value.index === column;
+  return (
+    selectedAxis.value?.type === "column" && selectedAxis.value.index === column
+  );
 }
 
 function isRowSelected(row: number) {

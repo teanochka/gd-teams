@@ -1,41 +1,49 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import Draggable from 'vuedraggable'
-import IconAdd from '~icons/carbon/add'
-import IconCheckmark from '~icons/carbon/checkmark'
-import IconChevronDown from '~icons/carbon/chevron-down'
-import IconClose from '~icons/carbon/close'
-import IconFilter from '~icons/carbon/filter'
-import IconSearch from '~icons/carbon/search'
-import IconUserAvatarFilled from '~icons/carbon/user-avatar-filled'
-import KanbanCard from '@/components/kanban/KanbanCard.vue'
-import { useKanbanStore } from '@/stores/kanban'
-import type { KanbanColumn, KanbanStatus, KanbanTask } from '@/types/domain'
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import Draggable from "vuedraggable";
+import IconAdd from "~icons/carbon/add";
+import IconCheckmark from "~icons/carbon/checkmark";
+import IconChevronDown from "~icons/carbon/chevron-down";
+import IconClose from "~icons/carbon/close";
+import IconFilter from "~icons/carbon/filter";
+import IconSearch from "~icons/carbon/search";
+import IconUserAvatarFilled from "~icons/carbon/user-avatar-filled";
+import KanbanCard from "@/components/kanban/KanbanCard.vue";
+import { useKanbanStore } from "@/stores/kanban";
+import type { KanbanColumn, KanbanStatus, KanbanTask } from "@/types/domain";
 
-type FilterKey = 'assignee' | 'role' | 'type' | 'tag' | 'status' | 'priority'
-type DetailFieldKey = 'assigneeId' | 'priority' | 'parentId' | 'dueDate' | 'labels' | 'role' | 'startDate' | 'authorId'
+type FilterKey = "assignee" | "role" | "type" | "tag" | "status" | "priority";
+type DetailFieldKey =
+  | "assigneeId"
+  | "priority"
+  | "parentId"
+  | "dueDate"
+  | "labels"
+  | "role"
+  | "startDate"
+  | "authorId";
 
-const route = useRoute()
-const kanbanStore = useKanbanStore()
+const route = useRoute();
+const kanbanStore = useKanbanStore();
 
 const coverColors = [
-  { name: 'Мята', value: '#51cf66' },
-  { name: 'Лайм', value: '#94d82d' },
-  { name: 'Небо', value: '#4dabf7' },
-  { name: 'Индиго', value: '#5c7cfa' },
-  { name: 'Сирень', value: '#9775fa' },
-  { name: 'Роза', value: '#f783ac' },
-  { name: 'Коралл', value: '#ff8787' },
-  { name: 'Мандарин', value: '#ffa94d' },
-  { name: 'Графит', value: '#495057' },
-  { name: 'Сталь', value: '#adb5bd' },
-]
+  { name: "Мята", value: "#51cf66" },
+  { name: "Лайм", value: "#94d82d" },
+  { name: "Небо", value: "#4dabf7" },
+  { name: "Индиго", value: "#5c7cfa" },
+  { name: "Сирень", value: "#9775fa" },
+  { name: "Роза", value: "#f783ac" },
+  { name: "Коралл", value: "#ff8787" },
+  { name: "Мандарин", value: "#ffa94d" },
+  { name: "Графит", value: "#495057" },
+  { name: "Сталь", value: "#adb5bd" },
+];
 
-const searchQuery = ref('')
-const selectedTaskId = ref<string | null>(null)
-const isAddingColumn = ref(false)
-const newColumnTitle = ref('')
+const searchQuery = ref("");
+const selectedTaskId = ref<string | null>(null);
+const isAddingColumn = ref(false);
+const newColumnTitle = ref("");
 const activeFilters = ref<Record<FilterKey, string[]>>({
   assignee: [],
   role: [],
@@ -43,64 +51,105 @@ const activeFilters = ref<Record<FilterKey, string[]>>({
   tag: [],
   status: [],
   priority: [],
-})
+});
 
 const projectId = computed(() => {
-  const value = route.params.projectId
+  const value = route.params.projectId;
 
-  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
-})
+  return Array.isArray(value) ? String(value[0] ?? "") : String(value ?? "");
+});
 
 const board = computed(() => {
-  return projectId.value ? kanbanStore.boardsByProjectId[projectId.value] ?? null : null
-})
+  return projectId.value
+    ? (kanbanStore.boardsByProjectId[projectId.value] ?? null)
+    : null;
+});
 
 const columns = computed<KanbanColumn[]>({
   get: () => board.value?.columns ?? [],
   set: (nextColumns) => {
     if (projectId.value) {
-      kanbanStore.replaceColumns(projectId.value, nextColumns)
+      kanbanStore.replaceColumns(projectId.value, nextColumns);
     }
   },
-})
+});
 
-const members = computed(() => board.value?.members ?? [])
-const roles = computed(() => board.value?.roles ?? [])
-const taskTypes = computed(() => board.value?.taskTypes ?? [])
-const priorities = computed(() => board.value?.priorities ?? [])
-const statuses = computed(() => board.value?.statuses ?? [])
-const tags = computed(() => board.value?.tags ?? [])
+const members = computed(() => board.value?.members ?? []);
+const roles = computed(() => board.value?.roles ?? []);
+const taskTypes = computed(() => board.value?.taskTypes ?? []);
+const priorities = computed(() => board.value?.priorities ?? []);
+const statuses = computed(() => board.value?.statuses ?? []);
+const tags = computed(() => board.value?.tags ?? []);
 const isLoading = computed(() => {
-  return projectId.value ? Boolean(kanbanStore.isLoadingByProjectId[projectId.value]) : false
-})
+  return projectId.value
+    ? Boolean(kanbanStore.isLoadingByProjectId[projectId.value])
+    : false;
+});
 const isSaving = computed(() => {
-  return projectId.value ? Boolean(kanbanStore.isSavingByProjectId[projectId.value]) : false
-})
+  return projectId.value
+    ? Boolean(kanbanStore.isSavingByProjectId[projectId.value])
+    : false;
+});
 const isDirty = computed(() => {
-  return projectId.value ? Boolean(kanbanStore.isDirtyByProjectId[projectId.value]) : false
-})
+  return projectId.value
+    ? Boolean(kanbanStore.isDirtyByProjectId[projectId.value])
+    : false;
+});
 const error = computed(() => {
-  return projectId.value ? kanbanStore.errorByProjectId[projectId.value] : null
-})
+  return projectId.value ? kanbanStore.errorByProjectId[projectId.value] : null;
+});
 
 const filterGroups = computed(() => [
-  { key: 'assignee' as const, title: 'Исполнитель', options: members.value.map((member) => ({ label: member.name, value: member.id })) },
-  { key: 'role' as const, title: 'Роль', options: roles.value.map((role) => ({ label: role, value: role })) },
-  { key: 'type' as const, title: 'Тип задачи', options: taskTypes.value.map((type) => ({ label: type, value: type })) },
-  { key: 'tag' as const, title: 'Тэги', options: tags.value.map((tag) => ({ label: tag, value: tag })) },
   {
-    key: 'status' as const,
-    title: 'Статус',
-    options: statuses.value.map((status) => ({ label: getStatusLabel(status), value: status })),
+    key: "assignee" as const,
+    title: "Исполнитель",
+    options: members.value.map((member) => ({
+      label: member.name,
+      value: member.id,
+    })),
   },
-  { key: 'priority' as const, title: 'Приоритет', options: priorities.value.map((priority) => ({ label: priority, value: priority })) },
-])
+  {
+    key: "role" as const,
+    title: "Роль",
+    options: roles.value.map((role) => ({ label: role, value: role })),
+  },
+  {
+    key: "type" as const,
+    title: "Тип задачи",
+    options: taskTypes.value.map((type) => ({ label: type, value: type })),
+  },
+  {
+    key: "tag" as const,
+    title: "Тэги",
+    options: tags.value.map((tag) => ({ label: tag, value: tag })),
+  },
+  {
+    key: "status" as const,
+    title: "Статус",
+    options: statuses.value.map((status) => ({
+      label: getStatusLabel(status),
+      value: status,
+    })),
+  },
+  {
+    key: "priority" as const,
+    title: "Приоритет",
+    options: priorities.value.map((priority) => ({
+      label: priority,
+      value: priority,
+    })),
+  },
+]);
 
-const allTasks = computed(() => columns.value.flatMap((column) => column.tasks))
-const selectedTask = computed(() => allTasks.value.find((task) => task.id === selectedTaskId.value) ?? null)
+const allTasks = computed(() =>
+  columns.value.flatMap((column) => column.tasks),
+);
+const selectedTask = computed(
+  () => allTasks.value.find((task) => task.id === selectedTaskId.value) ?? null,
+);
 
 const visibleColumns = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
+  const query = searchQuery.value.trim().toLowerCase();
 
   return columns.value.map((column) => ({
     ...column,
@@ -109,239 +158,307 @@ const visibleColumns = computed(() => {
         !query ||
         task.title.toLowerCase().includes(query) ||
         task.key.toLowerCase().includes(query) ||
-        task.description.toLowerCase().includes(query)
+        task.description.toLowerCase().includes(query);
 
       const matchesFilters =
-        matchesFilter('assignee', task.assigneeId) &&
-        matchesFilter('role', task.role ?? '') &&
-        matchesFilter('type', task.type) &&
-        matchesFilter('status', task.status) &&
-        matchesFilter('priority', task.priority) &&
-        (!activeFilters.value.tag.length || task.labels.some((label) => activeFilters.value.tag.includes(label)))
+        matchesFilter("assignee", task.assigneeId) &&
+        matchesFilter("role", task.role ?? "") &&
+        matchesFilter("type", task.type) &&
+        matchesFilter("status", task.status) &&
+        matchesFilter("priority", task.priority) &&
+        (!activeFilters.value.tag.length ||
+          task.labels.some((label) => activeFilters.value.tag.includes(label)));
 
-      return matchesQuery && matchesFilters
+      return matchesQuery && matchesFilters;
     }),
-  }))
-})
+  }));
+});
 
 const activeFilterCount = computed(() => {
-  return Object.values(activeFilters.value).reduce((count, values) => count + values.length, 0)
-})
+  return Object.values(activeFilters.value).reduce(
+    (count, values) => count + values.length,
+    0,
+  );
+});
 
 const selectedTaskAssignee = computed(() => {
-  return selectedTask.value ? getMember(selectedTask.value.assigneeId) : null
-})
+  return selectedTask.value ? getMember(selectedTask.value.assigneeId) : null;
+});
 
 const detailFields = computed(() => {
-  const task = selectedTask.value
+  const task = selectedTask.value;
 
   if (!task) {
-    return []
+    return [];
   }
 
   return [
-    { key: 'assigneeId' as const, label: 'Исполнитель', value: getMember(task.assigneeId)?.name ?? 'Нет', options: members.value.map((member) => ({ label: member.name, value: member.id })) },
-    { key: 'priority' as const, label: 'Приоритет', value: task.priority, options: priorities.value.map((priority) => ({ label: priority, value: priority })) },
-    { key: 'parentId' as const, label: 'Родитель', value: task.parentId ?? 'Нет', options: [{ label: 'Нет', value: '' }, ...allTasks.value.filter((item) => item.id !== task.id).map((item) => ({ label: item.key, value: item.key }))] },
-    { key: 'dueDate' as const, label: 'Срок исполнения', value: task.dueDate ?? 'Нет', options: ['Нет', 'Сегодня', 'Завтра', '17 мая', '20 мая'].map((value) => ({ label: value, value })) },
-    { key: 'labels' as const, label: 'Метки', value: task.labels.length ? task.labels.join(', ') : 'Нет', options: tags.value.map((tag) => ({ label: tag, value: tag })) },
-    { key: 'role' as const, label: 'Роль', value: task.role ?? 'Нет', options: roles.value.map((role) => ({ label: role, value: role })) },
-    { key: 'startDate' as const, label: 'Start date', value: task.startDate ?? 'Нет', options: ['Нет', '6 мая', '10 мая', 'Сегодня', 'Завтра'].map((value) => ({ label: value, value })) },
-    { key: 'authorId' as const, label: 'Автор', value: getMember(task.authorId)?.name ?? 'Нет', options: members.value.map((member) => ({ label: member.name, value: member.id })) },
-  ]
-})
+    {
+      key: "assigneeId" as const,
+      label: "Исполнитель",
+      value: getMember(task.assigneeId)?.name ?? "Нет",
+      options: members.value.map((member) => ({
+        label: member.name,
+        value: member.id,
+      })),
+    },
+    {
+      key: "priority" as const,
+      label: "Приоритет",
+      value: task.priority,
+      options: priorities.value.map((priority) => ({
+        label: priority,
+        value: priority,
+      })),
+    },
+    {
+      key: "parentId" as const,
+      label: "Родитель",
+      value: task.parentId ?? "Нет",
+      options: [
+        { label: "Нет", value: "" },
+        ...allTasks.value
+          .filter((item) => item.id !== task.id)
+          .map((item) => ({ label: item.key, value: item.key })),
+      ],
+    },
+    {
+      key: "dueDate" as const,
+      label: "Срок исполнения",
+      value: task.dueDate ?? "Нет",
+      options: ["Нет", "Сегодня", "Завтра", "17 мая", "20 мая"].map(
+        (value) => ({ label: value, value }),
+      ),
+    },
+    {
+      key: "labels" as const,
+      label: "Метки",
+      value: task.labels.length ? task.labels.join(", ") : "Нет",
+      options: tags.value.map((tag) => ({ label: tag, value: tag })),
+    },
+    {
+      key: "role" as const,
+      label: "Роль",
+      value: task.role ?? "Нет",
+      options: roles.value.map((role) => ({ label: role, value: role })),
+    },
+    {
+      key: "startDate" as const,
+      label: "Start date",
+      value: task.startDate ?? "Нет",
+      options: ["Нет", "6 мая", "10 мая", "Сегодня", "Завтра"].map((value) => ({
+        label: value,
+        value,
+      })),
+    },
+    {
+      key: "authorId" as const,
+      label: "Автор",
+      value: getMember(task.authorId)?.name ?? "Нет",
+      options: members.value.map((member) => ({
+        label: member.name,
+        value: member.id,
+      })),
+    },
+  ];
+});
 
 function getMember(memberId: string) {
-  return members.value.find((member) => member.id === memberId) ?? null
+  return members.value.find((member) => member.id === memberId) ?? null;
 }
 
 function getStatusLabel(status: string) {
   const labels: Record<string, string> = {
-    'to-do': 'To do',
-    'in-progress': 'In progress',
-    'in-review': 'In review',
-    done: 'Done',
-  }
+    "to-do": "To do",
+    "in-progress": "In progress",
+    "in-review": "In review",
+    done: "Done",
+  };
 
-  return labels[status] ?? status
+  return labels[status] ?? status;
 }
 
 function matchesFilter(key: FilterKey, value: string) {
-  return !activeFilters.value[key].length || activeFilters.value[key].includes(value)
+  return (
+    !activeFilters.value[key].length || activeFilters.value[key].includes(value)
+  );
 }
 
 function toggleFilter(key: FilterKey, value: string) {
-  const values = activeFilters.value[key]
-  const index = values.indexOf(value)
+  const values = activeFilters.value[key];
+  const index = values.indexOf(value);
 
   if (index >= 0) {
-    values.splice(index, 1)
-    return
+    values.splice(index, 1);
+    return;
   }
 
-  values.push(value)
+  values.push(value);
 }
 
 function clearFilters() {
   Object.keys(activeFilters.value).forEach((key) => {
-    activeFilters.value[key as FilterKey] = []
-  })
+    activeFilters.value[key as FilterKey] = [];
+  });
 }
 
 function startAddColumn() {
-  isAddingColumn.value = true
-  newColumnTitle.value = ''
+  isAddingColumn.value = true;
+  newColumnTitle.value = "";
 }
 
 function finishAddColumn() {
-  const title = newColumnTitle.value.trim()
+  const title = newColumnTitle.value.trim();
 
   if (!title) {
-    cancelAddColumn()
-    return
+    cancelAddColumn();
+    return;
   }
 
   if (projectId.value) {
-    kanbanStore.addColumn(projectId.value, title)
+    kanbanStore.addColumn(projectId.value, title);
   }
 
-  cancelAddColumn()
+  cancelAddColumn();
 }
 
 function cancelAddColumn() {
-  isAddingColumn.value = false
-  newColumnTitle.value = ''
+  isAddingColumn.value = false;
+  newColumnTitle.value = "";
 }
 
 function createTask(columnId: string) {
   if (projectId.value) {
-    kanbanStore.createTask(projectId.value, columnId)
+    kanbanStore.createTask(projectId.value, columnId);
   }
 }
 
 function syncStatuses() {
   if (projectId.value) {
-    kanbanStore.scheduleSave(projectId.value)
+    kanbanStore.scheduleSave(projectId.value);
   }
 }
 
 function renameTask(taskId: string, title: string) {
   if (projectId.value) {
-    kanbanStore.renameTask(projectId.value, taskId, title)
+    kanbanStore.renameTask(projectId.value, taskId, title);
   }
 }
 
 function deleteTask(taskId: string) {
   if (projectId.value) {
-    kanbanStore.deleteTask(projectId.value, taskId)
+    kanbanStore.deleteTask(projectId.value, taskId);
   }
 
   if (selectedTaskId.value === taskId) {
-    selectedTaskId.value = null
+    selectedTaskId.value = null;
   }
 }
 
 function copyTaskLink(taskId: string) {
-  const task = allTasks.value.find((item) => item.id === taskId)
-  const link = `${window.location.origin}${window.location.pathname}#${task?.key ?? taskId}`
+  const task = allTasks.value.find((item) => item.id === taskId);
+  const link = `${window.location.origin}${window.location.pathname}#${task?.key ?? taskId}`;
 
-  void navigator.clipboard?.writeText(link)
+  void navigator.clipboard?.writeText(link);
 }
 
 function setTaskCover(taskId: string, color: string) {
   if (projectId.value) {
-    kanbanStore.setTaskCover(projectId.value, taskId, color)
+    kanbanStore.setTaskCover(projectId.value, taskId, color);
   }
 }
 
 function selectDetailValue(field: DetailFieldKey, value: string) {
-  const task = selectedTask.value
+  const task = selectedTask.value;
 
   if (!task) {
-    return
+    return;
   }
 
-  if (field === 'labels') {
-    const index = task.labels.indexOf(value)
-    const nextLabels = [...task.labels]
+  if (field === "labels") {
+    const index = task.labels.indexOf(value);
+    const nextLabels = [...task.labels];
 
     if (index >= 0) {
-      nextLabels.splice(index, 1)
-      updateSelectedTaskField('labels', nextLabels)
-      return
+      nextLabels.splice(index, 1);
+      updateSelectedTaskField("labels", nextLabels);
+      return;
     }
 
-    nextLabels.push(value)
-    updateSelectedTaskField('labels', nextLabels)
-    return
+    nextLabels.push(value);
+    updateSelectedTaskField("labels", nextLabels);
+    return;
   }
 
-  if (field === 'parentId') {
-    updateSelectedTaskField('parentId', value || null)
-    return
+  if (field === "parentId") {
+    updateSelectedTaskField("parentId", value || null);
+    return;
   }
 
-  if (field === 'dueDate' || field === 'startDate') {
-    updateSelectedTaskField(field, value === 'Нет' ? null : value)
-    return
+  if (field === "dueDate" || field === "startDate") {
+    updateSelectedTaskField(field, value === "Нет" ? null : value);
+    return;
   }
 
-  updateSelectedTaskField(field, value)
+  updateSelectedTaskField(field, value);
 }
 
 function isDetailOptionSelected(field: DetailFieldKey, value: string) {
-  const task = selectedTask.value
+  const task = selectedTask.value;
 
   if (!task) {
-    return false
+    return false;
   }
 
-  if (field === 'labels') {
-    return task.labels.includes(value)
+  if (field === "labels") {
+    return task.labels.includes(value);
   }
 
-  if (field === 'parentId') {
-    return (task.parentId ?? '') === value
+  if (field === "parentId") {
+    return (task.parentId ?? "") === value;
   }
 
-  if (field === 'dueDate' || field === 'startDate') {
-    return (task[field] ?? 'Нет') === value
+  if (field === "dueDate" || field === "startDate") {
+    return (task[field] ?? "Нет") === value;
   }
 
-  return String(task[field]) === value
+  return String(task[field]) === value;
 }
 
-function updateSelectedTaskField<Key extends keyof KanbanTask>(field: Key, value: KanbanTask[Key]) {
-  const task = selectedTask.value
+function updateSelectedTaskField<Key extends keyof KanbanTask>(
+  field: Key,
+  value: KanbanTask[Key],
+) {
+  const task = selectedTask.value;
 
   if (!projectId.value || !task) {
-    return
+    return;
   }
 
-  kanbanStore.updateTaskField(projectId.value, task.id, field, value)
+  kanbanStore.updateTaskField(projectId.value, task.id, field, value);
 }
 
 watch(
   projectId,
   async (nextProjectId, previousProjectId) => {
     if (previousProjectId) {
-      await kanbanStore.flushBoard(previousProjectId)
+      await kanbanStore.flushBoard(previousProjectId);
     }
 
-    selectedTaskId.value = null
+    selectedTaskId.value = null;
 
     if (nextProjectId) {
-      await kanbanStore.loadBoard(nextProjectId)
+      await kanbanStore.loadBoard(nextProjectId);
     }
   },
   { immediate: true },
-)
+);
 
 onBeforeUnmount(() => {
   if (projectId.value) {
-    void kanbanStore.flushBoard(projectId.value)
+    void kanbanStore.flushBoard(projectId.value);
   }
-})
+});
 </script>
 
 <template>
@@ -349,14 +466,24 @@ onBeforeUnmount(() => {
     <section class="kanban-toolbar" aria-label="Фильтры доски">
       <label class="board-search">
         <IconSearch aria-hidden="true" />
-        <input v-model="searchQuery" type="search" placeholder="Поиск на доске" />
+        <input
+          v-model="searchQuery"
+          type="search"
+          placeholder="Поиск на доске"
+        />
       </label>
 
-      <BDropdown variant="outline-dark" class="filter-dropdown" auto-close="outside">
+      <BDropdown
+        variant="outline-dark"
+        class="filter-dropdown"
+        auto-close="outside"
+      >
         <template #button-content>
           <IconFilter aria-hidden="true" />
           <span>Фильтр</span>
-          <BBadge v-if="activeFilterCount" variant="dark">{{ activeFilterCount }}</BBadge>
+          <BBadge v-if="activeFilterCount" variant="dark">{{
+            activeFilterCount
+          }}</BBadge>
           <IconChevronDown aria-hidden="true" />
         </template>
 
@@ -366,9 +493,17 @@ onBeforeUnmount(() => {
             <button type="button" @click="clearFilters">Сбросить</button>
           </div>
 
-          <div v-for="group in filterGroups" :key="group.key" class="filter-group">
+          <div
+            v-for="group in filterGroups"
+            :key="group.key"
+            class="filter-group"
+          >
             <p>{{ group.title }}</p>
-            <label v-for="option in group.options" :key="option.value" class="filter-option">
+            <label
+              v-for="option in group.options"
+              :key="option.value"
+              class="filter-option"
+            >
               <input
                 type="checkbox"
                 :checked="activeFilters[group.key].includes(option.value)"
@@ -386,7 +521,11 @@ onBeforeUnmount(() => {
       <p>Получаем колонки и карточки из мок-БД.</p>
     </section>
 
-    <section v-else-if="error" class="kanban-state kanban-state-error" aria-live="polite">
+    <section
+      v-else-if="error"
+      class="kanban-state kanban-state-error"
+      aria-live="polite"
+    >
       <h2>Не удалось открыть доску</h2>
       <p>{{ error }}</p>
     </section>
@@ -419,17 +558,41 @@ onBeforeUnmount(() => {
           </template>
         </Draggable>
 
-        <form v-if="isAddingColumn" class="new-column-form" @submit.prevent="finishAddColumn">
-          <input v-model="newColumnTitle" type="text" placeholder="Название колонки" autofocus />
-          <button class="icon-button" type="submit" aria-label="Добавить колонку">
+        <form
+          v-if="isAddingColumn"
+          class="new-column-form"
+          @submit.prevent="finishAddColumn"
+        >
+          <input
+            v-model="newColumnTitle"
+            type="text"
+            placeholder="Название колонки"
+            autofocus
+          />
+          <button
+            class="icon-button"
+            type="submit"
+            aria-label="Добавить колонку"
+          >
             <IconCheckmark aria-hidden="true" />
           </button>
-          <button class="icon-button" type="button" aria-label="Отменить" @click="cancelAddColumn">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Отменить"
+            @click="cancelAddColumn"
+          >
             <IconClose aria-hidden="true" />
           </button>
         </form>
 
-        <button v-else class="add-column-button" type="button" aria-label="Добавить колонку" @click="startAddColumn">
+        <button
+          v-else
+          class="add-column-button"
+          type="button"
+          aria-label="Добавить колонку"
+          @click="startAddColumn"
+        >
           <IconAdd aria-hidden="true" />
         </button>
       </section>
@@ -449,7 +612,11 @@ onBeforeUnmount(() => {
                 <span>{{ column.title }}</span>
                 <BBadge variant="light">{{ column.tasks.length }}</BBadge>
               </button>
-              <button class="create-task-button" type="button" @click="createTask(column.id)">
+              <button
+                class="create-task-button"
+                type="button"
+                @click="createTask(column.id)"
+              >
                 <IconAdd aria-hidden="true" />
                 <span>Создать</span>
               </button>
@@ -467,7 +634,11 @@ onBeforeUnmount(() => {
             >
               <template #item="{ element: task }">
                 <KanbanCard
-                  v-show="visibleColumns.find((item) => item.id === column.id)?.tasks.some((item) => item.id === task.id)"
+                  v-show="
+                    visibleColumns
+                      .find((item) => item.id === column.id)
+                      ?.tasks.some((item) => item.id === task.id)
+                  "
                   :task="task"
                   :assignee="getMember(task.assigneeId)"
                   :done="column.status === 'done'"
@@ -485,9 +656,18 @@ onBeforeUnmount(() => {
       </Draggable>
     </template>
 
-    <div v-if="selectedTask" class="task-details-backdrop" @click.self="selectedTaskId = null">
+    <div
+      v-if="selectedTask"
+      class="task-details-backdrop"
+      @click.self="selectedTaskId = null"
+    >
       <aside class="task-details" aria-label="Карточка задачи">
-        <button class="details-close" type="button" aria-label="Закрыть" @click="selectedTaskId = null">
+        <button
+          class="details-close"
+          type="button"
+          aria-label="Закрыть"
+          @click="selectedTaskId = null"
+        >
           <IconClose aria-hidden="true" />
         </button>
 
@@ -504,7 +684,9 @@ onBeforeUnmount(() => {
           <section class="details-section">
             <h3>Подзадачи</h3>
             <ul v-if="selectedTask.subtasks.length">
-              <li v-for="subtask in selectedTask.subtasks" :key="subtask">{{ subtask }}</li>
+              <li v-for="subtask in selectedTask.subtasks" :key="subtask">
+                {{ subtask }}
+              </li>
             </ul>
             <button type="button">Добавить подзадачу</button>
           </section>
@@ -512,7 +694,9 @@ onBeforeUnmount(() => {
           <section class="details-section">
             <h3>Привязанные задачи</h3>
             <ul v-if="selectedTask.linkedTasks.length">
-              <li v-for="taskKey in selectedTask.linkedTasks" :key="taskKey">{{ taskKey }}</li>
+              <li v-for="taskKey in selectedTask.linkedTasks" :key="taskKey">
+                {{ taskKey }}
+              </li>
             </ul>
             <button type="button">Добавить связанную задачу</button>
           </section>
@@ -527,9 +711,18 @@ onBeforeUnmount(() => {
             {{ selectedTaskAssignee.name }}
           </div>
 
-          <div v-for="field in detailFields" :key="field.key" class="detail-field">
+          <div
+            v-for="field in detailFields"
+            :key="field.key"
+            class="detail-field"
+          >
             <span>{{ field.label }}</span>
-            <BDropdown variant="link" toggle-class="detail-field-toggle" auto-close="outside" no-caret>
+            <BDropdown
+              variant="link"
+              toggle-class="detail-field-toggle"
+              auto-close="outside"
+              no-caret
+            >
               <template #button-content>
                 {{ field.value }}
                 <IconChevronDown aria-hidden="true" />
@@ -539,7 +732,11 @@ onBeforeUnmount(() => {
                 :key="option.value"
                 @click="selectDetailValue(field.key, option.value)"
               >
-                <input type="checkbox" :checked="isDetailOptionSelected(field.key, option.value)" readonly />
+                <input
+                  type="checkbox"
+                  :checked="isDetailOptionSelected(field.key, option.value)"
+                  readonly
+                />
                 <span>{{ option.label }}</span>
               </BDropdownItem>
             </BDropdown>

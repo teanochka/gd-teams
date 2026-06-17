@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { LotionBlock, LotionTableData } from '@/types/domain'
+import { computed } from "vue";
+import type { LotionBlock, LotionTableData } from "@/types/domain";
 
 const props = defineProps<{
-  block: LotionBlock
-}>()
+  block: LotionBlock;
+}>();
 
 const table = computed<LotionTableData | null>(() => {
-  return props.block.details.table ?? null
-})
+  return props.block.details.table ?? null;
+});
 </script>
 
 <template>

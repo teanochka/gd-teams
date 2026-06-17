@@ -1,41 +1,41 @@
 <script setup lang="ts">
-import IconDashboard from '~icons/carbon/dashboard'
-import IconFolder from '~icons/carbon/folder'
-import IconGroup from '~icons/carbon/group'
-import IconStar from '~icons/carbon/star'
-import IconTrashCan from '~icons/carbon/trash-can'
-import IconLogout from '~icons/carbon/logout'
-import IconUser from '~icons/carbon/user'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import IconDashboard from "~icons/carbon/dashboard";
+import IconFolder from "~icons/carbon/folder";
+import IconGroup from "~icons/carbon/group";
+import IconStar from "~icons/carbon/star";
+import IconTrashCan from "~icons/carbon/trash-can";
+import IconLogout from "~icons/carbon/logout";
+import IconUser from "~icons/carbon/user";
+import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 
 type Team = {
-  id: string
-  name: string
-  count: number
-}
+  id: string;
+  name: string;
+  count: number;
+};
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
 withDefaults(
   defineProps<{
-    activeItem: string
-    teams?: Team[]
+    activeItem: string;
+    teams?: Team[];
   }>(),
   {
     teams: () => [],
   },
-)
+);
 
 const emit = defineEmits<{
-  (event: 'select', value: string): void
-}>()
+  (event: "select", value: string): void;
+}>();
 
 const handleLogout = () => {
-  auth.logout()
-  router.push('/auth/login')
-}
+  auth.logout();
+  router.push("/auth/login");
+};
 </script>
 
 <template>

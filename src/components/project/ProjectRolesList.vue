@@ -1,126 +1,143 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import IconAdd from '~icons/carbon/add'
-import IconTrash from '~icons/carbon/trash-can'
-import IconCheckmark from '~icons/carbon/checkmark'
-import { useProjectsStore } from '@/stores/projects'
-import type { ProjectRole } from '@/types/domain'
+import { computed, onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import IconAdd from "~icons/carbon/add";
+import IconTrash from "~icons/carbon/trash-can";
+import IconCheckmark from "~icons/carbon/checkmark";
+import { useProjectsStore } from "@/stores/projects";
+import type { ProjectRole } from "@/types/domain";
 
 const props = defineProps<{
-  projectId: string
-}>()
+  projectId: string;
+}>();
 
-const projectsStore = useProjectsStore()
-const { currentProjectRoles } = storeToRefs(projectsStore)
+const projectsStore = useProjectsStore();
+const { currentProjectRoles } = storeToRefs(projectsStore);
 
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-const isCreating = ref(false)
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+const isCreating = ref(false);
 const newRole = ref({
-  name: '',
-  color: '#666666',
-})
+  name: "",
+  color: "#666666",
+});
 
 const loadData = async () => {
-  if (!props.projectId) return
-  isLoading.value = true
-  error.value = null
+  if (!props.projectId) return;
+  isLoading.value = true;
+  error.value = null;
   try {
-    await projectsStore.loadProjectRoles(props.projectId)
+    await projectsStore.loadProjectRoles(props.projectId);
   } catch (e) {
-    error.value = 'Не удалось загрузить роли'
-    console.error(e)
+    error.value = "Не удалось загрузить роли";
+    console.error(e);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
-onMounted(loadData)
+onMounted(loadData);
 
-watch(() => props.projectId, loadData)
+watch(() => props.projectId, loadData);
 
 const startCreating = () => {
-  isCreating.value = true
-}
+  isCreating.value = true;
+};
 
 const cancelCreating = () => {
-  isCreating.value = false
+  isCreating.value = false;
   newRole.value = {
-    name: '',
-    color: '#666666',
-  }
-}
+    name: "",
+    color: "#666666",
+  };
+};
 
 const createRole = async () => {
-  if (!newRole.value.name) return
-  isLoading.value = true
+  if (!newRole.value.name) return;
+  isLoading.value = true;
   try {
-    const res = await projectsStore.createRole(props.projectId, newRole.value)
+    const res = await projectsStore.createRole(props.projectId, newRole.value);
     if (res) {
-      selectedRoleId.value = res.id
-      cancelCreating()
+      selectedRoleId.value = res.id;
+      cancelCreating();
     } else {
-      error.value = projectsStore.error || 'Не удалось создать роль'
+      error.value = projectsStore.error || "Не удалось создать роль";
     }
   } catch (e) {
-    error.value = 'Ошибка при создании роли'
+    error.value = "Ошибка при создании роли";
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const deleteRole = async (roleId: string) => {
-  if (confirm('Удалить роль? Она будет снята со всех участников.')) {
-    isLoading.value = true
+  if (confirm("Удалить роль? Она будет снята со всех участников.")) {
+    isLoading.value = true;
     try {
-      await projectsStore.deleteRole(props.projectId, roleId)
+      await projectsStore.deleteRole(props.projectId, roleId);
     } catch (e) {
-      error.value = 'Не удалось удалить роль'
+      error.value = "Не удалось удалить роль";
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
-}
+};
 
 const updateRoleColor = async (role: ProjectRole, color: string) => {
-  await projectsStore.updateRole(props.projectId, role.id, { color })
-}
+  await projectsStore.updateRole(props.projectId, role.id, { color });
+};
 
 const getRoleColor = (role: ProjectRole) => {
-  if (typeof role.color === 'string') return role.color
-  return role.color?.hex || '#666'
-}
+  if (typeof role.color === "string") return role.color;
+  return role.color?.hex || "#666";
+};
 
 const colors = [
-  '#666666', '#E02020', '#FA6400', '#F7B500', '#6DD400', 
-  '#0091FF', '#44D7B6', '#32C5FF', '#6236FF', '#B620E0'
-]
+  "#666666",
+  "#E02020",
+  "#FA6400",
+  "#F7B500",
+  "#6DD400",
+  "#0091FF",
+  "#44D7B6",
+  "#32C5FF",
+  "#6236FF",
+  "#B620E0",
+];
 
-const selectedRoleId = ref<string | null>(null)
-const selectedRole = computed(() => 
-  currentProjectRoles.value.find(r => r.id === selectedRoleId.value) || null
-)
+const selectedRoleId = ref<string | null>(null);
+const selectedRole = computed(
+  () =>
+    currentProjectRoles.value.find((r) => r.id === selectedRoleId.value) ||
+    null,
+);
 
-watch(currentProjectRoles, (roles) => {
-  if (roles.length > 0) {
-    if (!selectedRoleId.value || !roles.some(r => r.id === selectedRoleId.value)) {
-      selectedRoleId.value = roles[0].id
+watch(
+  currentProjectRoles,
+  (roles) => {
+    if (roles.length > 0) {
+      if (
+        !selectedRoleId.value ||
+        !roles.some((r) => r.id === selectedRoleId.value)
+      ) {
+        selectedRoleId.value = roles[0].id;
+      }
+    } else {
+      selectedRoleId.value = null;
     }
-  } else {
-    selectedRoleId.value = null
-  }
-}, { immediate: true })
+  },
+  { immediate: true },
+);
 
 const selectRole = (id: string) => {
-  selectedRoleId.value = id
-}
+  selectedRoleId.value = id;
+};
 
 const createDefaultRoles = async () => {
   const defaults = [
     {
-      name: 'Администратор',
-      color: '#E02020',
+      name: "Администратор",
+      color: "#E02020",
       permissions: {
         can_edit: true,
         can_create: true,
@@ -130,8 +147,8 @@ const createDefaultRoles = async () => {
       },
     },
     {
-      name: 'Модератор',
-      color: '#FA6400',
+      name: "Модератор",
+      color: "#FA6400",
       permissions: {
         can_edit: true,
         can_create: true,
@@ -141,8 +158,8 @@ const createDefaultRoles = async () => {
       },
     },
     {
-      name: 'Пользователь',
-      color: '#0091FF',
+      name: "Пользователь",
+      color: "#0091FF",
       permissions: {
         can_edit: true,
         can_create: true,
@@ -151,21 +168,30 @@ const createDefaultRoles = async () => {
         can_manage_roles: false,
       },
     },
-  ]
+  ];
 
   for (const role of defaults) {
-    await projectsStore.createRole(props.projectId, role)
+    await projectsStore.createRole(props.projectId, role);
   }
-}
+};
 </script>
 
 <template>
   <div class="roles-manager-container">
-    <BAlert v-if="error" variant="danger" show dismissible @dismissed="error = null">
+    <BAlert
+      v-if="error"
+      variant="danger"
+      show
+      dismissible
+      @dismissed="error = null"
+    >
       {{ error }}
     </BAlert>
 
-    <div v-if="isLoading && !currentProjectRoles.length" class="text-center p-5 border rounded-3 bg-white">
+    <div
+      v-if="isLoading && !currentProjectRoles.length"
+      class="text-center p-5 border rounded-3 bg-white"
+    >
       <BSpinner label="Загрузка ролей..." />
     </div>
 
@@ -176,92 +202,123 @@ const createDefaultRoles = async () => {
             <h5 class="m-0">Роли</h5>
             <BSpinner v-if="isLoading" size="sm" variant="secondary" />
           </div>
-          <BButton variant="link" class="p-0" title="Добавить роль" @click="startCreating">
+          <BButton
+            variant="link"
+            class="p-0"
+            title="Добавить роль"
+            @click="startCreating"
+          >
             <IconAdd />
           </BButton>
         </div>
 
-      <div class="roles-nav">
-        <div 
-          v-for="role in currentProjectRoles" 
-          :key="role.id"
-          class="role-nav-item"
-          :class="{ active: selectedRoleId === role.id }"
-          @click="selectRole(role.id)"
-        >
-          <span class="role-dot" :style="{ backgroundColor: getRoleColor(role) }"></span>
-          <span class="role-name">{{ role.name }}</span>
-        </div>
-      </div>
-    </aside>
-
-    <main class="role-details">
-      <div v-if="isCreating" class="role-editor-overlay">
-        <div class="role-editor-card">
-          <h4>Новая роль</h4>
-          <div class="form-group mb-3">
-            <label>Название</label>
-            <BFormInput v-model="newRole.name" placeholder="Например, Модератор" />
+        <div class="roles-nav">
+          <div
+            v-for="role in currentProjectRoles"
+            :key="role.id"
+            class="role-nav-item"
+            :class="{ active: selectedRoleId === role.id }"
+            @click="selectRole(role.id)"
+          >
+            <span
+              class="role-dot"
+              :style="{ backgroundColor: getRoleColor(role) }"
+            ></span>
+            <span class="role-name">{{ role.name }}</span>
           </div>
-          <div class="form-group mb-4">
-            <label>Цвет</label>
-            <div class="color-picker">
-              <div 
-                v-for="c in colors" 
-                :key="c" 
-                class="color-option" 
-                :style="{ backgroundColor: c }"
-                :class="{ active: newRole.color === c }"
-                @click="newRole.color = c"
-              ></div>
+        </div>
+      </aside>
+
+      <main class="role-details">
+        <div v-if="isCreating" class="role-editor-overlay">
+          <div class="role-editor-card">
+            <h4>Новая роль</h4>
+            <div class="form-group mb-3">
+              <label>Название</label>
+              <BFormInput
+                v-model="newRole.name"
+                placeholder="Например, Модератор"
+              />
+            </div>
+            <div class="form-group mb-4">
+              <label>Цвет</label>
+              <div class="color-picker">
+                <div
+                  v-for="c in colors"
+                  :key="c"
+                  class="color-option"
+                  :style="{ backgroundColor: c }"
+                  :class="{ active: newRole.color === c }"
+                  @click="newRole.color = c"
+                ></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <BButton variant="light" @click="cancelCreating">Отмена</BButton>
+              <BButton
+                variant="dark"
+                :disabled="!newRole.name"
+                @click="createRole"
+                >Создать роль</BButton
+              >
             </div>
           </div>
-          <div class="form-actions">
-            <BButton variant="light" @click="cancelCreating">Отмена</BButton>
-            <BButton variant="dark" :disabled="!newRole.name" @click="createRole">Создать роль</BButton>
-          </div>
-        </div>
-      </div>
-
-      <template v-else-if="selectedRole">
-        <header class="role-details-header">
-          <div class="role-title-row">
-            <span class="role-dot-lg" :style="{ backgroundColor: getRoleColor(selectedRole) }"></span>
-            <h2>{{ selectedRole.name }}</h2>
-          </div>
-          <BButton variant="outline-danger" size="sm" @click="deleteRole(selectedRole.id)">
-            Удалить роль
-          </BButton>
-        </header>
-
-        <div class="role-info-section mb-4">
-          <p class="text-muted">Это пользовательская роль (тег), которая помогает классифицировать участников команды по их специализации.</p>
         </div>
 
-        <section class="role-settings-section">
-          <h3>Оформление тега</h3>
-          <p class="text-muted small">Выберите цвет, который будет отображаться рядом с именем участника.</p>
-          <div class="color-picker mt-3">
-            <div 
-              v-for="c in colors" 
-              :key="c" 
-              class="color-option" 
-              :style="{ backgroundColor: c }"
-              :class="{ active: getRoleColor(selectedRole) === c }"
-              @click="updateRoleColor(selectedRole!, c)"
-            ></div>
-          </div>
-        </section>
-      </template>
+        <template v-else-if="selectedRole">
+          <header class="role-details-header">
+            <div class="role-title-row">
+              <span
+                class="role-dot-lg"
+                :style="{ backgroundColor: getRoleColor(selectedRole) }"
+              ></span>
+              <h2>{{ selectedRole.name }}</h2>
+            </div>
+            <BButton
+              variant="outline-danger"
+              size="sm"
+              @click="deleteRole(selectedRole.id)"
+            >
+              Удалить роль
+            </BButton>
+          </header>
 
-      <div v-else class="empty-state">
-        <p>Выберите роль (тег) для настройки или создайте новую.</p>
-        <div class="d-flex gap-2">
-          <BButton variant="dark" @click="startCreating">Добавить роль</BButton>
+          <div class="role-info-section mb-4">
+            <p class="text-muted">
+              Это пользовательская роль (тег), которая помогает классифицировать
+              участников команды по их специализации.
+            </p>
+          </div>
+
+          <section class="role-settings-section">
+            <h3>Оформление тега</h3>
+            <p class="text-muted small">
+              Выберите цвет, который будет отображаться рядом с именем
+              участника.
+            </p>
+            <div class="color-picker mt-3">
+              <div
+                v-for="c in colors"
+                :key="c"
+                class="color-option"
+                :style="{ backgroundColor: c }"
+                :class="{ active: getRoleColor(selectedRole) === c }"
+                @click="updateRoleColor(selectedRole!, c)"
+              ></div>
+            </div>
+          </section>
+        </template>
+
+        <div v-else class="empty-state">
+          <p>Выберите роль (тег) для настройки или создайте новую.</p>
+          <div class="d-flex gap-2">
+            <BButton variant="dark" @click="startCreating"
+              >Добавить роль</BButton
+            >
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -362,7 +419,8 @@ const createDefaultRoles = async () => {
   font-weight: 800;
 }
 
-.permissions-section h3, .role-settings-section h3 {
+.permissions-section h3,
+.role-settings-section h3 {
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 4px;
@@ -426,7 +484,7 @@ const createDefaultRoles = async () => {
 .role-editor-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -440,7 +498,7 @@ const createDefaultRoles = async () => {
   background: #fff;
   border: 1px solid #e5e5e5;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 }
 
 .role-editor-card h4 {

@@ -1,34 +1,36 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 import {
   getSvgShadowId,
   hasSvgShadow,
-} from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
-const shadowId = computed(() => getSvgShadowId(props.element, 'square-shadow'))
-const hasShadow = computed(() => hasSvgShadow(props.element))
+const shadowId = computed(() => getSvgShadowId(props.element, "square-shadow"));
+const hasShadow = computed(() => hasSvgShadow(props.element));
 const strokeWidth = computed(() => {
   if (!props.element.borderColor && !props.element.borderWidth) {
-    return 0
+    return 0;
   }
 
-  return props.element.borderWidth ?? 2
-})
-const strokeOffset = computed(() => strokeWidth.value / 2)
-const rectWidth = computed(() => 100 - strokeWidth.value)
-const rectHeight = computed(() => 100 - strokeWidth.value)
+  return props.element.borderWidth ?? 2;
+});
+const strokeOffset = computed(() => strokeWidth.value / 2);
+const rectWidth = computed(() => 100 - strokeWidth.value);
+const rectHeight = computed(() => 100 - strokeWidth.value);
 const borderRadiusViewBox = computed(() => {
   if (!props.element.borderRadius) {
-    return 4
+    return 4;
   }
 
-  return typeof props.element.borderRadius === 'number' ? props.element.borderRadius : 4
-})
+  return typeof props.element.borderRadius === "number"
+    ? props.element.borderRadius
+    : 4;
+});
 </script>
 
 <template>

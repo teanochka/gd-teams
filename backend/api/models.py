@@ -123,6 +123,17 @@ class DocumentPage(models.Model):
     class Meta:
         db_table = 'document_pages'
 
+class CanvasPage(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    node = models.OneToOneField(Node, on_delete=models.CASCADE, related_name='canvas_page', null=True)
+    project_id = models.CharField(max_length=50, null=True, blank=True)
+    data = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'canvas_pages'
+
 class CanvasDraft(models.Model):
     id = models.CharField(primary_key=True, max_length=50, default=generate_id)
     node = models.OneToOneField(Node, on_delete=models.CASCADE, related_name='canvas_draft', null=True)

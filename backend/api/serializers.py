@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Project, Team, Tag, Node, DocumentPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard, Channel, ChatMessage
+from .models import User, Project, Team, Tag, Node, DocumentPage, CanvasPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard, Channel, ChatMessage
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,6 +115,17 @@ class DocumentPageSerializer(serializers.ModelSerializer):
         model = DocumentPage
         fields = ['id', 'nodeId', 'projectId', 'page', 'createdAt', 'updatedAt']
 
+class CanvasPageSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(required=False)
+    nodeId = serializers.PrimaryKeyRelatedField(source='node', queryset=Node.objects.all())
+    projectId = serializers.CharField(source='project_id', required=False, allow_null=True)
+    createdAt = serializers.DateTimeField(source='created_at', required=False, read_only=True)
+    updatedAt = serializers.DateTimeField(source='updated_at', required=False, read_only=True)
+
+    class Meta:
+        model = CanvasPage
+        fields = ['id', 'nodeId', 'projectId', 'data', 'createdAt', 'updatedAt']
+
 class CanvasDraftSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
     nodeId = serializers.PrimaryKeyRelatedField(source='node', queryset=Node.objects.all())
@@ -122,6 +133,7 @@ class CanvasDraftSerializer(serializers.ModelSerializer):
     class Meta:
         model = CanvasDraft
         fields = ['id', 'nodeId', 'elements']
+
 
 class KanbanBoardSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)

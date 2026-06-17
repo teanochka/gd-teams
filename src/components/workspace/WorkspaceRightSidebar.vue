@@ -1,45 +1,47 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import IconCalendar from '~icons/carbon/calendar'
-import IconDocument from '~icons/carbon/document'
-import IconFolder from '~icons/carbon/folder'
-import IconInformation from '~icons/carbon/information'
-import IconPaintBrush from '~icons/carbon/paint-brush'
-import IconTag from '~icons/carbon/tag'
-import IconTemplate from '~icons/carbon/template'
-import IconUserAvatar from '~icons/carbon/user-avatar'
-import { formatDateTime } from '@/utils/formatDate'
+import { computed } from "vue";
+import IconCalendar from "~icons/carbon/calendar";
+import IconDocument from "~icons/carbon/document";
+import IconFolder from "~icons/carbon/folder";
+import IconInformation from "~icons/carbon/information";
+import IconPaintBrush from "~icons/carbon/paint-brush";
+import IconTag from "~icons/carbon/tag";
+import IconTemplate from "~icons/carbon/template";
+import IconUserAvatar from "~icons/carbon/user-avatar";
+import { formatDateTime } from "@/utils/formatDate";
 
-type WorkspaceItemType = 'folder' | 'document' | 'canvas' | 'template'
+type WorkspaceItemType = "folder" | "document" | "canvas" | "template";
 
 type WorkspaceDetails = {
-  id: string
-  name: string
-  type: WorkspaceItemType
-  tags: string[]
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
-}
+  id: string;
+  name: string;
+  type: WorkspaceItemType;
+  tags: string[];
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+};
 
 const props = defineProps<{
-  item?: WorkspaceDetails | null
-  currentDirectory: WorkspaceDetails
-}>()
+  item?: WorkspaceDetails | null;
+  currentDirectory: WorkspaceDetails;
+}>();
 
-const details = computed(() => props.item ?? props.currentDirectory)
-const heading = computed(() => (props.item ? 'Сведения' : 'Текущая директория'))
+const details = computed(() => props.item ?? props.currentDirectory);
+const heading = computed(() =>
+  props.item ? "Сведения" : "Текущая директория",
+);
 const typeLabel = computed(() => {
   const labels: Record<WorkspaceItemType, string> = {
-    folder: 'Папка',
-    document: 'Документ',
-    canvas: 'Холст',
-    template: 'Шаблон',
-  }
+    folder: "Папка",
+    document: "Документ",
+    canvas: "Холст",
+    template: "Шаблон",
+  };
 
-  return labels[details.value.type]
-})
+  return labels[details.value.type];
+});
 </script>
 
 <template>
@@ -51,8 +53,14 @@ const typeLabel = computed(() => {
 
     <div class="details-icon" :class="details.type">
       <IconFolder v-if="details.type === 'folder'" aria-hidden="true" />
-      <IconDocument v-else-if="details.type === 'document'" aria-hidden="true" />
-      <IconPaintBrush v-else-if="details.type === 'canvas'" aria-hidden="true" />
+      <IconDocument
+        v-else-if="details.type === 'document'"
+        aria-hidden="true"
+      />
+      <IconPaintBrush
+        v-else-if="details.type === 'canvas'"
+        aria-hidden="true"
+      />
       <IconTemplate v-else aria-hidden="true" />
     </div>
 
@@ -67,7 +75,9 @@ const typeLabel = computed(() => {
         Тэги
       </h3>
       <div class="tag-list">
-        <BBadge v-for="tag in details.tags" :key="tag" variant="light">{{ tag }}</BBadge>
+        <BBadge v-for="tag in details.tags" :key="tag" variant="light">{{
+          tag
+        }}</BBadge>
         <span v-if="!details.tags.length" class="muted">Нет тэгов</span>
       </div>
     </section>

@@ -1,124 +1,141 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import IconAdd from '~icons/carbon/add'
-import IconClose from '~icons/carbon/close'
-import IconEdit from '~icons/carbon/edit'
-import IconTrashCan from '~icons/carbon/trash-can'
-import IconCheckmark from '~icons/carbon/checkmark'
-import IconSearch from '~icons/carbon/search'
+import { ref, computed } from "vue";
+import IconAdd from "~icons/carbon/add";
+import IconClose from "~icons/carbon/close";
+import IconEdit from "~icons/carbon/edit";
+import IconTrashCan from "~icons/carbon/trash-can";
+import IconCheckmark from "~icons/carbon/checkmark";
+import IconSearch from "~icons/carbon/search";
 
 type TagItem = {
-  id: string
-  name: string
-  color: string
-}
+  id: string;
+  name: string;
+  color: string;
+};
 
 const props = defineProps<{
-  tags: TagItem[]
-  activeTagIds?: string[]
-}>()
+  tags: TagItem[];
+  activeTagIds?: string[];
+}>();
 
 const emit = defineEmits<{
-  (event: 'create', payload: { name: string; color: string }): void
-  (event: 'update', payload: { id: string; name: string; color: string }): void
-  (event: 'delete', id: string): void
-  (event: 'toggle-tag', id: string): void
-}>()
+  (event: "create", payload: { name: string; color: string }): void;
+  (event: "update", payload: { id: string; name: string; color: string }): void;
+  (event: "delete", id: string): void;
+  (event: "toggle-tag", id: string): void;
+}>();
 
 const TAG_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#84cc16', '#22c55e', '#14b8a6', '#06b6d4',
-  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
-  '#d946ef', '#ec4899', '#f43f5e', '#78716c',
-]
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#eab308",
+  "#84cc16",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#a855f7",
+  "#d946ef",
+  "#ec4899",
+  "#f43f5e",
+  "#78716c",
+];
 
-const isSearching = ref(false)
-const searchQuery = ref('')
-const editingId = ref<string | null>(null)
-const newTagName = ref('')
-const newTagColor = ref(TAG_COLORS[0]!)
-const editTagName = ref('')
-const editTagColor = ref('')
-const showColorPicker = ref(false)
-const editShowColorPicker = ref(false)
+const isSearching = ref(false);
+const searchQuery = ref("");
+const editingId = ref<string | null>(null);
+const newTagName = ref("");
+const newTagColor = ref(TAG_COLORS[0]!);
+const editTagName = ref("");
+const editTagColor = ref("");
+const showColorPicker = ref(false);
+const editShowColorPicker = ref(false);
 
-const canCreate = computed(() => newTagName.value.trim().length > 0)
-const canSaveEdit = computed(() => editTagName.value.trim().length > 0)
+const canCreate = computed(() => newTagName.value.trim().length > 0);
+const canSaveEdit = computed(() => editTagName.value.trim().length > 0);
 
 const filteredTags = computed(() => {
-  const query = searchQuery.value.toLowerCase().trim()
-  if (!query) return props.tags
-  return props.tags.filter(t => t.name.toLowerCase().includes(query))
-})
+  const query = searchQuery.value.toLowerCase().trim();
+  if (!query) return props.tags;
+  return props.tags.filter((t) => t.name.toLowerCase().includes(query));
+});
 
 const showCreateOption = computed(() => {
-  const query = searchQuery.value.trim()
-  if (!query) return false
-  return !props.tags.some(t => t.name.toLowerCase() === query.toLowerCase())
-})
+  const query = searchQuery.value.trim();
+  if (!query) return false;
+  return !props.tags.some((t) => t.name.toLowerCase() === query.toLowerCase());
+});
 
 function toggleSearch() {
-  isSearching.value = !isSearching.value
+  isSearching.value = !isSearching.value;
   if (!isSearching.value) {
-    searchQuery.value = ''
+    searchQuery.value = "";
   }
 }
 
 function startCreateFromSearch() {
-  newTagName.value = searchQuery.value.trim()
-  newTagColor.value = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)]!
-  isSearching.value = false
-  searchQuery.value = ''
-  // In a real app we might just emit create directly, 
+  newTagName.value = searchQuery.value.trim();
+  newTagColor.value =
+    TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)]!;
+  isSearching.value = false;
+  searchQuery.value = "";
+  // In a real app we might just emit create directly,
   // but let's show the color picker for a better UX
-  submitCreate() 
+  submitCreate();
 }
 
 function submitCreate() {
-  const name = newTagName.value.trim() || searchQuery.value.trim()
-  if (!name) return
-  emit('create', { name, color: newTagColor.value })
-  newTagName.value = ''
-  isSearching.value = false
-  searchQuery.value = ''
+  const name = newTagName.value.trim() || searchQuery.value.trim();
+  if (!name) return;
+  emit("create", { name, color: newTagColor.value });
+  newTagName.value = "";
+  isSearching.value = false;
+  searchQuery.value = "";
 }
 
 function startEdit(tag: TagItem) {
-  editingId.value = tag.id
-  editTagName.value = tag.name
-  editTagColor.value = tag.color || TAG_COLORS[0]!
-  editShowColorPicker.value = false
+  editingId.value = tag.id;
+  editTagName.value = tag.name;
+  editTagColor.value = tag.color || TAG_COLORS[0]!;
+  editShowColorPicker.value = false;
 }
 
 function cancelEdit() {
-  editingId.value = null
-  editTagName.value = ''
-  editShowColorPicker.value = false
+  editingId.value = null;
+  editTagName.value = "";
+  editShowColorPicker.value = false;
 }
 
 function submitEdit() {
-  if (!editingId.value || !canSaveEdit.value) return
-  emit('update', { id: editingId.value, name: editTagName.value.trim(), color: editTagColor.value })
-  cancelEdit()
+  if (!editingId.value || !canSaveEdit.value) return;
+  emit("update", {
+    id: editingId.value,
+    name: editTagName.value.trim(),
+    color: editTagColor.value,
+  });
+  cancelEdit();
 }
 
 function confirmDelete(id: string) {
-  emit('delete', id)
+  emit("delete", id);
   if (editingId.value === id) {
-    cancelEdit()
+    cancelEdit();
   }
 }
 
 function getContrastColor(hexColor: string | undefined) {
-  if (!hexColor) return '#000000'
-  const hex = hexColor.replace('#', '')
-  if (hex.length < 6) return '#000000'
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return '#000000'
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
-  return (yiq >= 128) ? '#000000' : '#ffffff'
+  if (!hexColor) return "#000000";
+  const hex = hexColor.replace("#", "");
+  if (hex.length < 6) return "#000000";
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return "#000000";
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "#000000" : "#ffffff";
 }
 </script>
 
@@ -126,7 +143,12 @@ function getContrastColor(hexColor: string | undefined) {
   <div class="tag-manager">
     <div class="tag-manager-header">
       <h3>Теги</h3>
-      <button class="tag-add-btn" :class="{ active: isSearching }" @click="toggleSearch" type="button">
+      <button
+        class="tag-add-btn"
+        :class="{ active: isSearching }"
+        @click="toggleSearch"
+        type="button"
+      >
         <IconAdd v-if="!isSearching" aria-hidden="true" />
         <IconClose v-else aria-hidden="true" />
       </button>
@@ -143,19 +165,26 @@ function getContrastColor(hexColor: string | undefined) {
           @keydown.enter.prevent="showCreateOption && submitCreate()"
         />
       </div>
-      
+
       <div class="search-results">
-        <div 
-          v-for="tag in filteredTags" 
-          :key="tag.id" 
+        <div
+          v-for="tag in filteredTags"
+          :key="tag.id"
           class="search-result-item"
           @click="emit('toggle-tag', tag.id)"
         >
           <span class="tag-dot" :style="{ background: tag.color }" />
           <span class="tag-name">{{ tag.name }}</span>
-          <IconCheckmark v-if="activeTagIds?.includes(tag.id)" class="check-icon" />
+          <IconCheckmark
+            v-if="activeTagIds?.includes(tag.id)"
+            class="check-icon"
+          />
         </div>
-        <div v-if="showCreateOption" class="create-option" @click="submitCreate">
+        <div
+          v-if="showCreateOption"
+          class="create-option"
+          @click="submitCreate"
+        >
           <IconAdd aria-hidden="true" />
           <span>Создать "{{ searchQuery }}"</span>
         </div>
@@ -163,14 +192,18 @@ function getContrastColor(hexColor: string | undefined) {
     </div>
 
     <div class="tag-cloud">
-      <div 
-        v-for="tag in tags" 
-        :key="tag.id" 
+      <div
+        v-for="tag in tags"
+        :key="tag.id"
         class="tag-badge"
         :class="{ active: activeTagIds?.includes(tag.id) }"
-        :style="{ 
-          backgroundColor: activeTagIds?.includes(tag.id) ? tag.color : '#f0f0f0',
-          color: activeTagIds?.includes(tag.id) ? getContrastColor(tag.color) : '#444'
+        :style="{
+          backgroundColor: activeTagIds?.includes(tag.id)
+            ? tag.color
+            : '#f0f0f0',
+          color: activeTagIds?.includes(tag.id)
+            ? getContrastColor(tag.color)
+            : '#444',
         }"
         @click="emit('toggle-tag', tag.id)"
       >
@@ -261,7 +294,8 @@ function getContrastColor(hexColor: string | undefined) {
   transition: all 0.2s;
 }
 
-.tag-add-btn:hover, .tag-add-btn.active {
+.tag-add-btn:hover,
+.tag-add-btn.active {
   background: #f5f5f5;
   border-color: #bbb;
   color: #111;
@@ -275,7 +309,7 @@ function getContrastColor(hexColor: string | undefined) {
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .search-input-wrapper {
@@ -314,7 +348,8 @@ function getContrastColor(hexColor: string | undefined) {
   gap: 2px;
 }
 
-.search-result-item, .create-option {
+.search-result-item,
+.create-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -325,7 +360,8 @@ function getContrastColor(hexColor: string | undefined) {
   transition: background 0.15s;
 }
 
-.search-result-item:hover, .create-option:hover {
+.search-result-item:hover,
+.create-option:hover {
   background: #f0f0f0;
 }
 
@@ -365,17 +401,19 @@ function getContrastColor(hexColor: string | undefined) {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
   user-select: none;
 }
 
 .tag-badge:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .tag-badge.active {
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .tag-edit-small {
@@ -385,7 +423,7 @@ function getContrastColor(hexColor: string | undefined) {
   height: 16px;
   padding: 0;
   border: none;
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
   color: inherit;
   opacity: 0.6;
@@ -394,7 +432,7 @@ function getContrastColor(hexColor: string | undefined) {
 
 .tag-edit-small:hover {
   opacity: 1;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .tag-edit-small svg {
@@ -408,7 +446,7 @@ function getContrastColor(hexColor: string | undefined) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: grid;
   place-items: center;
   z-index: 2000;
@@ -418,7 +456,7 @@ function getContrastColor(hexColor: string | undefined) {
   width: 320px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 

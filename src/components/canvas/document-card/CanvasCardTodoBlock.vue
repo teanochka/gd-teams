@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { LotionBlock } from '@/types/domain'
+import { computed } from "vue";
+import type { LotionBlock } from "@/types/domain";
 
 const props = defineProps<{
-  block: LotionBlock
-}>()
+  block: LotionBlock;
+}>();
 
-const checked = computed(() => Boolean(props.block.details.checked))
+const checked = computed(() => Boolean(props.block.details.checked));
 const htmlValue = computed(() => {
-  const value = props.block.details.value
+  const value = props.block.details.value;
 
-  return typeof value === 'string' ? value : ''
-})
+  return typeof value === "string" ? value : "";
+});
 </script>
 
 <template>

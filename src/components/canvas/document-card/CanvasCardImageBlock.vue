@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { LotionBlock } from '@/types/domain'
+import { computed } from "vue";
+import type { LotionBlock } from "@/types/domain";
 
 const props = defineProps<{
-  block: LotionBlock
-}>()
+  block: LotionBlock;
+}>();
 
 const imageUrl = computed(() => {
-  const value = props.block.details.imageUrl ?? props.block.details.value
+  const value = props.block.details.imageUrl ?? props.block.details.value;
 
-  return typeof value === 'string' ? value : ''
-})
+  return typeof value === "string" ? value : "";
+});
 
 const imageWidthPercent = computed(() => {
-  const value = props.block.details.imageWidthPercent
+  const value = props.block.details.imageWidthPercent;
 
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return 100
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return 100;
   }
 
-  return Math.min(100, Math.max(20, value))
-})
+  return Math.min(100, Math.max(20, value));
+});
 </script>
 
 <template>
@@ -30,7 +30,7 @@ const imageWidthPercent = computed(() => {
       alt=""
       :style="{ width: `${imageWidthPercent}%` }"
       draggable="false"
-    >
+    />
   </figure>
   <div v-else class="canvas-card-empty">Изображение не задано</div>
 </template>

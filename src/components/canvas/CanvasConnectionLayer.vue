@@ -1,53 +1,56 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 import {
   buildSvgPath,
   routeOrthogonalConnection,
-} from '@/components/canvas/connectionRouting'
+} from "@/components/canvas/connectionRouting";
 import type {
   CanvasConnection,
   CanvasElement,
   CanvasElementId,
   CanvasHandlePosition,
   CanvasPoint,
-} from '@/types/canvas'
+} from "@/types/canvas";
 
 export type DraftCanvasConnection = {
-  sourceId: CanvasElementId
-  sourceHandle: CanvasHandlePosition
-  targetPoint: CanvasPoint
-  targetElementId?: CanvasElementId | null
-  targetHandle?: CanvasHandlePosition | null
-}
+  sourceId: CanvasElementId;
+  sourceHandle: CanvasHandlePosition;
+  targetPoint: CanvasPoint;
+  targetElementId?: CanvasElementId | null;
+  targetHandle?: CanvasHandlePosition | null;
+};
 
 const props = defineProps<{
-  elements: CanvasElement[]
-  connections: CanvasConnection[]
-  draftConnection?: DraftCanvasConnection | null
-}>()
+  elements: CanvasElement[];
+  connections: CanvasConnection[];
+  draftConnection?: DraftCanvasConnection | null;
+}>();
 
 type ConnectionPath = {
-  id: CanvasConnection['id'] | 'draft-connection'
-  d: string
-  stroke: string
-  markerEnd: boolean
-  draft?: boolean
-}
+  id: CanvasConnection["id"] | "draft-connection";
+  d: string;
+  stroke: string;
+  markerEnd: boolean;
+  draft?: boolean;
+};
 
 const elementById = computed(() => {
-  return new Map(props.elements.map((element) => [element.id, element]))
-})
+  return new Map(props.elements.map((element) => [element.id, element]));
+});
 
-const toConnectionPath = (connection: CanvasConnection): ConnectionPath | null => {
-  const source = elementById.value.get(connection.sourceId)
+const toConnectionPath = (
+  connection: CanvasConnection,
+): ConnectionPath | null => {
+  const source = elementById.value.get(connection.sourceId);
 
   if (!source) {
-    return null
+    return null;
   }
 
-  const target = connection.targetId !== null && connection.targetId !== undefined
-    ? elementById.value.get(connection.targetId)
-    : null
+  const target =
+    connection.targetId !== null && connection.targetId !== undefined
+      ? elementById.value.get(connection.targetId)
+      : null;
   const points = routeOrthogonalConnection({
     source,
     sourceHandle: connection.sourceHandle,
@@ -55,68 +58,69 @@ const toConnectionPath = (connection: CanvasConnection): ConnectionPath | null =
     targetHandle: connection.targetHandle,
     targetPoint: connection.targetPoint,
     waypoints: connection.data?.waypoints,
-  })
+  });
 
   if (!points.length) {
-    return null
+    return null;
   }
 
   return {
     id: connection.id,
     d: buildSvgPath(points),
-    stroke: connection.style?.stroke ?? '#202020',
-    markerEnd: connection.markerEnd !== 'none',
-  }
-}
+    stroke: connection.style?.stroke ?? "#202020",
+    markerEnd: connection.markerEnd !== "none",
+  };
+};
 
 const draftPath = computed<ConnectionPath | null>(() => {
-  const draft = props.draftConnection
+  const draft = props.draftConnection;
 
   if (!draft) {
-    return null
+    return null;
   }
 
-  const source = elementById.value.get(draft.sourceId)
+  const source = elementById.value.get(draft.sourceId);
 
   if (!source) {
-    return null
+    return null;
   }
 
-  const target = draft.targetElementId !== null && draft.targetElementId !== undefined
-    ? elementById.value.get(draft.targetElementId)
-    : null
+  const target =
+    draft.targetElementId !== null && draft.targetElementId !== undefined
+      ? elementById.value.get(draft.targetElementId)
+      : null;
   const points = routeOrthogonalConnection({
     source,
     sourceHandle: draft.sourceHandle,
     target,
     targetHandle: draft.targetHandle,
     targetPoint: draft.targetPoint,
-  })
+  });
 
   if (!points.length) {
-    return null
+    return null;
   }
 
   return {
-    id: 'draft-connection',
+    id: "draft-connection",
     d: buildSvgPath(points),
-    stroke: '#202020',
+    stroke: "#202020",
     markerEnd: true,
     draft: true,
-  }
-})
+  };
+});
 
 const connectionPaths = computed(() => {
   const paths = props.connections
     .map(toConnectionPath)
-    .filter((path): path is ConnectionPath => path !== null)
+    .filter((path): path is ConnectionPath => path !== null);
 
   if (draftPath.value) {
-    return [...paths, draftPath.value]
+    return [...paths, draftPath.value];
   }
 
-  return paths
-})
+  return paths;
+});
 </script>
 
 <template>

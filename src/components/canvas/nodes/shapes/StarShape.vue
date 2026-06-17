@@ -1,41 +1,41 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 import {
   getSvgShadowId,
   hasSvgShadow,
-} from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
-const shadowId = computed(() => getSvgShadowId(props.element, 'star-shadow'))
-const hasShadow = computed(() => hasSvgShadow(props.element))
+const shadowId = computed(() => getSvgShadowId(props.element, "star-shadow"));
+const hasShadow = computed(() => hasSvgShadow(props.element));
 const strokeWidth = computed(() => {
   if (!props.element.borderColor && !props.element.borderWidth) {
-    return 0
+    return 0;
   }
 
-  return props.element.borderWidth ?? 2
-})
+  return props.element.borderWidth ?? 2;
+});
 const starPoints = computed(() => {
-  const points: string[] = []
-  const numPoints = 5
-  const innerRadius = 30
-  const outerRadius = 50
+  const points: string[] = [];
+  const numPoints = 5;
+  const innerRadius = 30;
+  const outerRadius = 50;
 
   for (let index = 0; index < numPoints * 2; index += 1) {
-    const radius = index % 2 === 0 ? outerRadius : innerRadius
-    const angle = (Math.PI / numPoints) * index - Math.PI / 2
-    const x = 50 + radius * Math.cos(angle)
-    const y = 50 + radius * Math.sin(angle)
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (Math.PI / numPoints) * index - Math.PI / 2;
+    const x = 50 + radius * Math.cos(angle);
+    const y = 50 + radius * Math.sin(angle);
 
-    points.push(`${x},${y}`)
+    points.push(`${x},${y}`);
   }
 
-  return points.join(' ')
-})
+  return points.join(" ");
+});
 </script>
 
 <template>

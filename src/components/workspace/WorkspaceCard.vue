@@ -1,63 +1,63 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import IconDocument from '~icons/carbon/document'
-import IconFolder from '~icons/carbon/folder'
-import IconPaintBrush from '~icons/carbon/paint-brush'
-import IconStar from '~icons/carbon/star'
-import IconStarFilled from '~icons/carbon/star-filled'
-import IconTemplate from '~icons/carbon/template'
-import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
-import type { NodeId, WorkspaceItem } from '@/types/domain'
+import { computed } from "vue";
+import IconDocument from "~icons/carbon/document";
+import IconFolder from "~icons/carbon/folder";
+import IconPaintBrush from "~icons/carbon/paint-brush";
+import IconStar from "~icons/carbon/star";
+import IconStarFilled from "~icons/carbon/star-filled";
+import IconTemplate from "~icons/carbon/template";
+import { useInlineTitleEdit } from "@/composables/useInlineTitleEdit";
+import type { NodeId, WorkspaceItem } from "@/types/domain";
 
 type WorkspaceItemSelectPayload = {
-  id: NodeId
-  event: MouseEvent
-}
+  id: NodeId;
+  event: MouseEvent;
+};
 
 const props = defineProps<{
-  item: WorkspaceItem
-  selected: boolean
-  editing?: boolean
-  draftName?: string
-  isSavingName?: boolean
-}>()
+  item: WorkspaceItem;
+  selected: boolean;
+  editing?: boolean;
+  draftName?: string;
+  isSavingName?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (event: 'select', payload: WorkspaceItemSelectPayload): void
-  (event: 'open', item: WorkspaceItem): void
-  (event: 'toggle-favorite', item: WorkspaceItem): void
-  (event: 'update:draftName', value: string): void
-  (event: 'finish-name'): void
-  (event: 'cancel-name'): void
-}>()
+  (event: "select", payload: WorkspaceItemSelectPayload): void;
+  (event: "open", item: WorkspaceItem): void;
+  (event: "toggle-favorite", item: WorkspaceItem): void;
+  (event: "update:draftName", value: string): void;
+  (event: "finish-name"): void;
+  (event: "cancel-name"): void;
+}>();
 
-const isEditing = computed(() => props.editing ?? false)
+const isEditing = computed(() => props.editing ?? false);
 const currentDraftName = computed({
   get: () => props.draftName ?? props.item.name,
-  set: (value: string) => emit('update:draftName', value),
-})
+  set: (value: string) => emit("update:draftName", value),
+});
 
 const { inputRef } = useInlineTitleEdit({
   isEditing,
   isBusy: computed(() => props.isSavingName ?? false),
-  onCommit: () => emit('finish-name'),
-})
+  onCommit: () => emit("finish-name"),
+});
 
 const handleClick = (event: MouseEvent) => {
   if (isEditing.value) {
-    return
+    return;
   }
 
-  emit('select', { id: props.item.id, event })
-}
+  emit("select", { id: props.item.id, event });
+};
 
 const handleDoubleClick = () => {
   if (isEditing.value) {
-    return
+    return;
   }
 
-  emit('open', props.item)
-}
+  emit("open", props.item);
+};
 </script>
 
 <template>
@@ -73,13 +73,17 @@ const handleDoubleClick = () => {
       <IconDocument v-else-if="item.type === 'document'" aria-hidden="true" />
       <IconPaintBrush v-else-if="item.type === 'canvas'" aria-hidden="true" />
       <IconTemplate v-else aria-hidden="true" />
-      <button 
-        class="favorite-btn" 
-        :class="{ active: item.isFavorite }" 
+      <button
+        class="favorite-btn"
+        :class="{ active: item.isFavorite }"
         @click.stop="emit('toggle-favorite', item)"
         type="button"
       >
-        <IconStarFilled v-if="item.isFavorite" aria-hidden="true" class="star-filled" />
+        <IconStarFilled
+          v-if="item.isFavorite"
+          aria-hidden="true"
+          class="star-filled"
+        />
         <IconStar v-else aria-hidden="true" />
       </button>
     </span>
@@ -164,7 +168,8 @@ const handleDoubleClick = () => {
   display: none;
 }
 
-.workspace-card:hover .favorite-btn, .favorite-btn.active {
+.workspace-card:hover .favorite-btn,
+.favorite-btn.active {
   display: grid;
   place-items: center;
 }

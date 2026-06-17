@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import IconSettings from '~icons/carbon/settings'
-import IconGroup from '~icons/carbon/group'
-import IconUserRole from '~icons/carbon/user-role'
+import { ref } from "vue";
+import IconSettings from "~icons/carbon/settings";
+import IconGroup from "~icons/carbon/group";
+import IconUserRole from "~icons/carbon/user-role";
 
 const props = defineProps<{
-  activeTab: 'general' | 'members' | 'roles'
-}>()
+  activeTab: "general" | "members" | "roles";
+}>();
 
 const emit = defineEmits<{
-  'update:activeTab': [value: 'general' | 'members' | 'roles']
-}>()
+  "update:activeTab": [value: "general" | "members" | "roles"];
+}>();
 
 const tabs = [
-  { id: 'general', label: 'Основное', icon: IconSettings },
-  { id: 'members', label: 'Участники', icon: IconGroup },
-  { id: 'roles', label: 'Роли', icon: IconUserRole },
-] as const
+  { id: "general", label: "Основное", icon: IconSettings },
+  { id: "members", label: "Участники", icon: IconGroup },
+  { id: "roles", label: "Роли", icon: IconUserRole },
+] as const;
 </script>
 
 <template>

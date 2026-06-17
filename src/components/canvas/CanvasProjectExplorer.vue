@@ -264,7 +264,12 @@ const openItem = (item: WorkspaceItem) => {
 const handleItemDragStart = (item: WorkspaceItem, event: Event) => {
   const node = nodesById.value[item.id];
 
-  if (!(event instanceof DragEvent) || !node || node.type !== "document" || !event.dataTransfer) {
+  if (
+    !(event instanceof DragEvent) ||
+    !node ||
+    node.type !== "document" ||
+    !event.dataTransfer
+  ) {
     event.preventDefault();
     return;
   }

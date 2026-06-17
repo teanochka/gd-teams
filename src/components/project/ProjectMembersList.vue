@@ -1,114 +1,124 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import IconUserAdd from '~icons/carbon/user-follow'
-import IconTrash from '~icons/carbon/trash-can'
-import IconOverflowMenuVertical from '~icons/carbon/overflow-menu-vertical'
-import { useProjectsStore } from '@/stores/projects'
-import { searchUsers } from '@/api/projects'
-import MemberManagementModal from './MemberManagementModal.vue'
-import type { User, ProjectRole, ProjectMember } from '@/types/domain'
+import { onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import IconUserAdd from "~icons/carbon/user-follow";
+import IconTrash from "~icons/carbon/trash-can";
+import IconOverflowMenuVertical from "~icons/carbon/overflow-menu-vertical";
+import { useProjectsStore } from "@/stores/projects";
+import { searchUsers } from "@/api/projects";
+import MemberManagementModal from "./MemberManagementModal.vue";
+import type { User, ProjectRole, ProjectMember } from "@/types/domain";
 
 const props = defineProps<{
-  projectId: string
-}>()
+  projectId: string;
+}>();
 
-const projectsStore = useProjectsStore()
-const { currentProjectMembers, currentProjectRoles } = storeToRefs(projectsStore)
+const projectsStore = useProjectsStore();
+const { currentProjectMembers, currentProjectRoles } =
+  storeToRefs(projectsStore);
 
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-const searchQuery = ref('')
-const searchResults = ref<User[]>([])
-const isSearching = ref(false)
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+const searchQuery = ref("");
+const searchResults = ref<User[]>([]);
+const isSearching = ref(false);
 
-const isMgmtModalOpen = ref(false)
-const selectedMember = ref<ProjectMember | null>(null)
+const isMgmtModalOpen = ref(false);
+const selectedMember = ref<ProjectMember | null>(null);
 
 const loadData = async () => {
-  if (!props.projectId) return
-  isLoading.value = true
-  error.value = null
+  if (!props.projectId) return;
+  isLoading.value = true;
+  error.value = null;
   try {
     await Promise.all([
       projectsStore.loadProjectMembers(props.projectId),
       projectsStore.loadProjectRoles(props.projectId),
-    ])
+    ]);
   } catch (e) {
-    error.value = 'Не удалось загрузить данные участников'
-    console.error(e)
+    error.value = "Не удалось загрузить данные участников";
+    console.error(e);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
-onMounted(loadData)
+onMounted(loadData);
 
-watch(() => props.projectId, loadData)
+watch(() => props.projectId, loadData);
 
 const openMemberMgmt = (member: ProjectMember) => {
-  selectedMember.value = member
-  isMgmtModalOpen.value = true
-}
+  selectedMember.value = member;
+  isMgmtModalOpen.value = true;
+};
 
 const handleSearch = async () => {
   if (searchQuery.value.length < 2) {
-    searchResults.value = []
-    return
+    searchResults.value = [];
+    return;
   }
-  isSearching.value = true
+  isSearching.value = true;
   try {
-    const users = await searchUsers(searchQuery.value)
+    const users = await searchUsers(searchQuery.value);
     // Фильтруем тех, кто уже в проекте
     searchResults.value = users.filter(
       (u) => !currentProjectMembers.value.some((m) => m.user.id === u.id),
-    )
+    );
   } finally {
-    isSearching.value = false
+    isSearching.value = false;
   }
-}
+};
 
 const addMember = async (userId: string) => {
-  await projectsStore.addMember(props.projectId, userId)
-  searchQuery.value = ''
-  searchResults.value = []
-}
+  await projectsStore.addMember(props.projectId, userId);
+  searchQuery.value = "";
+  searchResults.value = [];
+};
 
 const removeMember = async (memberId: string) => {
-  if (confirm('Удалить участника из проекта?')) {
-    await projectsStore.removeMember(props.projectId, memberId)
+  if (confirm("Удалить участника из проекта?")) {
+    await projectsStore.removeMember(props.projectId, memberId);
   }
-}
+};
 
 const toggleRole = async (memberId: string, roleId: string) => {
-  const member = currentProjectMembers.value.find((m) => m.id === memberId)
-  if (!member) return
+  const member = currentProjectMembers.value.find((m) => m.id === memberId);
+  if (!member) return;
 
-  const hasRole = member.roles.some((r) => r.id === roleId)
-  let newRoleIds = member.roles.map((r) => r.id)
+  const hasRole = member.roles.some((r) => r.id === roleId);
+  let newRoleIds = member.roles.map((r) => r.id);
 
   if (hasRole) {
-    newRoleIds = newRoleIds.filter((id) => id !== roleId)
+    newRoleIds = newRoleIds.filter((id) => id !== roleId);
   } else {
-    newRoleIds.push(roleId)
+    newRoleIds.push(roleId);
   }
 
-  await projectsStore.updateMember(props.projectId, memberId, newRoleIds)
-}
+  await projectsStore.updateMember(props.projectId, memberId, newRoleIds);
+};
 
 const getRoleColor = (role: ProjectRole) => {
-  if (typeof role.color === 'string') return role.color
-  return role.color?.hex || '#666'
-}
+  if (typeof role.color === "string") return role.color;
+  return role.color?.hex || "#666";
+};
 </script>
 
 <template>
   <div class="members-list">
-    <BAlert v-if="error" variant="danger" show dismissible @dismissed="error = null">
+    <BAlert
+      v-if="error"
+      variant="danger"
+      show
+      dismissible
+      @dismissed="error = null"
+    >
       {{ error }}
     </BAlert>
 
-    <div v-if="isLoading && !currentProjectMembers.length" class="text-center p-5">
+    <div
+      v-if="isLoading && !currentProjectMembers.length"
+      class="text-center p-5"
+    >
       <BSpinner label="Загрузка участников..." />
     </div>
 
@@ -140,7 +150,7 @@ const getRoleColor = (role: ProjectRole) => {
           <h3 class="m-0">Список участников</h3>
           <BSpinner v-if="isLoading" size="sm" variant="secondary" />
         </div>
-        
+
         <div class="members-table-wrapper">
           <table class="members-table">
             <thead>
@@ -156,60 +166,87 @@ const getRoleColor = (role: ProjectRole) => {
                 <td>
                   <div class="user-info">
                     <div class="user-avatar">
-                      {{ (member.user.display_name || member.user.username || '?')[0].toUpperCase() }}
+                      {{
+                        (member.user.display_name ||
+                          member.user.username ||
+                          "?")[0].toUpperCase()
+                      }}
                     </div>
                     <div>
-                      <div class="user-name">{{ member.user.display_name || member.user.username }}</div>
-                      <div class="user-email text-muted small">{{ member.user.email }}</div>
+                      <div class="user-name">
+                        {{ member.user.display_name || member.user.username }}
+                      </div>
+                      <div class="user-email text-muted small">
+                        {{ member.user.email }}
+                      </div>
                     </div>
-                    <span v-if="member.isOwner" class="badge bg-dark ms-2">Владелец</span>
+                    <span v-if="member.isOwner" class="badge bg-dark ms-2"
+                      >Владелец</span
+                    >
                   </div>
                 </td>
                 <td>
-                  <span class="access-level-badge" :class="member.isOwner ? 'admin' : member.accessLevel">
-                    {{ (member.isOwner || member.accessLevel === 'admin') ? 'Администратор' : member.accessLevel === 'moderator' ? 'Модератор' : 'Пользователь' }}
+                  <span
+                    class="access-level-badge"
+                    :class="member.isOwner ? 'admin' : member.accessLevel"
+                  >
+                    {{
+                      member.isOwner || member.accessLevel === "admin"
+                        ? "Администратор"
+                        : member.accessLevel === "moderator"
+                          ? "Модератор"
+                          : "Пользователь"
+                    }}
                   </span>
                 </td>
                 <td>
                   <div class="member-roles-summary">
-                    <span 
-                      v-for="role in member.roles" 
-                      :key="role.id" 
+                    <span
+                      v-for="role in member.roles"
+                      :key="role.id"
                       class="role-badge"
-                      :style="{ backgroundColor: getRoleColor(role) + '20', color: getRoleColor(role), borderColor: getRoleColor(role) }"
+                      :style="{
+                        backgroundColor: getRoleColor(role) + '20',
+                        color: getRoleColor(role),
+                        borderColor: getRoleColor(role),
+                      }"
                     >
                       {{ role.name }}
                     </span>
-                    <span v-if="member.roles.length === 0" class="text-muted small">Нет ролей</span>
+                    <span
+                      v-if="member.roles.length === 0"
+                      class="text-muted small"
+                      >Нет ролей</span
+                    >
                   </div>
                 </td>
-              <td>
-                <div class="actions-cell">
-                  <BButton
-                    variant="link"
-                    class="mgmt-trigger-btn"
-                    title="Управление ролями и правами"
-                    @click="openMemberMgmt(member)"
-                  >
-                    <IconOverflowMenuVertical />
-                  </BButton>
-                  
-                  <BButton
-                    v-if="!member.isOwner"
-                    variant="link"
-                    class="text-danger p-0 ms-2"
-                    title="Удалить из проекта"
-                    @click="removeMember(member.id)"
-                  >
-                    <IconTrash />
-                  </BButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+                <td>
+                  <div class="actions-cell">
+                    <BButton
+                      variant="link"
+                      class="mgmt-trigger-btn"
+                      title="Управление ролями и правами"
+                      @click="openMemberMgmt(member)"
+                    >
+                      <IconOverflowMenuVertical />
+                    </BButton>
+
+                    <BButton
+                      v-if="!member.isOwner"
+                      variant="link"
+                      class="text-danger p-0 ms-2"
+                      title="Удалить из проекта"
+                      @click="removeMember(member.id)"
+                    >
+                      <IconTrash />
+                    </BButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </template>
 
     <MemberManagementModal

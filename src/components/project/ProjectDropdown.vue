@@ -1,65 +1,68 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue'
-import { useRouter } from 'vue-router'
-import IconOverflowMenuHorizontal from '~icons/carbon/overflow-menu-horizontal'
-import { useProjectsStore } from '@/stores/projects'
+import { useTemplateRef } from "vue";
+import { useRouter } from "vue-router";
+import IconOverflowMenuHorizontal from "~icons/carbon/overflow-menu-horizontal";
+import { useProjectsStore } from "@/stores/projects";
 
 type ProjectDropdownData = {
-  id: string
-  isFavorite: boolean
-  isDeleted: boolean
-}
+  id: string;
+  isFavorite: boolean;
+  isDeleted: boolean;
+};
 
 const props = withDefaults(
   defineProps<{
-    project: ProjectDropdownData
-    placement?: 'card' | 'list'
+    project: ProjectDropdownData;
+    placement?: "card" | "list";
   }>(),
   {
-    placement: 'card',
+    placement: "card",
   },
-)
+);
 
 const emit = defineEmits<{
-  rename: []
-}>()
+  rename: [];
+}>();
 
-const dropdownMenu = useTemplateRef('dropdownMenu')
-const router = useRouter()
-const projectsStore = useProjectsStore()
+const dropdownMenu = useTemplateRef("dropdownMenu");
+const router = useRouter();
+const projectsStore = useProjectsStore();
 
-const hide = () => dropdownMenu.value?.hide()
-const toggle = () => dropdownMenu.value?.toggle()
+const hide = () => dropdownMenu.value?.hide();
+const toggle = () => dropdownMenu.value?.toggle();
 
 const openEditPage = () => {
-  hide()
-  void router.push({ name: 'project-edit', params: { projectId: props.project.id } })
-}
+  hide();
+  void router.push({
+    name: "project-edit",
+    params: { projectId: props.project.id },
+  });
+};
 
 const startRename = () => {
-  hide()
-  emit('rename')
-}
+  hide();
+  emit("rename");
+};
 
 const addToFavorites = () => {
-  hide()
-  void projectsStore.toggleFavoriteProject(props.project.id, true)
-}
+  hide();
+  void projectsStore.toggleFavoriteProject(props.project.id, true);
+};
 
 const removeFromFavorites = () => {
-  hide()
-  void projectsStore.toggleFavoriteProject(props.project.id, false)
-}
+  hide();
+  void projectsStore.toggleFavoriteProject(props.project.id, false);
+};
 
 const moveToTrash = () => {
-  hide()
-  void projectsStore.softDeleteProject(props.project.id)
-}
+  hide();
+  void projectsStore.softDeleteProject(props.project.id);
+};
 
 defineExpose({
   hide,
   toggle,
-})
+});
 </script>
 
 <template>

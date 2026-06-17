@@ -1,125 +1,154 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import IconSettings from '~icons/carbon/settings'
-import IconUserRole from '~icons/carbon/user-role'
-import { useProjectsStore } from '@/stores/projects'
-import type { ProjectMember, ProjectRole, AccessLevel } from '@/types/domain'
+import { computed, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import IconSettings from "~icons/carbon/settings";
+import IconUserRole from "~icons/carbon/user-role";
+import { useProjectsStore } from "@/stores/projects";
+import type { ProjectMember, ProjectRole, AccessLevel } from "@/types/domain";
 
 const props = defineProps<{
-  modelValue: boolean
-  member: ProjectMember | null
-  projectId: string
-}>()
+  modelValue: boolean;
+  member: ProjectMember | null;
+  projectId: string;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'updated': []
-}>()
+  "update:modelValue": [value: boolean];
+  updated: [];
+}>();
 
-const projectsStore = useProjectsStore()
-const { currentProjectRoles } = storeToRefs(projectsStore)
+const projectsStore = useProjectsStore();
+const { currentProjectRoles } = storeToRefs(projectsStore);
 
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-const activeTab = ref<'rights' | 'roles'>('rights')
-const selectedRoleIds = ref<string[]>([])
-const selectedAccessLevel = ref<AccessLevel>('user')
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+const activeTab = ref<"rights" | "roles">("rights");
+const selectedRoleIds = ref<string[]>([]);
+const selectedAccessLevel = ref<AccessLevel>("user");
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-})
+  set: (val) => emit("update:modelValue", val),
+});
 
 watch(
   () => props.member,
   (newMember) => {
     if (newMember) {
-      selectedRoleIds.value = newMember.roles.map((r) => r.id)
-      selectedAccessLevel.value = newMember.accessLevel || 'user'
-      activeTab.value = 'rights'
-      error.value = null
+      selectedRoleIds.value = newMember.roles.map((r) => r.id);
+      selectedAccessLevel.value = newMember.accessLevel || "user";
+      activeTab.value = "rights";
+      error.value = null;
     }
   },
   { immediate: true },
-)
+);
 
 const saveChanges = async () => {
-  if (!props.member || isLoading.value) return
-  isLoading.value = true
-  error.value = null
+  if (!props.member || isLoading.value) return;
+  isLoading.value = true;
+  error.value = null;
   try {
     await projectsStore.updateMember(props.projectId, props.member.id, {
       roleIds: selectedRoleIds.value,
       accessLevel: selectedAccessLevel.value,
-    })
-    emit('updated')
+    });
+    emit("updated");
   } catch (e) {
-    error.value = 'Не удалось сохранить изменения'
-    console.error(e)
+    error.value = "Не удалось сохранить изменения";
+    console.error(e);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 // Автосохранение при изменении ролей или уровня доступа
-watch([selectedRoleIds, selectedAccessLevel], () => {
-  if (isOpen.value && props.member) {
-    saveChanges()
-  }
-}, { deep: true })
+watch(
+  [selectedRoleIds, selectedAccessLevel],
+  () => {
+    if (isOpen.value && props.member) {
+      saveChanges();
+    }
+  },
+  { deep: true },
+);
 
 const toggleRole = (roleId: string) => {
-  const index = selectedRoleIds.value.indexOf(roleId)
+  const index = selectedRoleIds.value.indexOf(roleId);
   if (index === -1) {
-    selectedRoleIds.value = [...selectedRoleIds.value, roleId]
+    selectedRoleIds.value = [...selectedRoleIds.value, roleId];
   } else {
-    selectedRoleIds.value = selectedRoleIds.value.filter(id => id !== roleId)
+    selectedRoleIds.value = selectedRoleIds.value.filter((id) => id !== roleId);
   }
-}
+};
 
 const getRoleColor = (role: ProjectRole) => {
-  if (typeof role.color === 'string') return role.color
-  return role.color?.hex || '#666'
-}
+  if (typeof role.color === "string") return role.color;
+  return role.color?.hex || "#666";
+};
 
 interface AccessLevelOption {
-  id: AccessLevel
-  label: string
-  description: string
+  id: AccessLevel;
+  label: string;
+  description: string;
 }
 
 const accessLevels: AccessLevelOption[] = [
-  { id: 'admin', label: 'Администратор', description: 'Полный доступ к управлению проектом, участниками и ролями.' },
-  { id: 'moderator', label: 'Модератор', description: 'Может управлять контентом и участниками, но не настройками проекта.' },
-  { id: 'user', label: 'Пользователь', description: 'Может создавать и редактировать контент в рамках своих задач.' },
-]
+  {
+    id: "admin",
+    label: "Администратор",
+    description: "Полный доступ к управлению проектом, участниками и ролями.",
+  },
+  {
+    id: "moderator",
+    label: "Модератор",
+    description:
+      "Может управлять контентом и участниками, но не настройками проекта.",
+  },
+  {
+    id: "user",
+    label: "Пользователь",
+    description:
+      "Может создавать и редактировать контент в рамках своих задач.",
+  },
+];
 </script>
 
 <template>
   <BModal
     v-model="isOpen"
-    :title="member ? `Управление участником: ${member.user.display_name || member.user.username}` : 'Управление участником'"
+    :title="
+      member
+        ? `Управление участником: ${member.user.display_name || member.user.username}`
+        : 'Управление участником'
+    "
     size="lg"
     hide-footer
     body-class="p-0"
   >
-    <BAlert v-if="error" variant="danger" show dismissible class="m-3" @dismissed="error = null">
+    <BAlert
+      v-if="error"
+      variant="danger"
+      show
+      dismissible
+      class="m-3"
+      @dismissed="error = null"
+    >
       {{ error }}
     </BAlert>
 
     <div class="member-mgmt-container">
       <aside class="mgmt-sidebar">
-        <button 
-          class="mgmt-nav-item" 
+        <button
+          class="mgmt-nav-item"
           :class="{ active: activeTab === 'rights' }"
           @click="activeTab = 'rights'"
         >
           <IconUserRole />
           <span>Права доступа</span>
         </button>
-        <button 
-          class="mgmt-nav-item" 
+        <button
+          class="mgmt-nav-item"
           :class="{ active: activeTab === 'roles' }"
           @click="activeTab = 'roles'"
         >
@@ -134,15 +163,26 @@ const accessLevels: AccessLevelOption[] = [
             <h4 class="m-0">Права доступа</h4>
             <BSpinner v-if="isLoading" size="sm" />
           </div>
-          <p class="text-muted small mb-4">Выберите уровень прав, определяющий возможности пользователя по управлению проектом.</p>
-          
-          <BAlert v-if="member?.isOwner" variant="info" show class="small py-2 mb-4">
+          <p class="text-muted small mb-4">
+            Выберите уровень прав, определяющий возможности пользователя по
+            управлению проектом.
+          </p>
+
+          <BAlert
+            v-if="member?.isOwner"
+            variant="info"
+            show
+            class="small py-2 mb-4"
+          >
             Владелец проекта всегда имеет права администратора.
           </BAlert>
 
-          <div class="access-levels-list" :class="{ 'opacity-50 pointer-events-none': member?.isOwner }">
-            <div 
-              v-for="level in accessLevels" 
+          <div
+            class="access-levels-list"
+            :class="{ 'opacity-50 pointer-events-none': member?.isOwner }"
+          >
+            <div
+              v-for="level in accessLevels"
               :key="level.id"
               class="access-level-item"
               :class="{ active: selectedAccessLevel === level.id }"
@@ -154,7 +194,10 @@ const accessLevels: AccessLevelOption[] = [
               </div>
               <div class="level-radio">
                 <div class="radio-outer">
-                  <div v-if="selectedAccessLevel === level.id" class="radio-inner"></div>
+                  <div
+                    v-if="selectedAccessLevel === level.id"
+                    class="radio-inner"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -166,28 +209,38 @@ const accessLevels: AccessLevelOption[] = [
             <h4 class="m-0">Роли в проекте</h4>
             <BSpinner v-if="isLoading" size="sm" />
           </div>
-          <p class="text-muted small mb-4">Назначьте участнику роли (теги), чтобы обозначить его специализацию (например, Художник).</p>
-          
+          <p class="text-muted small mb-4">
+            Назначьте участнику роли (теги), чтобы обозначить его специализацию
+            (например, Художник).
+          </p>
+
           <div class="roles-list-compact">
-            <div 
-              v-for="role in currentProjectRoles" 
+            <div
+              v-for="role in currentProjectRoles"
               :key="role.id"
               class="role-select-item"
               :class="{ active: selectedRoleIds.includes(role.id) }"
               @click="toggleRole(role.id)"
             >
               <div class="role-info">
-                <span class="role-dot" :style="{ backgroundColor: getRoleColor(role) }"></span>
+                <span
+                  class="role-dot"
+                  :style="{ backgroundColor: getRoleColor(role) }"
+                ></span>
                 <span class="role-name">{{ role.name }}</span>
               </div>
-              <BFormCheckbox 
-                :model-value="selectedRoleIds.includes(role.id)" 
-                readonly 
+              <BFormCheckbox
+                :model-value="selectedRoleIds.includes(role.id)"
+                readonly
                 @click.stop
               />
             </div>
-            <div v-if="currentProjectRoles.length === 0" class="text-center p-4 text-muted border rounded-3">
-              Роли пока не созданы. Их можно создать в настройках проекта на вкладке "Роли".
+            <div
+              v-if="currentProjectRoles.length === 0"
+              class="text-center p-4 text-muted border rounded-3"
+            >
+              Роли пока не созданы. Их можно создать в настройках проекта на
+              вкладке "Роли".
             </div>
           </div>
         </div>

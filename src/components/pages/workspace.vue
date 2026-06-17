@@ -93,6 +93,14 @@ const {
   deleteTag,
 } = useWorkspacePage();
 
+const handleEmptyTrash = async () => {
+  if (
+    confirm("Вы уверены, что хотите навсегда удалить все элементы из корзины?")
+  ) {
+    await emptyTrash();
+  }
+};
+
 const contextMenuRef = ref<InstanceType<typeof ContextMenu> | null>(null);
 const contextMenuOptions = ref<any[]>([]);
 
@@ -372,7 +380,7 @@ const handleEmptyContextMenu = (e: MouseEvent) => {
                   variant="danger"
                   size="sm"
                   :disabled="!specialViewItems.length"
-                  @click="emptyTrash"
+                  @click="handleEmptyTrash"
                 >
                   <IconTrashCan aria-hidden="true" />
                   Очистить корзину

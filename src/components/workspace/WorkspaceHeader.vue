@@ -32,7 +32,7 @@ const goUp = () => {
 
 const handleLogout = () => {
   auth.logout();
-  router.push('/auth/login');
+  router.push("/auth/login");
 };
 </script>
 
@@ -84,7 +84,9 @@ const handleLogout = () => {
         :users="users"
       />
       <div v-if="auth.user" class="user-profile">
-        <span class="user-name">{{ auth.user.display_name || auth.user.username }}</span>
+        <span class="user-name">{{
+          auth.user.display_name || auth.user.username
+        }}</span>
         <BButton variant="light" size="sm" @click="handleLogout" title="Выйти">
           <IconLogout />
         </BButton>

@@ -1,101 +1,105 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import IconCheckmarkFilled from '~icons/carbon/checkmark-filled'
-import IconCopy from '~icons/carbon/copy'
-import IconEdit from '~icons/carbon/edit'
-import IconFlagFilled from '~icons/carbon/flag-filled'
-import IconOverflowMenuHorizontal from '~icons/carbon/overflow-menu-horizontal'
-import IconPaintBrush from '~icons/carbon/paint-brush'
-import IconTrashCan from '~icons/carbon/trash-can'
-import IconUserAvatarFilled from '~icons/carbon/user-avatar-filled'
-import ColorPaletteMenu from '@/components/shared/ColorPaletteMenu.vue'
-import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
-import type { KanbanMember, KanbanPriority, KanbanTask } from '@/types/domain'
+import { computed, ref, watch } from "vue";
+import IconCheckmarkFilled from "~icons/carbon/checkmark-filled";
+import IconCopy from "~icons/carbon/copy";
+import IconEdit from "~icons/carbon/edit";
+import IconFlagFilled from "~icons/carbon/flag-filled";
+import IconOverflowMenuHorizontal from "~icons/carbon/overflow-menu-horizontal";
+import IconPaintBrush from "~icons/carbon/paint-brush";
+import IconTrashCan from "~icons/carbon/trash-can";
+import IconUserAvatarFilled from "~icons/carbon/user-avatar-filled";
+import ColorPaletteMenu from "@/components/shared/ColorPaletteMenu.vue";
+import { useInlineTitleEdit } from "@/composables/useInlineTitleEdit";
+import type { KanbanMember, KanbanPriority, KanbanTask } from "@/types/domain";
 
 const priorityClasses: Record<KanbanPriority, string> = {
-  Low: 'low',
-  Medium: 'medium',
-  High: 'high',
-  Critical: 'critical',
-}
+  Low: "low",
+  Medium: "medium",
+  High: "high",
+  Critical: "critical",
+};
 
 const props = defineProps<{
-  task: KanbanTask
-  assignee: KanbanMember | null
-  done?: boolean
-  coverColors: Array<{ name: string; value: string }>
-}>()
+  task: KanbanTask;
+  assignee: KanbanMember | null;
+  done?: boolean;
+  coverColors: Array<{ name: string; value: string }>;
+}>();
 
 const emit = defineEmits<{
-  open: [taskId: string]
-  rename: [taskId: string, title: string]
-  delete: [taskId: string]
-  copyLink: [taskId: string]
-  setCover: [taskId: string, color: string]
-}>()
+  open: [taskId: string];
+  rename: [taskId: string, title: string];
+  delete: [taskId: string];
+  copyLink: [taskId: string];
+  setCover: [taskId: string, color: string];
+}>();
 
-const isRenaming = ref(false)
-const draftTitle = ref(props.task.title)
-const isSavingTitle = ref(false)
+const isRenaming = ref(false);
+const draftTitle = ref(props.task.title);
+const isSavingTitle = ref(false);
 
-const priorityClass = computed(() => priorityClasses[props.task.priority])
+const priorityClass = computed(() => priorityClasses[props.task.priority]);
 const assigneeInitials = computed(() => {
   if (!props.assignee?.name) {
-    return '??'
+    return "??";
   }
 
   return props.assignee.name
-    .split(' ')
+    .split(" ")
     .map((part) => part[0])
-    .join('')
+    .join("")
     .slice(0, 2)
-    .toUpperCase()
-})
+    .toUpperCase();
+});
 
 watch(
   () => props.task.title,
   (title) => {
     if (!isRenaming.value) {
-      draftTitle.value = title
+      draftTitle.value = title;
     }
   },
-)
+);
 
 const startRename = () => {
-  isRenaming.value = true
-  draftTitle.value = props.task.title
-}
+  isRenaming.value = true;
+  draftTitle.value = props.task.title;
+};
 
 const finishRename = () => {
   if (!isRenaming.value || isSavingTitle.value) {
-    return
+    return;
   }
 
-  const nextTitle = draftTitle.value.trim()
+  const nextTitle = draftTitle.value.trim();
 
   if (nextTitle && nextTitle !== props.task.title) {
-    emit('rename', props.task.id, nextTitle)
+    emit("rename", props.task.id, nextTitle);
   }
 
-  draftTitle.value = nextTitle || props.task.title
-  isRenaming.value = false
-}
+  draftTitle.value = nextTitle || props.task.title;
+  isRenaming.value = false;
+};
 
 const cancelRename = () => {
-  draftTitle.value = props.task.title
-  isRenaming.value = false
-}
+  draftTitle.value = props.task.title;
+  isRenaming.value = false;
+};
 
 const { inputRef: titleInput } = useInlineTitleEdit({
   isEditing: isRenaming,
   isBusy: isSavingTitle,
   onCommit: finishRename,
-})
+});
 </script>
 
 <template>
   <article class="kanban-card" @click="emit('open', task.id)">
-    <div v-if="task.coverColor" class="card-cover" :style="{ backgroundColor: task.coverColor }" />
+    <div
+      v-if="task.coverColor"
+      class="card-cover"
+      :style="{ backgroundColor: task.coverColor }"
+    />
 
     <BDropdown
       variant="link"
@@ -147,8 +151,16 @@ const { inputRef: titleInput } = useInlineTitleEdit({
     <div class="card-footer">
       <span class="task-key">{{ task.key }}</span>
       <div class="task-signals">
-        <IconCheckmarkFilled v-if="done" class="done-icon" aria-label="Готово" />
-        <IconFlagFilled class="priority-icon" :class="priorityClass" :aria-label="task.priority" />
+        <IconCheckmarkFilled
+          v-if="done"
+          class="done-icon"
+          aria-label="Готово"
+        />
+        <IconFlagFilled
+          class="priority-icon"
+          :class="priorityClass"
+          :aria-label="task.priority"
+        />
         <span
           class="assignee-avatar"
           :style="{ backgroundColor: assignee?.color ?? '#d8d8d8' }"

@@ -1,4 +1,4 @@
-import { apiRequest } from '@/api/http'
+import { apiRequest } from "@/api/http";
 import type {
   DocumentPage,
   LotionBlockDetails,
@@ -7,43 +7,46 @@ import type {
   Node,
   NodeId,
   ProjectId,
-} from '@/types/domain'
+} from "@/types/domain";
 
-type RawNode = Omit<Node, 'tags'> & {
-  tagIds: string[]
-  icon?: string | null
-}
+type RawNode = Omit<Node, "tags"> & {
+  tagIds: string[];
+  icon?: string | null;
+};
 
 const createBlockId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
   }
 
-  return `block-${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
+  return `block-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
 
-const getCurrentDate = () => new Date().toISOString()
+const getCurrentDate = () => new Date().toISOString();
 
 export const sanitizeLotionBlockValue = (value: unknown) => {
-  if (typeof value !== 'string') {
-    return value
+  if (typeof value !== "string") {
+    return value;
   }
 
   return value
-    .replace(/<input\b[^>]*>/gi, '')
-    .replace(/<br\b[^>]*ProseMirror-trailingBreak[^>]*>/gi, '')
-    .replace(/<br\b[^>]*class=["']?ProseMirror-trailingBreak["']?[^>]*>/gi, '')
-    .replace(/(?:<br\s*)?class=["']?Prose(?:Mirror-trailingBreak)?(?:["']?&gt;|["']?>)?/gi, '')
-    .replace(/Mirror-trailingBreak(?:["']?&gt;|["']?>)?/gi, '')
-    .replace(/ProseMirror-trailingBreak(?:["']?&gt;|["']?>)?/gi, '')
-    .replace(/&gt;/gi, '')
-}
+    .replace(/<input\b[^>]*>/gi, "")
+    .replace(/<br\b[^>]*ProseMirror-trailingBreak[^>]*>/gi, "")
+    .replace(/<br\b[^>]*class=["']?ProseMirror-trailingBreak["']?[^>]*>/gi, "")
+    .replace(
+      /(?:<br\s*)?class=["']?Prose(?:Mirror-trailingBreak)?(?:["']?&gt;|["']?>)?/gi,
+      "",
+    )
+    .replace(/Mirror-trailingBreak(?:["']?&gt;|["']?>)?/gi, "")
+    .replace(/ProseMirror-trailingBreak(?:["']?&gt;|["']?>)?/gi, "")
+    .replace(/&gt;/gi, "");
+};
 
 const cloneTableData = (table: LotionTableData): LotionTableData => ({
   rows: table.rows.map((row) => [...row]),
   columnWidths: [...table.columnWidths],
   rowHeights: [...table.rowHeights],
-})
+});
 
 export const cloneLotionBlockDetails = (
   details: LotionBlockDetails,
@@ -51,43 +54,46 @@ export const cloneLotionBlockDetails = (
   ...details,
   value: sanitizeLotionBlockValue(details.value),
   table: details.table ? cloneTableData(details.table) : undefined,
-})
+});
 
 export const createDefaultLotionPage = (title: string): LotionPage => ({
   name: title,
   blocks: [
     {
       id: createBlockId(),
-      type: 'TEXT',
+      type: "TEXT",
       details: {
-        value: '',
+        value: "",
       },
     },
   ],
   card: {
     blockIds: [],
   },
-})
+});
 
 const clonePage = (page: LotionPage): LotionPage => ({
-  name: page.name.trim() || 'Untitled',
+  name: page.name.trim() || "Untitled",
   coverUrl: page.coverUrl,
   blocks: page.blocks.map((block) => ({
     ...block,
     details: cloneLotionBlockDetails(block.details),
   })),
   card: {
-    blockIds: page.card?.blockIds.filter((blockId) =>
-      page.blocks.some((block) => block.id === blockId),
-    ) ?? [],
+    blockIds:
+      page.card?.blockIds.filter((blockId) =>
+        page.blocks.some((block) => block.id === blockId),
+      ) ?? [],
   },
-})
+});
 
-export const createDocumentPage = async (node: Pick<Node, 'id' | 'projectId' | 'title'>) => {
-  const savedAt = getCurrentDate()
+export const createDocumentPage = async (
+  node: Pick<Node, "id" | "projectId" | "title">,
+) => {
+  const savedAt = getCurrentDate();
 
-  return apiRequest<DocumentPage>('/documentPages', {
-    method: 'POST',
+  return apiRequest<DocumentPage>("/documentPages", {
+    method: "POST",
     body: {
       nodeId: node.id,
       projectId: node.projectId,
@@ -95,24 +101,25 @@ export const createDocumentPage = async (node: Pick<Node, 'id' | 'projectId' | '
       createdAt: savedAt,
       updatedAt: savedAt,
     },
-  })
-}
+  });
+};
 
 export const copyDocumentPage = async (
   sourceNodeId: NodeId,
-  targetNode: Pick<Node, 'id' | 'projectId' | 'title'>,
+  targetNode: Pick<Node, "id" | "projectId" | "title">,
 ) => {
-  const pages = await apiRequest<DocumentPage[]>('/documentPages', {
+  const pages = await apiRequest<DocumentPage[]>("/documentPages", {
     query: { nodeId: sourceNodeId },
-  })
-  const savedAt = getCurrentDate()
-  const sourcePage = pages[0]?.page ?? createDefaultLotionPage(targetNode.title)
-  const page = clonePage(sourcePage)
+  });
+  const savedAt = getCurrentDate();
+  const sourcePage =
+    pages[0]?.page ?? createDefaultLotionPage(targetNode.title);
+  const page = clonePage(sourcePage);
 
-  page.name = targetNode.title
+  page.name = targetNode.title;
 
-  return apiRequest<DocumentPage>('/documentPages', {
-    method: 'POST',
+  return apiRequest<DocumentPage>("/documentPages", {
+    method: "POST",
     body: {
       nodeId: targetNode.id,
       projectId: targetNode.projectId,
@@ -120,52 +127,52 @@ export const copyDocumentPage = async (
       createdAt: savedAt,
       updatedAt: savedAt,
     },
-  })
-}
+  });
+};
 
 export const getDocumentPage = async (
   documentId: NodeId,
   projectId: ProjectId,
 ): Promise<DocumentPage> => {
-  const pages = await apiRequest<DocumentPage[]>('/documentPages', {
+  const pages = await apiRequest<DocumentPage[]>("/documentPages", {
     query: { nodeId: documentId },
-  })
-  const existingPage = pages[0]
+  });
+  const existingPage = pages[0];
 
   if (existingPage) {
-    return existingPage
+    return existingPage;
   }
 
-  const node = await apiRequest<RawNode>(`/nodes/${documentId}`)
+  const node = await apiRequest<RawNode>(`/nodes/${documentId}`);
 
-  if (node.type !== 'document' || node.projectId !== projectId) {
-    throw new Error('Document not found')
+  if (node.type !== "document" || node.projectId !== projectId) {
+    throw new Error("Document not found");
   }
 
   return createDocumentPage({
     id: node.id,
     projectId: node.projectId,
     title: node.title,
-  })
-}
+  });
+};
 
 export const saveDocumentPage = async (
   documentId: NodeId,
   page: LotionPage,
 ): Promise<DocumentPage> => {
-  const savedAt = getCurrentDate()
-  const nextPage = clonePage(page)
-  const pages = await apiRequest<DocumentPage[]>('/documentPages', {
+  const savedAt = getCurrentDate();
+  const nextPage = clonePage(page);
+  const pages = await apiRequest<DocumentPage[]>("/documentPages", {
     query: { nodeId: documentId },
-  })
-  const documentPageId = pages[0]?.id
+  });
+  const documentPageId = pages[0]?.id;
 
   if (!documentPageId) {
-    const node = await apiRequest<RawNode>(`/nodes/${documentId}`)
+    const node = await apiRequest<RawNode>(`/nodes/${documentId}`);
 
     const [documentPage] = await Promise.all([
-      apiRequest<DocumentPage>('/documentPages', {
-        method: 'POST',
+      apiRequest<DocumentPage>("/documentPages", {
+        method: "POST",
         body: {
           nodeId: node.id,
           projectId: node.projectId,
@@ -175,35 +182,35 @@ export const saveDocumentPage = async (
         },
       }),
       apiRequest<RawNode>(`/nodes/${documentId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: {
           title: nextPage.name,
           updatedAt: savedAt,
-          updatedBy: 'Р’С‹',
+          updatedBy: "Р’С‹",
         },
       }),
-    ])
+    ]);
 
-    return documentPage
+    return documentPage;
   }
 
   const [documentPage] = await Promise.all([
     apiRequest<DocumentPage>(`/documentPages/${documentPageId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: {
         page: nextPage,
         updatedAt: savedAt,
       },
     }),
     apiRequest<RawNode>(`/nodes/${documentId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: {
-        title: nextPage.name.trim() || 'Untitled',
+        title: nextPage.name.trim() || "Untitled",
         updatedAt: savedAt,
-        updatedBy: 'Р’С‹',
+        updatedBy: "Р’С‹",
       },
     }),
-  ])
+  ]);
 
-  return documentPage
-}
+  return documentPage;
+};

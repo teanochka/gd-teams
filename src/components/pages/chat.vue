@@ -63,7 +63,11 @@
             placeholder="Введите сообщение..."
             @keydown.enter.prevent="handleSendMessage"
           ></textarea>
-          <BButton variant="primary" @click="handleSendMessage" :disabled="!newMessage.trim()">
+          <BButton
+            variant="primary"
+            @click="handleSendMessage"
+            :disabled="!newMessage.trim()"
+          >
             Отправить
           </BButton>
         </div>
@@ -75,13 +79,27 @@
     </div>
 
     <!-- Modal Create Channel -->
-    <BModal v-model="showCreateChannel" title="Создать канал" @ok="handleCreateChannel">
+    <BModal
+      v-model="showCreateChannel"
+      title="Создать канал"
+      @ok="handleCreateChannel"
+    >
       <div class="form-group">
         <label>Название канала</label>
-        <input v-model="newChannelName" type="text" class="form-control" placeholder="general" />
+        <input
+          v-model="newChannelName"
+          type="text"
+          class="form-control"
+          placeholder="general"
+        />
       </div>
       <div class="form-check mt-3">
-        <input v-model="newChannelPrivate" type="checkbox" class="form-check-input" id="isPrivate" />
+        <input
+          v-model="newChannelPrivate"
+          type="checkbox"
+          class="form-check-input"
+          id="isPrivate"
+        />
         <label class="form-check-label" for="isPrivate">Приватный канал</label>
       </div>
     </BModal>
@@ -89,128 +107,150 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useChatStore } from '@/stores/chat'
-import { useAuthStore } from '@/stores/auth'
-import { apiRequest } from '@/api/http'
-import IconAdd from '~icons/carbon/add'
-import IconHashtag from '~icons/carbon/hashtag'
-import IconLocked from '~icons/carbon/locked'
-import IconUser from '~icons/carbon/user'
-import IconChat from '~icons/carbon/chat'
+import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useChatStore } from "@/stores/chat";
+import { useAuthStore } from "@/stores/auth";
+import { apiRequest } from "@/api/http";
+import IconAdd from "~icons/carbon/add";
+import IconHashtag from "~icons/carbon/hashtag";
+import IconLocked from "~icons/carbon/locked";
+import IconUser from "~icons/carbon/user";
+import IconChat from "~icons/carbon/chat";
 
-const route = useRoute()
-const router = useRouter()
-const chatStore = useChatStore()
-const authStore = useAuthStore()
+const route = useRoute();
+const router = useRouter();
+const chatStore = useChatStore();
+const authStore = useAuthStore();
 
-const projectId = computed(() => route.params.projectId as string)
-const type = computed(() => route.params.type as string)
-const activeId = computed(() => route.params.id as string)
+const projectId = computed(() => route.params.projectId as string);
+const type = computed(() => route.params.type as string);
+const activeId = computed(() => route.params.id as string);
 
-const newMessage = ref('')
-const messageList = ref<HTMLElement | null>(null)
-const projectUsers = ref<any[]>([])
+const newMessage = ref("");
+const messageList = ref<HTMLElement | null>(null);
+const projectUsers = ref<any[]>([]);
 
-const showCreateChannel = ref(false)
-const newChannelName = ref('')
-const newChannelPrivate = ref(false)
+const showCreateChannel = ref(false);
+const newChannelName = ref("");
+const newChannelPrivate = ref(false);
 
 const currentTargetName = computed(() => {
-  if (type.value === 'channel') {
-    return chatStore.channels.find(c => c.id === activeId.value)?.name || 'Канал'
+  if (type.value === "channel") {
+    return (
+      chatStore.channels.find((c) => c.id === activeId.value)?.name || "Канал"
+    );
   } else {
-    return projectUsers.value.find(u => u.id === activeId.value)?.display_name || 'Пользователь'
+    return (
+      projectUsers.value.find((u) => u.id === activeId.value)?.display_name ||
+      "Пользователь"
+    );
   }
-})
+});
 
 async function loadData() {
-  await chatStore.loadChannels(projectId.value)
+  await chatStore.loadChannels(projectId.value);
   // Загружаем участников проекта для ЛС
-  const members = await apiRequest<any[]>(`/projects/${projectId.value}/members`)
-  projectUsers.value = members.map(m => m.user).filter(u => u.id !== authStore.user?.id)
-  
+  const members = await apiRequest<any[]>(
+    `/projects/${projectId.value}/members`,
+  );
+  projectUsers.value = members
+    .map((m) => m.user)
+    .filter((u) => u.id !== authStore.user?.id);
+
   if (activeId.value) {
-    await loadMessages()
+    await loadMessages();
   }
 }
 
 async function loadMessages() {
-  if (type.value === 'channel') {
-    await chatStore.loadMessages(projectId.value, activeId.value)
+  if (type.value === "channel") {
+    await chatStore.loadMessages(projectId.value, activeId.value);
   } else {
-    await chatStore.loadMessages(projectId.value, undefined, activeId.value)
+    await chatStore.loadMessages(projectId.value, undefined, activeId.value);
   }
-  scrollToBottom()
+  scrollToBottom();
 }
 
 function selectChannel(id: string) {
-  router.push({ name: 'project-chat', params: { projectId: projectId.value, type: 'channel', id } })
+  router.push({
+    name: "project-chat",
+    params: { projectId: projectId.value, type: "channel", id },
+  });
 }
 
 function selectDM(userId: string) {
-  router.push({ name: 'project-chat', params: { projectId: projectId.value, type: 'dm', id: userId } })
+  router.push({
+    name: "project-chat",
+    params: { projectId: projectId.value, type: "dm", id: userId },
+  });
 }
 
 async function handleSendMessage() {
-  if (!newMessage.value.trim() || !activeId.value) return
-  
+  if (!newMessage.value.trim() || !activeId.value) return;
+
   const payload: any = {
     projectId: projectId.value,
-    content: newMessage.value.trim()
-  }
-  
-  if (type.value === 'channel') {
-    payload.channelId = activeId.value
+    content: newMessage.value.trim(),
+  };
+
+  if (type.value === "channel") {
+    payload.channelId = activeId.value;
   } else {
-    payload.recipientId = activeId.value
+    payload.recipientId = activeId.value;
   }
-  
-  await chatStore.sendMessage(payload)
-  newMessage.value = ''
-  scrollToBottom()
+
+  await chatStore.sendMessage(payload);
+  newMessage.value = "";
+  scrollToBottom();
 }
 
 async function handleCreateChannel() {
-  if (!newChannelName.value.trim()) return
-  const channel = await chatStore.createChannel(projectId.value, newChannelName.value.trim(), newChannelPrivate.value)
-  newChannelName.value = ''
-  newChannelPrivate.value = false
-  selectChannel(channel.id)
+  if (!newChannelName.value.trim()) return;
+  const channel = await chatStore.createChannel(
+    projectId.value,
+    newChannelName.value.trim(),
+    newChannelPrivate.value,
+  );
+  newChannelName.value = "";
+  newChannelPrivate.value = false;
+  selectChannel(channel.id);
 }
 
 function scrollToBottom() {
   nextTick(() => {
     if (messageList.value) {
-      messageList.value.scrollTop = messageList.value.scrollHeight
+      messageList.value.scrollTop = messageList.value.scrollHeight;
     }
-  })
+  });
 }
 
 function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return new Date(dateStr).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-onMounted(loadData)
+onMounted(loadData);
 
 watch([type, activeId], () => {
   if (activeId.value) {
-    loadMessages()
+    loadMessages();
   }
-})
+});
 
 // Авто-обновление сообщений (простое лонг-поллинг эмуляция)
-let pollInterval: any = null
+let pollInterval: any = null;
 onMounted(() => {
   pollInterval = setInterval(() => {
     if (activeId.value) {
-      loadMessages()
+      loadMessages();
     }
-  }, 5000)
-})
-import { onUnmounted } from 'vue'
-onUnmounted(() => clearInterval(pollInterval))
+  }, 5000);
+});
+import { onUnmounted } from "vue";
+onUnmounted(() => clearInterval(pollInterval));
 </script>
 
 <style scoped>
@@ -244,7 +284,8 @@ onUnmounted(() => clearInterval(pollInterval))
   font-weight: 700;
 }
 
-.channel-list, .dm-list {
+.channel-list,
+.dm-list {
   display: flex;
   flex-direction: column;
   gap: 2px;

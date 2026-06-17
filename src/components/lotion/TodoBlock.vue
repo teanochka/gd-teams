@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch, type PropType } from 'vue'
-import { types } from '@dashibase/lotion'
+import { computed, nextTick, onMounted, ref, watch, type PropType } from "vue";
+import { types } from "@dashibase/lotion";
 
 type TodoDetails = types.Details & {
-  checked?: boolean
-}
+  checked?: boolean;
+};
 
 type TodoBlock = types.Block & {
-  details: TodoDetails
-}
+  details: TodoDetails;
+};
 
 const props = defineProps({
   block: {
@@ -19,112 +19,115 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-})
+});
 
-const editorRef = ref<HTMLDivElement | null>(null)
+const editorRef = ref<HTMLDivElement | null>(null);
 
 const checked = computed({
   get: () => Boolean(props.block.details.checked),
   set: (value: boolean) => {
-    props.block.details.checked = value
+    props.block.details.checked = value;
   },
-})
+});
 
-const getText = () => props.block.details.value ?? ''
+const getText = () => props.block.details.value ?? "";
 
 function ensureDetails() {
-  props.block.details.value = props.block.details.value ?? ''
-  props.block.details.checked = Boolean(props.block.details.checked)
+  props.block.details.value = props.block.details.value ?? "";
+  props.block.details.checked = Boolean(props.block.details.checked);
 }
 
 function setEditorText(value = getText()) {
-  const editor = editorRef.value
+  const editor = editorRef.value;
 
   if (!editor || editor.textContent === value) {
-    return
+    return;
   }
 
-  editor.textContent = value
+  editor.textContent = value;
 }
 
-function focusInput(position: 'start' | 'end' = 'end') {
+function focusInput(position: "start" | "end" = "end") {
   void nextTick(() => {
-    const editor = editorRef.value
+    const editor = editorRef.value;
 
     if (!editor) {
-      return
+      return;
     }
 
-    setEditorText()
+    setEditorText();
 
-    const textNode = editor.firstChild ?? editor
-    const caretPosition = position === 'start' ? 0 : getText().length
-    const range = document.createRange()
-    const selection = window.getSelection()
+    const textNode = editor.firstChild ?? editor;
+    const caretPosition = position === "start" ? 0 : getText().length;
+    const range = document.createRange();
+    const selection = window.getSelection();
 
-    range.setStart(textNode, Math.min(caretPosition, textNode.textContent?.length ?? 0))
-    range.collapse(true)
-    selection?.removeAllRanges()
-    selection?.addRange(range)
-    editor.focus()
-  })
+    range.setStart(
+      textNode,
+      Math.min(caretPosition, textNode.textContent?.length ?? 0),
+    );
+    range.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    editor.focus();
+  });
 }
 
 function onSet() {
-  ensureDetails()
-  focusInput('end')
+  ensureDetails();
+  focusInput("end");
 }
 
 function onUnset() {
-  syncTextFromEditor()
+  syncTextFromEditor();
 }
 
 function getTextContent() {
-  return getText()
+  return getText();
 }
 
 function getHtmlContent() {
-  return getText()
+  return getText();
 }
 
 function moveToStart() {
-  focusInput('start')
+  focusInput("start");
 }
 
 function moveToEnd() {
-  focusInput('end')
+  focusInput("end");
 }
 
 function syncTextFromEditor() {
-  props.block.details.value = editorRef.value?.textContent ?? ''
+  props.block.details.value = editorRef.value?.textContent ?? "";
 }
 
 function isCheckboxPointer(event: MouseEvent) {
-  const editor = editorRef.value
+  const editor = editorRef.value;
 
   if (!editor) {
-    return false
+    return false;
   }
 
-  return event.clientX - editor.getBoundingClientRect().left <= 22
+  return event.clientX - editor.getBoundingClientRect().left <= 22;
 }
 
 function handleMouseDown(event: MouseEvent) {
   if (isCheckboxPointer(event)) {
-    event.preventDefault()
+    event.preventDefault();
   }
 }
 
 function handleClick(event: MouseEvent) {
   if (props.readonly) {
-    return
+    return;
   }
 
   if (!isCheckboxPointer(event)) {
-    return
+    return;
   }
 
-  checked.value = !checked.value
+  checked.value = !checked.value;
 }
 
 defineExpose({
@@ -134,33 +137,33 @@ defineExpose({
   getHtmlContent,
   moveToStart,
   moveToEnd,
-})
+});
 
 onMounted(() => {
-  ensureDetails()
-  setEditorText()
-})
+  ensureDetails();
+  setEditorText();
+});
 
 watch(
   () => props.block.id,
   () => {
     void nextTick(() => {
-      ensureDetails()
-      setEditorText()
-    })
+      ensureDetails();
+      setEditorText();
+    });
   },
-)
+);
 
 watch(
   () => props.block.details.value,
   (value) => {
     if (document.activeElement === editorRef.value) {
-      return
+      return;
     }
 
-    setEditorText(value ?? '')
+    setEditorText(value ?? "");
   },
-)
+);
 </script>
 
 <template>
@@ -205,7 +208,7 @@ watch(
   border: 1.5px solid #69707d;
   border-radius: 4px;
   background: #ffffff;
-  content: '';
+  content: "";
 }
 
 .todo-block.checked::before {
@@ -220,7 +223,7 @@ watch(
   width: 16px;
   height: 16px;
   color: #ffffff;
-  content: '✓';
+  content: "✓";
   font-size: 11px;
   font-weight: 700;
   line-height: 1;

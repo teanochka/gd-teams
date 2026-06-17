@@ -45,7 +45,7 @@ export const apiRequest = async <T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const headers: Record<string, string> = {};
 
   if (options.body) {

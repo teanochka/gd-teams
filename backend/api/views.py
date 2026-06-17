@@ -7,10 +7,10 @@ from rest_framework import status, viewsets, permissions, exceptions
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User, Project, Team, Node, Tag, DocumentPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard, Channel, ChatMessage
+from .models import User, Project, Team, Node, Tag, DocumentPage, CanvasPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard, Channel, ChatMessage
 from .serializers import (
     UserSerializer, ProjectSerializer, TeamSerializer, NodeSerializer, 
-    TagSerializer, DocumentPageSerializer, CanvasDraftSerializer,
+    TagSerializer, DocumentPageSerializer, CanvasPageSerializer, CanvasDraftSerializer,
     ProjectRoleSerializer, ProjectMemberSerializer, KanbanBoardSerializer,
     ChannelSerializer, ChatMessageSerializer
 )
@@ -170,6 +170,21 @@ class ProjectDetailView(APIView):
         except Project.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+class ProjectClearTrashView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def delete(self, request):
+        if not request.user.is_authenticated:
+            # Для анонимов удаляем все удаленные проекты (для демо)
+            Project.objects.filter(is_deleted=True).delete()
+        else:
+            # Только проекты, где пользователь - владелец
+            memberships = ProjectMember.objects.filter(user=request.user, is_owner=True, project__is_deleted=True)
+            for m in memberships:
+                m.project.delete()
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class ProjectMemberListView(APIView):
     permission_classes = [permissions.AllowAny] # Временно
 
@@ -285,6 +300,7 @@ class NodeListCreateView(APIView):
             if node.type == 'document':
                 DocumentPage.objects.create(node=node, project_id=node.project_id, page={'name': node.title, 'blocks':[]})
             elif node.type == 'canvas':
+                CanvasPage.objects.create(node=node, project_id=node.project_id, data={'elements': [], 'connections': []})
                 CanvasDraft.objects.create(node=node)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -342,6 +358,59 @@ class DocumentPageDetailView(APIView):
         DocumentPage.objects.filter(id=page_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class CanvasPageListCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        node_id = request.query_params.get('nodeId')
+        query = {}
+        if node_id: query['node'] = node_id
+        
+        pages = CanvasPage.objects.filter(**query)
+        return Response(CanvasPageSerializer(pages, many=True).data)
+
+    def post(self, request):
+        serializer = CanvasPageSerializer(data=request.data)
+        if serializer.is_valid():
+            node = serializer.validated_data.get('node')
+            existing = CanvasPage.objects.filter(node=node).first()
+            if existing:
+                for field_name, value in serializer.validated_data.items():
+                    setattr(existing, field_name, value)
+                existing.updated_at = timezone.now()
+                existing.save()
+                return Response(CanvasPageSerializer(existing).data)
+
+            page = serializer.save()
+            return Response(CanvasPageSerializer(page).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CanvasPageDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, page_id):
+        try:
+            page = CanvasPage.objects.get(id=page_id)
+            return Response(CanvasPageSerializer(page).data)
+        except CanvasPage.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, page_id):
+        try:
+            page = CanvasPage.objects.get(id=page_id)
+        except CanvasPage.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CanvasPageSerializer(page, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save(updated_at=timezone.now())
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, page_id):
+        CanvasPage.objects.filter(id=page_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class GlobalTagListCreateView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -377,6 +446,13 @@ class TreeView(APIView):
 class NodeDetailView(APIView):
     permission_classes = [permissions.AllowAny] # Временно
 
+    def get(self, request, node_id, project_id=None):
+        try:
+            node = Node.objects.get(id=node_id)
+            return Response(NodeSerializer(node).data)
+        except Node.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
     def patch(self, request, node_id, project_id=None):
         try:
             # Ищем узел только по ID, так как project_id может не быть в URL
@@ -398,9 +474,14 @@ class NodeDetailView(APIView):
             node = Node.objects.get(id=node_id)
             if request.user.is_authenticated and not check_permission(request.user, node.project, 'delete', node_id=node.id):
                 return Response(status=status.HTTP_403_FORBIDDEN)
-            node.is_deleted = True
-            node.deleted_at = timezone.now()
-            node.save()
+            
+            permanent = request.query_params.get('permanent') == 'true'
+            if permanent:
+                node.delete()
+            else:
+                node.is_deleted = True
+                node.deleted_at = timezone.now()
+                node.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Node.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

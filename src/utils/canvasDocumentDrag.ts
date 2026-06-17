@@ -1,55 +1,59 @@
-import type { Node, NodeId, ProjectId } from '@/types/domain'
+import type { Node, NodeId, ProjectId } from "@/types/domain";
 
-export const canvasDocumentDragType = 'application/x-gdteams-document-card'
+export const canvasDocumentDragType = "application/x-gdteams-document-card";
 
 export type CanvasDocumentDragPayload = {
-  type: 'document'
-  nodeId: NodeId
-  projectId: ProjectId
-  title: string
-}
+  type: "document";
+  nodeId: NodeId;
+  projectId: ProjectId;
+  title: string;
+};
 
 export const createCanvasDocumentDragPayload = (
-  node: Pick<Node, 'id' | 'projectId' | 'title'>,
+  node: Pick<Node, "id" | "projectId" | "title">,
 ): CanvasDocumentDragPayload => ({
-  type: 'document',
+  type: "document",
   nodeId: node.id,
   projectId: node.projectId,
   title: node.title,
-})
+});
 
-export const hasCanvasDocumentDragPayload = (dataTransfer: DataTransfer | null) => {
-  return Boolean(dataTransfer?.types.includes(canvasDocumentDragType))
-}
+export const hasCanvasDocumentDragPayload = (
+  dataTransfer: DataTransfer | null,
+) => {
+  return Boolean(dataTransfer?.types.includes(canvasDocumentDragType));
+};
 
 export const parseCanvasDocumentDragPayload = (
   dataTransfer: DataTransfer | null,
 ): CanvasDocumentDragPayload | null => {
-  const rawPayload = dataTransfer?.getData(canvasDocumentDragType)
+  const rawPayload = dataTransfer?.getData(canvasDocumentDragType);
 
   if (!rawPayload) {
-    return null
+    return null;
   }
 
   try {
-    const payload = JSON.parse(rawPayload) as Partial<CanvasDocumentDragPayload>
+    const payload = JSON.parse(
+      rawPayload,
+    ) as Partial<CanvasDocumentDragPayload>;
 
     if (
-      payload.type !== 'document' ||
-      typeof payload.nodeId !== 'string' ||
-      typeof payload.projectId !== 'string' ||
-      typeof payload.title !== 'string'
+      payload.type !== "document" ||
+      typeof payload.nodeId !== "string" ||
+      typeof payload.projectId !== "string" ||
+      typeof payload.title !== "string"
     ) {
-      return null
+      return null;
     }
 
     return {
-      type: 'document',
+      type: "document",
       nodeId: payload.nodeId,
       projectId: payload.projectId,
       title: payload.title,
-    }
+    };
   } catch {
-    return null
+    return null;
   }
-}
+};

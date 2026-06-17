@@ -1,64 +1,67 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref } from "vue";
 import {
   getBlockStyle,
   getTextStyle,
   updateField,
-} from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:element', element: CanvasElement): void
-}>()
+  (event: "update:element", element: CanvasElement): void;
+}>();
 
-const classNameInput = ref<HTMLTextAreaElement | null>(null)
-const attributesInput = ref<HTMLTextAreaElement | null>(null)
-const methodsInput = ref<HTMLTextAreaElement | null>(null)
+const classNameInput = ref<HTMLTextAreaElement | null>(null);
+const attributesInput = ref<HTMLTextAreaElement | null>(null);
+const methodsInput = ref<HTMLTextAreaElement | null>(null);
 
-const blockStyle = computed(() => getBlockStyle(props.element))
-const borderColorValue = computed(() => props.element.borderColor ?? '#6b7280')
-const textStyle = computed(() => getTextStyle(props.element))
+const blockStyle = computed(() => getBlockStyle(props.element));
+const borderColorValue = computed(() => props.element.borderColor ?? "#6b7280");
+const textStyle = computed(() => getTextStyle(props.element));
 const classNameField = computed(() =>
-  props.element.fields?.find((field) => field.id === 'className'),
-)
+  props.element.fields?.find((field) => field.id === "className"),
+);
 const attributesField = computed(() =>
-  props.element.fields?.find((field) => field.id === 'attributes'),
-)
+  props.element.fields?.find((field) => field.id === "attributes"),
+);
 const methodsField = computed(() =>
-  props.element.fields?.find((field) => field.id === 'methods'),
-)
+  props.element.fields?.find((field) => field.id === "methods"),
+);
 
 const onFieldInput = (fieldId: string, event: Event) => {
-  const value = (event.target as HTMLTextAreaElement).value
-  const fields = updateField(props.element.fields, fieldId, value)
+  const value = (event.target as HTMLTextAreaElement).value;
+  const fields = updateField(props.element.fields, fieldId, value);
 
-  emit('update:element', {
+  emit("update:element", {
     ...props.element,
-    content: fieldId === 'className' ? value : props.element.content,
+    content: fieldId === "className" ? value : props.element.content,
     fields,
-  })
-}
+  });
+};
 
 const onEnter = (fieldId: string) => {
-  if (fieldId === 'className') {
-    attributesInput.value?.focus()
+  if (fieldId === "className") {
+    attributesInput.value?.focus();
   }
-}
+};
 
 defineExpose({
   classNameInput,
   attributesInput,
   methodsInput,
-})
+});
 </script>
 
 <template>
   <div class="uml-class-node" :style="blockStyle">
-    <div class="uml-section uml-class-name" :style="{ borderColor: borderColorValue }">
+    <div
+      class="uml-section uml-class-name"
+      :style="{ borderColor: borderColorValue }"
+    >
       <textarea
         ref="classNameInput"
         class="uml-textarea uml-title"
@@ -70,7 +73,10 @@ defineExpose({
       />
     </div>
 
-    <div class="uml-section uml-member-section" :style="{ borderColor: borderColorValue }">
+    <div
+      class="uml-section uml-member-section"
+      :style="{ borderColor: borderColorValue }"
+    >
       <textarea
         ref="attributesInput"
         class="uml-textarea"

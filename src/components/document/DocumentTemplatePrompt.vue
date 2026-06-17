@@ -1,37 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import IconTemplate from '~icons/carbon/template'
+import { ref } from "vue";
+import IconTemplate from "~icons/carbon/template";
 
 type TemplateOption = {
-  id: string
-  title: string
-}
+  id: string;
+  title: string;
+};
 
 const templates: TemplateOption[] = [
   {
-    id: 'blank',
-    title: 'Пустой',
+    id: "blank",
+    title: "Пустой",
   },
-]
+];
 
 const emit = defineEmits<{
-  (event: 'apply', templateId: string): void
-  (event: 'skip'): void
-}>()
+  (event: "apply", templateId: string): void;
+  (event: "skip"): void;
+}>();
 
-const selectedTemplateId = ref(templates[0]?.id ?? '')
+const selectedTemplateId = ref(templates[0]?.id ?? "");
 
 const selectTemplate = (templateId: string) => {
-  selectedTemplateId.value = templateId
-}
+  selectedTemplateId.value = templateId;
+};
 
 const applySelectedTemplate = () => {
   if (!selectedTemplateId.value) {
-    return
+    return;
   }
 
-  emit('apply', selectedTemplateId.value)
-}
+  emit("apply", selectedTemplateId.value);
+};
 </script>
 
 <template>
@@ -60,10 +60,18 @@ const applySelectedTemplate = () => {
       </div>
 
       <footer class="template-prompt-actions">
-        <button class="template-action secondary" type="button" @click="emit('skip')">
+        <button
+          class="template-action secondary"
+          type="button"
+          @click="emit('skip')"
+        >
           Пропустить
         </button>
-        <button class="template-action primary" type="button" @click="applySelectedTemplate">
+        <button
+          class="template-action primary"
+          type="button"
+          @click="applySelectedTemplate"
+        >
           ОК
         </button>
       </footer>

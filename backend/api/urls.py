@@ -3,9 +3,9 @@ from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from .views import (
     RegisterView, LoginView, CurrentUserView, PasswordResetView, UserSearchView,
-    ProjectListCreateView, ProjectDetailView, ProjectMemberListView, ProjectMemberDetailView, ProjectRoleViewSet,
+    ProjectListCreateView, ProjectDetailView, ProjectClearTrashView, ProjectMemberListView, ProjectMemberDetailView, ProjectRoleViewSet,
     NodeListCreateView, NodeDetailView, DocumentDetailView, CanvasDetailView,
-    DocumentPageListCreateView, DocumentPageDetailView, GlobalTagListCreateView, TreeView,
+    DocumentPageListCreateView, DocumentPageDetailView, CanvasPageListCreateView, CanvasPageDetailView, GlobalTagListCreateView, TreeView,
     KanbanBoardListCreateView, KanbanBoardDetailView, ChannelListCreateView, ChatMessageListCreateView
 )
 
@@ -32,6 +32,8 @@ urlpatterns = [
     path('nodes/<str:node_id>', NodeDetailView.as_view(), name='nodes-compat-detail'),
     path('documentPages', DocumentPageListCreateView.as_view(), name='document-page-list-create'),
     path('documentPages/<str:page_id>', DocumentPageDetailView.as_view(), name='document-page-detail'),
+    path('canvasPages', CanvasPageListCreateView.as_view(), name='canvas-page-list-create'),
+    path('canvasPages/<str:page_id>', CanvasPageDetailView.as_view(), name='canvas-page-detail'),
     path('tags', GlobalTagListCreateView.as_view(), name='global-tag-list-create'),
     path('kanbanBoards', KanbanBoardListCreateView.as_view(), name='kanban-board-list-create'),
     path('kanbanBoards/<str:pk>', KanbanBoardDetailView.as_view(), name='kanban-board-detail'),
@@ -39,6 +41,7 @@ urlpatterns = [
     path('chatMessages', ChatMessageListCreateView.as_view(), name='chat-message-list-create'),
 
     # Projects
+    path('projects/clear-trash', ProjectClearTrashView.as_view(), name='project-clear-trash'),
     path('projects', ProjectListCreateView.as_view(), name='project-list-create'),
     path('projects/<str:project_id>', ProjectDetailView.as_view(), name='project-detail'),
     path('projects/<str:project_id>/members', ProjectMemberListView.as_view(), name='project-members'),

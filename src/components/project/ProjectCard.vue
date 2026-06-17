@@ -1,107 +1,107 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import ProjectDropdown from '@/components/project/ProjectDropdown.vue'
-import IconStar from '~icons/carbon/star'
-import IconTime from '~icons/carbon/time'
-import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
-import { useProjectsStore } from '@/stores/projects'
-import { formatDateTime } from '@/utils/formatDate'
+import { computed, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
+import ProjectDropdown from "@/components/project/ProjectDropdown.vue";
+import IconStar from "~icons/carbon/star";
+import IconTime from "~icons/carbon/time";
+import { useInlineTitleEdit } from "@/composables/useInlineTitleEdit";
+import { useProjectsStore } from "@/stores/projects";
+import { formatDateTime } from "@/utils/formatDate";
 
-const projectsStore = useProjectsStore()
+const projectsStore = useProjectsStore();
 
 type ProjectCardData = {
-  id: string
-  title: string
-  description: string
-  updatedAt: string
-  owner: string
-  teamName: string
-  isFavorite: boolean
-  filesCount: number
-  imageUrl: string
-  isDeleted: boolean
-}
+  id: string;
+  title: string;
+  description: string;
+  updatedAt: string;
+  owner: string;
+  teamName: string;
+  isFavorite: boolean;
+  filesCount: number;
+  imageUrl: string;
+  isDeleted: boolean;
+};
 
 const props = defineProps<{
-  project: ProjectCardData
-}>()
+  project: ProjectCardData;
+}>();
 
-const projectDropdown = ref<InstanceType<typeof ProjectDropdown> | null>(null)
-const renamingProjectId = ref<string | null>(null)
-const draftTitle = ref('')
-const isSavingTitle = ref(false)
-const isRenaming = computed(() => renamingProjectId.value === props.project.id)
+const projectDropdown = ref<InstanceType<typeof ProjectDropdown> | null>(null);
+const renamingProjectId = ref<string | null>(null);
+const draftTitle = ref("");
+const isSavingTitle = ref(false);
+const isRenaming = computed(() => renamingProjectId.value === props.project.id);
 const projectLinkProps = computed(() => {
   if (isRenaming.value) {
     return {
-      class: 'project-link',
-      'aria-label': props.project.title,
-    }
+      class: "project-link",
+      "aria-label": props.project.title,
+    };
   }
 
   return {
-    class: 'project-link',
-    to: { name: 'project', params: { projectId: props.project.id } },
-    'aria-label': props.project.title,
-  }
-})
+    class: "project-link",
+    to: { name: "project", params: { projectId: props.project.id } },
+    "aria-label": props.project.title,
+  };
+});
 
 watch(
   () => props.project.title,
   (title) => {
     if (!isRenaming.value) {
-      draftTitle.value = title
+      draftTitle.value = title;
     }
   },
   { immediate: true },
-)
+);
 
-const toggleDropdown = () => projectDropdown.value?.toggle()
+const toggleDropdown = () => projectDropdown.value?.toggle();
 
 const startRename = () => {
-  renamingProjectId.value = props.project.id
-  draftTitle.value = props.project.title
-}
+  renamingProjectId.value = props.project.id;
+  draftTitle.value = props.project.title;
+};
 
 const finishRename = async () => {
   if (!isRenaming.value || isSavingTitle.value) {
-    return
+    return;
   }
 
-  const nextTitle = draftTitle.value.trim()
+  const nextTitle = draftTitle.value.trim();
 
   if (!nextTitle) {
-    draftTitle.value = props.project.title
-    renamingProjectId.value = null
-    return
+    draftTitle.value = props.project.title;
+    renamingProjectId.value = null;
+    return;
   }
 
   if (nextTitle === props.project.title) {
-    renamingProjectId.value = null
-    return
+    renamingProjectId.value = null;
+    return;
   }
 
-  isSavingTitle.value = true
+  isSavingTitle.value = true;
 
   try {
-    await projectsStore.renameProject(props.project.id, nextTitle)
+    await projectsStore.renameProject(props.project.id, nextTitle);
   } finally {
-    isSavingTitle.value = false
-    renamingProjectId.value = null
+    isSavingTitle.value = false;
+    renamingProjectId.value = null;
   }
-}
+};
 
 const cancelRename = () => {
-  draftTitle.value = props.project.title
-  renamingProjectId.value = null
-}
+  draftTitle.value = props.project.title;
+  renamingProjectId.value = null;
+};
 
 const { inputRef: titleInput } = useInlineTitleEdit({
   isEditing: isRenaming,
   isBusy: isSavingTitle,
   onCommit: finishRename,
-})
+});
 </script>
 
 <template>
@@ -124,7 +124,11 @@ const { inputRef: titleInput } = useInlineTitleEdit({
             @keydown.esc.prevent="cancelRename"
           />
           <h2 v-else>{{ project.title }}</h2>
-          <IconStar v-if="project.isFavorite" class="favorite-icon" aria-label="В избранном" />
+          <IconStar
+            v-if="project.isFavorite"
+            class="favorite-icon"
+            aria-label="В избранном"
+          />
         </div>
 
         <p>{{ project.description }}</p>
@@ -144,7 +148,11 @@ const { inputRef: titleInput } = useInlineTitleEdit({
       </div>
     </component>
 
-    <ProjectDropdown ref="projectDropdown" :project="project" @rename="startRename" />
+    <ProjectDropdown
+      ref="projectDropdown"
+      :project="project"
+      @rename="startRename"
+    />
   </article>
 </template>
 

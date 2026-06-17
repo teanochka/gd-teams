@@ -1,19 +1,14 @@
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  reactive,
-  ref,
-  watch,
-} from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Lotion } from "@dashibase/lotion";
+import Draggable from "vuedraggable";
 import IconArrowLeft from "~icons/carbon/arrow-left";
+import CanvasCardBlockRenderer from "@/components/canvas/document-card/CanvasCardBlockRenderer.vue";
 import DocumentCover from "@/components/document/DocumentCover.vue";
 import DocumentTemplatePrompt from "@/components/document/DocumentTemplatePrompt.vue";
 import { useDocumentsStore } from "@/stores/documents";
-import type { LotionBlock, LotionPage } from "@/types/domain";
+import type { LotionBlock } from "@/types/domain";
 
 const route = useRoute();
 const router = useRouter();
@@ -23,12 +18,6 @@ let canScheduleSave = false;
 const isTemplatePromptDismissed = ref(false);
 const isCardVisible = ref(false);
 const draggedDocumentBlockId = ref<string | null>(null);
-const cardPanelRef = ref<HTMLElement | null>(null);
-const cardPage = reactive<LotionPage>({
-  name: "",
-  blocks: [],
-});
-let isSyncingCardPage = false;
 
 const projectId = computed(() => String(route.params.projectId ?? ""));
 const documentId = computed(() => {
@@ -73,7 +62,10 @@ const stripHtml = (value: string) => {
 
 const isBlockEmpty = (block: LotionBlock) => {
   if (block.type === "IMAGE") {
-    return typeof block.details.imageUrl !== "string" || block.details.imageUrl.length === 0;
+    return (
+      typeof block.details.imageUrl !== "string" ||
+      block.details.imageUrl.length === 0
+    );
   }
 
   if (block.type === "TABLE" && block.details.table) {
@@ -103,12 +95,29 @@ const shouldShowTemplatePrompt = computed(() => {
   );
 });
 
-const documentBlockIdsKey = computed(() => {
-  return page.value?.blocks.map((block) => block.id).join("\u0000") ?? "";
-});
+const cardBlocks = computed<LotionBlock[]>({
+  get: () => {
+    if (!page.value) {
+      return [];
+    }
 
-const cardBlockIdsKey = computed(() => {
-  return page.value?.card?.blockIds.join("\u0000") ?? "";
+    return (page.value.card?.blockIds ?? [])
+      .map(
+        (blockId) =>
+          page.value?.blocks.find((block) => block.id === blockId) ?? null,
+      )
+      .filter((block): block is LotionBlock => Boolean(block));
+  },
+  set: (blocks) => {
+    if (!documentId.value) {
+      return;
+    }
+
+    documentsStore.setCardBlockIds(
+      documentId.value,
+      blocks.map((block) => block.id),
+    );
+  },
 });
 
 const getBlockIdFromDragTarget = (target: EventTarget | null) => {
@@ -152,97 +161,6 @@ const handleCardDrop = (event: DragEvent) => {
   }
 
   draggedDocumentBlockId.value = null;
-};
-
-const prepareCardDom = async () => {
-  await nextTick();
-
-  const panel = cardPanelRef.value;
-
-  if (!panel) {
-    return;
-  }
-
-  panel
-    .querySelectorAll(".document-card-add-control")
-    .forEach((element) =>
-      element.classList.remove("document-card-add-control"),
-    );
-
-  panel
-    .querySelectorAll<HTMLElement>(".group > div:first-child > *")
-    .forEach((control) => {
-      if (control.querySelector('path[d="M12 4v16m8-8H4"]')) {
-        control.classList.add("document-card-add-control");
-      }
-    });
-
-  panel
-    .querySelectorAll<HTMLElement>('[contenteditable="true"]')
-    .forEach((element) => {
-      element.setAttribute("contenteditable", "false");
-      element.setAttribute("spellcheck", "false");
-    });
-};
-
-const syncCardPage = async () => {
-  isSyncingCardPage = true;
-
-  if (!page.value) {
-    cardPage.name = "";
-    cardPage.blocks = [];
-  } else {
-    cardPage.name = page.value.name;
-    cardPage.blocks = (page.value.card?.blockIds ?? [])
-      .map(
-        (blockId) =>
-          page.value?.blocks.find((block) => block.id === blockId) ?? null,
-      )
-      .filter((block): block is LotionBlock => Boolean(block));
-  }
-
-  await prepareCardDom();
-  isSyncingCardPage = false;
-};
-
-const isCardEditableTarget = (target: EventTarget | null) => {
-  return (
-    target instanceof HTMLElement &&
-    Boolean(target.closest(".document-card-panel [contenteditable]"))
-  );
-};
-
-const preventCardTextInput = (event: Event) => {
-  if (!isCardEditableTarget(event.target)) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-};
-
-const preventCardEditingKeydown = (event: KeyboardEvent) => {
-  if (!isCardEditableTarget(event.target)) {
-    return;
-  }
-
-  const key = event.key.toLowerCase();
-  const isAllowedShortcut = (event.ctrlKey || event.metaKey) && ["a", "c"].includes(key);
-  const isNavigationKey = [
-    "arrowup",
-    "arrowdown",
-    "arrowleft",
-    "arrowright",
-    "escape",
-    "tab",
-  ].includes(key);
-
-  if (isAllowedShortcut || isNavigationKey) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
 };
 
 const updateCover = (coverUrl: string) => {
@@ -314,40 +232,6 @@ watch(
   { deep: true },
 );
 
-watch(
-  [() => page.value?.name, documentBlockIdsKey, cardBlockIdsKey],
-  () => {
-    void syncCardPage();
-  },
-  { immediate: true },
-);
-
-watch(
-  () => cardPage.blocks.map((block) => block.id),
-  (blockIds) => {
-    if (isSyncingCardPage || !documentId.value) {
-      return;
-    }
-
-    documentsStore.setCardBlockIds(documentId.value, blockIds);
-  },
-  { flush: "post" },
-);
-
-watch(
-  () => cardPage.blocks.map((block) => `${block.id}:${block.type}`).join("\u0000"),
-  () => {
-    void prepareCardDom();
-  },
-  { flush: "post" },
-);
-
-watch(isCardVisible, (visible) => {
-  if (visible) {
-    void prepareCardDom();
-  }
-});
-
 onBeforeUnmount(() => {
   canScheduleSave = false;
 
@@ -400,15 +284,29 @@ onBeforeUnmount(() => {
 
         <aside
           v-if="isCardVisible"
-          ref="cardPanelRef"
           class="document-card-panel"
           aria-label="Карточка документа"
-          @beforeinput.capture="preventCardTextInput"
-          @keydown.capture="preventCardEditingKeydown"
-          @paste.capture="preventCardTextInput"
-          @compositionstart.capture="preventCardTextInput"
         >
-          <Lotion :page="cardPage" />
+          <header class="document-card-header">
+            <h2>{{ page.name }}</h2>
+          </header>
+          <Draggable
+            v-if="cardBlocks.length"
+            v-model="cardBlocks"
+            item-key="id"
+            tag="div"
+            class="document-card-blocks"
+            ghost-class="document-card-block-ghost"
+          >
+            <template #item="{ element }">
+              <div class="document-card-block">
+                <CanvasCardBlockRenderer :block="element" />
+              </div>
+            </template>
+          </Draggable>
+          <div v-else class="document-card-empty">
+            В карточке документа нет блоков
+          </div>
           <div
             v-if="draggedDocumentBlockId"
             class="document-card-drop-overlay"
@@ -461,6 +359,9 @@ onBeforeUnmount(() => {
   align-self: start;
   min-width: 0;
   min-height: 420px;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  padding: 28px 32px 32px;
   border: 1px solid #d9dde3;
   border-radius: 8px;
   background: #ffffff;
@@ -480,18 +381,41 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-.document-card-panel :deep(.document-card-add-control) {
-  display: none;
-}
-
-.document-card-panel :deep([contenteditable="false"]) {
-  caret-color: transparent;
-}
-
-.document-card-panel :deep(.lotion h1) {
+.document-card-header {
   margin-bottom: 24px;
+}
+
+.document-card-header h2 {
+  margin: 0;
+  color: #111111;
   font-size: 26px;
+  font-weight: 850;
   line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.document-card-blocks {
+  display: grid;
+  gap: 12px;
+}
+
+.document-card-block {
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.document-card-block-ghost {
+  opacity: 0.45;
+}
+
+.document-card-empty {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  color: #707782;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .document-back-button {

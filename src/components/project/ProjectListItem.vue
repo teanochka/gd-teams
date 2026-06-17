@@ -1,105 +1,108 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import ProjectDropdown from '@/components/project/ProjectDropdown.vue'
-import IconStar from '~icons/carbon/star'
-import IconTime from '~icons/carbon/time'
-import { useInlineTitleEdit } from '@/composables/useInlineTitleEdit'
-import { useProjectsStore } from '@/stores/projects'
-import { formatDateTime } from '@/utils/formatDate'
+import { computed, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
+import ProjectDropdown from "@/components/project/ProjectDropdown.vue";
+import IconStar from "~icons/carbon/star";
+import IconTime from "~icons/carbon/time";
+import { useInlineTitleEdit } from "@/composables/useInlineTitleEdit";
+import { useProjectsStore } from "@/stores/projects";
+import { formatDateTime } from "@/utils/formatDate";
 
 type ProjectListItemData = {
-  id: string
-  title: string
-  createdAt: string
-  isFavorite: boolean
-  isDeleted: boolean
-}
+  id: string;
+  title: string;
+  createdAt: string;
+  isFavorite: boolean;
+  isDeleted: boolean;
+};
 
 const props = defineProps<{
-  project: ProjectListItemData
-}>()
+  project: ProjectListItemData;
+}>();
 
-const projectDropdown = ref<InstanceType<typeof ProjectDropdown> | null>(null)
-const projectsStore = useProjectsStore()
-const renamingProjectId = ref<string | null>(null)
-const draftTitle = ref('')
-const isSavingTitle = ref(false)
-const isRenaming = computed(() => renamingProjectId.value === props.project.id)
+const projectDropdown = ref<InstanceType<typeof ProjectDropdown> | null>(null);
+const projectsStore = useProjectsStore();
+const renamingProjectId = ref<string | null>(null);
+const draftTitle = ref("");
+const isSavingTitle = ref(false);
+const isRenaming = computed(() => renamingProjectId.value === props.project.id);
 const projectLinkProps = computed(() => {
   if (isRenaming.value) {
     return {
-      class: 'project-list-link',
-      'aria-label': props.project.title,
-    }
+      class: "project-list-link",
+      "aria-label": props.project.title,
+    };
   }
 
   return {
-    class: 'project-list-link',
-    to: { name: 'project', params: { projectId: props.project.id } },
-    'aria-label': props.project.title,
-  }
-})
+    class: "project-list-link",
+    to: { name: "project", params: { projectId: props.project.id } },
+    "aria-label": props.project.title,
+  };
+});
 
 watch(
   () => props.project.title,
   (title) => {
     if (!isRenaming.value) {
-      draftTitle.value = title
+      draftTitle.value = title;
     }
   },
   { immediate: true },
-)
+);
 
-const toggleDropdown = () => projectDropdown.value?.toggle()
+const toggleDropdown = () => projectDropdown.value?.toggle();
 
 const startRename = () => {
-  renamingProjectId.value = props.project.id
-  draftTitle.value = props.project.title
-}
+  renamingProjectId.value = props.project.id;
+  draftTitle.value = props.project.title;
+};
 
 const finishRename = async () => {
   if (!isRenaming.value || isSavingTitle.value) {
-    return
+    return;
   }
 
-  const nextTitle = draftTitle.value.trim()
+  const nextTitle = draftTitle.value.trim();
 
   if (!nextTitle) {
-    draftTitle.value = props.project.title
-    renamingProjectId.value = null
-    return
+    draftTitle.value = props.project.title;
+    renamingProjectId.value = null;
+    return;
   }
 
   if (nextTitle === props.project.title) {
-    renamingProjectId.value = null
-    return
+    renamingProjectId.value = null;
+    return;
   }
 
-  isSavingTitle.value = true
+  isSavingTitle.value = true;
 
   try {
-    await projectsStore.renameProject(props.project.id, nextTitle)
+    await projectsStore.renameProject(props.project.id, nextTitle);
   } finally {
-    isSavingTitle.value = false
-    renamingProjectId.value = null
+    isSavingTitle.value = false;
+    renamingProjectId.value = null;
   }
-}
+};
 
 const cancelRename = () => {
-  draftTitle.value = props.project.title
-  renamingProjectId.value = null
-}
+  draftTitle.value = props.project.title;
+  renamingProjectId.value = null;
+};
 
 const toggleFavorite = () => {
-  void projectsStore.toggleFavoriteProject(props.project.id, !props.project.isFavorite)
-}
+  void projectsStore.toggleFavoriteProject(
+    props.project.id,
+    !props.project.isFavorite,
+  );
+};
 
 const { inputRef: titleInput } = useInlineTitleEdit({
   isEditing: isRenaming,
   isBusy: isSavingTitle,
   onCommit: finishRename,
-})
+});
 </script>
 
 <template>
@@ -245,7 +248,7 @@ const { inputRef: titleInput } = useInlineTitleEdit({
   height: 18px;
 }
 
-.favorite-toggle[aria-pressed='false'] {
+.favorite-toggle[aria-pressed="false"] {
   color: #8a8a8a;
 }
 

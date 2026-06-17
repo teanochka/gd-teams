@@ -5,7 +5,12 @@
       <form @submit.prevent="handleLogin">
         <div class="form-group">
           <label>Имя пользователя</label>
-          <input v-model="username" type="text" placeholder="@username" required />
+          <input
+            v-model="username"
+            type="text"
+            placeholder="@username"
+            required
+          />
         </div>
         <div class="form-group">
           <label>Пароль</label>
@@ -13,10 +18,11 @@
         </div>
         <div v-if="error" class="error-msg">{{ error }}</div>
         <button type="submit" :disabled="loading">
-          {{ loading ? 'Вход...' : 'Войти' }}
+          {{ loading ? "Вход..." : "Войти" }}
         </button>
         <p class="switch-mode">
-          Нет аккаунта? <router-link to="/auth/register">Зарегистрироваться</router-link>
+          Нет аккаунта?
+          <router-link to="/auth/register">Зарегистрироваться</router-link>
         </p>
       </form>
     </div>
@@ -24,28 +30,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { ref } from "vue";
+import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
-const username = ref('')
-const password = ref('')
-const loading = ref(false)
-const error = ref('')
+const username = ref("");
+const password = ref("");
+const loading = ref(false);
+const error = ref("");
 
 async function handleLogin() {
-  loading.value = true
-  error.value = ''
+  loading.value = true;
+  error.value = "";
   try {
-    await auth.login(username.value, password.value)
-    router.push('/projects')
+    await auth.login(username.value, password.value);
+    router.push("/projects");
   } catch (e: any) {
-    error.value = e.message || 'Ошибка входа'
+    error.value = e.message || "Ошибка входа";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -64,7 +70,7 @@ async function handleLogin() {
   border-radius: 12px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 h2 {
   margin-bottom: 1.5rem;

@@ -1,48 +1,52 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
 const props = defineProps<{
-  coverUrl?: string
-}>()
+  coverUrl?: string;
+}>();
 
 const emit = defineEmits<{
-  (event: 'update-cover', coverUrl: string): void
-  (event: 'remove-cover'): void
-}>()
+  (event: "update-cover", coverUrl: string): void;
+  (event: "remove-cover"): void;
+}>();
 
-const fileInputRef = ref<HTMLInputElement | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null);
 
 const openFilePicker = () => {
-  fileInputRef.value?.click()
-}
+  fileInputRef.value?.click();
+};
 
 const handleFileChange = (event: Event) => {
-  const input = event.target
+  const input = event.target;
 
   if (!(input instanceof HTMLInputElement)) {
-    return
+    return;
   }
 
-  const file = input.files?.[0]
+  const file = input.files?.[0];
 
   if (!file) {
-    return
+    return;
   }
 
-  const reader = new FileReader()
+  const reader = new FileReader();
 
-  reader.addEventListener('load', () => {
-    if (typeof reader.result === 'string') {
-      emit('update-cover', reader.result)
+  reader.addEventListener("load", () => {
+    if (typeof reader.result === "string") {
+      emit("update-cover", reader.result);
     }
-  })
-  reader.readAsDataURL(file)
-  input.value = ''
-}
+  });
+  reader.readAsDataURL(file);
+  input.value = "";
+};
 </script>
 
 <template>
-  <section class="document-cover" :class="{ empty: !props.coverUrl }" aria-label="Обложка документа">
+  <section
+    class="document-cover"
+    :class="{ empty: !props.coverUrl }"
+    aria-label="Обложка документа"
+  >
     <input
       ref="fileInputRef"
       class="cover-file-input"
@@ -66,7 +70,11 @@ const handleFileChange = (event: Event) => {
         <button class="cover-action" type="button" @click="openFilePicker">
           Изменить
         </button>
-        <button class="cover-action danger" type="button" @click="emit('remove-cover')">
+        <button
+          class="cover-action danger"
+          type="button"
+          @click="emit('remove-cover')"
+        >
           Удалить
         </button>
       </div>

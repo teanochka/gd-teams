@@ -1,34 +1,30 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 import {
   getSvgShadowId,
   hasSvgShadow,
-} from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
-const shadowId = computed(() => getSvgShadowId(props.element, 'circle-shadow'))
-const hasShadow = computed(() => hasSvgShadow(props.element))
+const shadowId = computed(() => getSvgShadowId(props.element, "circle-shadow"));
+const hasShadow = computed(() => hasSvgShadow(props.element));
 const strokeWidth = computed(() => {
   if (!props.element.borderColor && !props.element.borderWidth) {
-    return 0
+    return 0;
   }
 
-  return props.element.borderWidth ?? 2
-})
-const circleRadius = computed(() => 45 - strokeWidth.value / 2)
+  return props.element.borderWidth ?? 2;
+});
+const circleRadius = computed(() => 45 - strokeWidth.value / 2);
 </script>
 
 <template>
   <div class="shape-node">
-    <svg
-      class="shape-svg"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-    >
+    <svg class="shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
       <defs v-if="hasShadow">
         <filter :id="shadowId">
           <feDropShadow

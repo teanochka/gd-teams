@@ -1,5 +1,5 @@
-import { computed, ref } from 'vue'
-import { defineStore } from 'pinia'
+import { computed, ref } from "vue";
+import { defineStore } from "pinia";
 import {
   copyNodes as apiCopyNodes,
   createNode as apiCreateNode,
@@ -12,12 +12,12 @@ import {
   restoreNodes as apiRestoreNodes,
   toggleFavorite as apiToggleFavorite,
   permanentDeleteNodes as apiPermanentDeleteNodes,
-} from '@/api/nodes'
+} from "@/api/nodes";
 import {
   createTag as apiCreateTag,
   updateTag as apiUpdateTag,
   deleteTag as apiDeleteTag,
-} from '@/api/tags'
+} from "@/api/tags";
 import type {
   Breadcrumb,
   ClipboardState,
@@ -28,357 +28,387 @@ import type {
   Project,
   ProjectId,
   Tag,
-} from '@/types/domain'
+} from "@/types/domain";
 
-export const useWorkspaceStore = defineStore('workspace', () => {
-  const projectId = ref<ProjectId | null>(null)
-  const currentFolderId = ref<NodeId | null>(null)
-  const currentProject = ref<Project | null>(null)
+export const useWorkspaceStore = defineStore("workspace", () => {
+  const projectId = ref<ProjectId | null>(null);
+  const currentFolderId = ref<NodeId | null>(null);
+  const currentProject = ref<Project | null>(null);
 
-  const nodesById = ref<Record<NodeId, Node>>({})
-  const childrenByFolderId = ref<Record<NodeId, NodeId[]>>({})
-  const breadcrumbsByFolderId = ref<Record<NodeId, Breadcrumb[]>>({})
-  const tagsById = ref<Record<string, Tag>>({})
-  const foldersTree = ref<FolderTreeNode[]>([])
+  const nodesById = ref<Record<NodeId, Node>>({});
+  const childrenByFolderId = ref<Record<NodeId, NodeId[]>>({});
+  const breadcrumbsByFolderId = ref<Record<NodeId, Breadcrumb[]>>({});
+  const tagsById = ref<Record<string, Tag>>({});
+  const foldersTree = ref<FolderTreeNode[]>([]);
 
-  const selectedNodeIds = ref<NodeId[]>([])
-  const selectionAnchorId = ref<NodeId | null>(null)
-  const clipboard = ref<ClipboardState | null>(null)
+  const selectedNodeIds = ref<NodeId[]>([]);
+  const selectionAnchorId = ref<NodeId | null>(null);
+  const clipboard = ref<ClipboardState | null>(null);
 
-  const isLoading = ref(false)
-  const loadingByFolderId = ref<Record<NodeId, boolean>>({})
-  const errorByFolderId = ref<Record<NodeId, string | null>>({})
-  const loadedFolderIds = ref<Record<NodeId, boolean>>({})
+  const isLoading = ref(false);
+  const loadingByFolderId = ref<Record<NodeId, boolean>>({});
+  const errorByFolderId = ref<Record<NodeId, string | null>>({});
+  const loadedFolderIds = ref<Record<NodeId, boolean>>({});
 
   // Special view mode: null = normal folder view, 'trash' = recycle bin, 'favorites' = starred items
-  const specialView = ref<'trash' | 'favorites' | null>(null)
-  const specialViewItems = ref<Node[]>([])
-  const specialViewLoading = ref(false)
+  const specialView = ref<"trash" | "favorites" | null>(null);
+  const specialViewItems = ref<Node[]>([]);
+  const specialViewLoading = ref(false);
 
   const currentFolder = computed(() => {
     if (!currentFolderId.value) {
-      return null
+      return null;
     }
 
-    return nodesById.value[currentFolderId.value] ?? null
-  })
+    return nodesById.value[currentFolderId.value] ?? null;
+  });
 
   const currentItems = computed(() => {
     if (!currentFolderId.value) {
-      return []
+      return [];
     }
 
-    const ids = childrenByFolderId.value[currentFolderId.value] ?? []
+    const ids = childrenByFolderId.value[currentFolderId.value] ?? [];
 
     return ids
       .map((id) => nodesById.value[id])
-      .filter((node): node is Node => node !== undefined && !node.isDeleted)
-  })
+      .filter((node): node is Node => node !== undefined && !node.isDeleted);
+  });
 
   const breadcrumbs = computed(() => {
     if (!currentFolderId.value) {
-      return []
+      return [];
     }
 
-    return breadcrumbsByFolderId.value[currentFolderId.value] ?? []
-  })
+    return breadcrumbsByFolderId.value[currentFolderId.value] ?? [];
+  });
 
-  const tags = computed(() => Object.values(tagsById.value))
+  const tags = computed(() => Object.values(tagsById.value));
 
   const selectedItems = computed(() => {
     return selectedNodeIds.value
       .map((id) => nodesById.value[id])
-      .filter((node): node is Node => node !== undefined && !node.isDeleted)
-  })
+      .filter((node): node is Node => node !== undefined && !node.isDeleted);
+  });
 
   const isCurrentFolderLoading = computed(() => {
     if (isLoading.value) {
-      return true
+      return true;
     }
 
     if (!currentFolderId.value) {
-      return false
+      return false;
     }
 
-    return loadingByFolderId.value[currentFolderId.value] ?? false
-  })
+    return loadingByFolderId.value[currentFolderId.value] ?? false;
+  });
 
   const currentFolderError = computed(() => {
     if (!currentFolderId.value) {
-      return null
+      return null;
     }
 
-    return errorByFolderId.value[currentFolderId.value] ?? null
-  })
+    return errorByFolderId.value[currentFolderId.value] ?? null;
+  });
 
   async function loadTrash() {
-    if (!projectId.value) return
-    specialView.value = 'trash'
-    specialViewLoading.value = true
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    if (!projectId.value) return;
+    specialView.value = "trash";
+    specialViewLoading.value = true;
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
     try {
-      specialViewItems.value = await apiGetDeletedNodes(projectId.value)
+      specialViewItems.value = await apiGetDeletedNodes(projectId.value);
     } finally {
-      specialViewLoading.value = false
+      specialViewLoading.value = false;
     }
   }
 
   async function loadFavorites() {
-    if (!projectId.value) return
-    specialView.value = 'favorites'
-    specialViewLoading.value = true
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    if (!projectId.value) return;
+    specialView.value = "favorites";
+    specialViewLoading.value = true;
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
     try {
-      specialViewItems.value = await apiGetFavoriteNodes(projectId.value)
+      specialViewItems.value = await apiGetFavoriteNodes(projectId.value);
     } finally {
-      specialViewLoading.value = false
+      specialViewLoading.value = false;
     }
   }
 
   function exitSpecialView() {
-    specialView.value = null
-    specialViewItems.value = []
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    specialView.value = null;
+    specialViewItems.value = [];
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
   }
 
   async function restoreSelected() {
-    if (!selectedNodeIds.value.length) return []
-    const restored = await apiRestoreNodes(selectedNodeIds.value)
-    cacheNodes(restored)
+    if (!selectedNodeIds.value.length) return [];
+    const restored = await apiRestoreNodes(selectedNodeIds.value);
+    cacheNodes(restored);
     // Remove from special view items
-    const restoredIds = new Set(restored.map(n => n.id))
-    specialViewItems.value = specialViewItems.value.filter(n => !restoredIds.has(n.id))
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
-    rebuildFoldersTree()
-    return restored
+    const restoredIds = new Set(restored.map((n) => n.id));
+    specialViewItems.value = specialViewItems.value.filter(
+      (n) => !restoredIds.has(n.id),
+    );
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
+    rebuildFoldersTree();
+    return restored;
   }
 
   async function restoreAll() {
-    if (!specialViewItems.value.length) return []
-    const allIds = specialViewItems.value.map(n => n.id)
-    const restored = await apiRestoreNodes(allIds)
-    cacheNodes(restored)
-    specialViewItems.value = []
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
-    rebuildFoldersTree()
-    return restored
+    if (!specialViewItems.value.length) return [];
+    const allIds = specialViewItems.value.map((n) => n.id);
+    const restored = await apiRestoreNodes(allIds);
+    cacheNodes(restored);
+    specialViewItems.value = [];
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
+    rebuildFoldersTree();
+    return restored;
   }
 
   async function permanentDeleteSelected() {
-    if (!selectedNodeIds.value.length) return []
-    await apiPermanentDeleteNodes(selectedNodeIds.value)
-    
+    if (!selectedNodeIds.value.length) return [];
+    await apiPermanentDeleteNodes(selectedNodeIds.value);
+
     for (const nodeId of selectedNodeIds.value) {
-      delete nodesById.value[nodeId]
+      delete nodesById.value[nodeId];
     }
-    
-    const deletedIds = new Set(selectedNodeIds.value)
-    specialViewItems.value = specialViewItems.value.filter(n => !deletedIds.has(n.id))
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
-    return Array.from(deletedIds)
+
+    const deletedIds = new Set(selectedNodeIds.value);
+    specialViewItems.value = specialViewItems.value.filter(
+      (n) => !deletedIds.has(n.id),
+    );
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
+    return Array.from(deletedIds);
   }
 
   async function emptyTrash() {
-    if (!specialViewItems.value.length) return []
-    const allIds = specialViewItems.value.map(n => n.id)
-    await apiPermanentDeleteNodes(allIds)
-    
+    if (!specialViewItems.value.length) return [];
+    const allIds = specialViewItems.value.map((n) => n.id);
+    await apiPermanentDeleteNodes(allIds);
+
     for (const nodeId of allIds) {
-      delete nodesById.value[nodeId]
+      delete nodesById.value[nodeId];
     }
-    
-    specialViewItems.value = []
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
-    return allIds
+
+    specialViewItems.value = [];
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
+    return allIds;
   }
 
   function cacheNodes(nodes: Node[]) {
     for (const node of nodes) {
-      nodesById.value[node.id] = node
+      nodesById.value[node.id] = node;
     }
   }
 
   function cacheTags(nextTags: Tag[]) {
     for (const tag of nextTags) {
-      tagsById.value[tag.id] = tag
+      tagsById.value[tag.id] = tag;
     }
   }
 
   function rebuildFoldersTree() {
-    const rootFolderId = currentProject.value?.rootFolderId
+    const rootFolderId = currentProject.value?.rootFolderId;
 
     if (!rootFolderId) {
-      foldersTree.value = []
-      return
+      foldersTree.value = [];
+      return;
     }
 
-    const nodes = Object.values(nodesById.value)
+    const nodes = Object.values(nodesById.value);
 
     const buildTree = (parentId: NodeId): FolderTreeNode[] => {
       return nodes
-        .filter((node) => node.parentId === parentId && node.type === 'folder' && !node.isDeleted)
+        .filter(
+          (node) =>
+            node.parentId === parentId &&
+            node.type === "folder" &&
+            !node.isDeleted,
+        )
         .map((node) => {
-          const children = buildTree(node.id)
+          const children = buildTree(node.id);
 
           return {
             id: node.id,
             name: node.title,
             ...(children.length ? { children } : {}),
-          }
-        })
-    }
+          };
+        });
+    };
 
-    foldersTree.value = buildTree(rootFolderId)
+    foldersTree.value = buildTree(rootFolderId);
   }
 
   function removeFromParentChildren(nodeIds: NodeId[]) {
     for (const folderId of Object.keys(childrenByFolderId.value)) {
-      const children = childrenByFolderId.value[folderId] ?? []
-      childrenByFolderId.value[folderId] = children.filter((id) => !nodeIds.includes(id))
+      const children = childrenByFolderId.value[folderId] ?? [];
+      childrenByFolderId.value[folderId] = children.filter(
+        (id) => !nodeIds.includes(id),
+      );
     }
   }
 
   function normalizeSelectedNodeIds(nodeIds: NodeId[]) {
     return [...new Set(nodeIds)].filter((nodeId) => {
-      const node = nodesById.value[nodeId]
+      const node = nodesById.value[nodeId];
 
-      return node !== undefined && !node.isDeleted
-    })
+      return node !== undefined && !node.isDeleted;
+    });
   }
 
-  function findFolderTreeNode(targetId: NodeId, tree = foldersTree.value): FolderTreeNode | null {
+  function findFolderTreeNode(
+    targetId: NodeId,
+    tree = foldersTree.value,
+  ): FolderTreeNode | null {
     for (const node of tree) {
       if (node.id === targetId) {
-        return node
+        return node;
       }
 
-      const nestedNode = node.children?.length ? findFolderTreeNode(targetId, node.children) : null
+      const nestedNode = node.children?.length
+        ? findFolderTreeNode(targetId, node.children)
+        : null;
 
       if (nestedNode) {
-        return nestedNode
+        return nestedNode;
       }
     }
 
-    return null
+    return null;
   }
 
   function collectFolderDescendantIds(folderId: NodeId) {
-    const folderNode = findFolderTreeNode(folderId)
-    const descendantIds = new Set<NodeId>()
+    const folderNode = findFolderTreeNode(folderId);
+    const descendantIds = new Set<NodeId>();
 
     const walk = (tree: FolderTreeNode[] = []) => {
       for (const node of tree) {
-        descendantIds.add(node.id)
-        walk(node.children)
+        descendantIds.add(node.id);
+        walk(node.children);
       }
-    }
+    };
 
-    walk(folderNode?.children)
+    walk(folderNode?.children);
 
-    return descendantIds
+    return descendantIds;
   }
 
   function canMoveNodeIdsToFolder(nodeIds: NodeId[], targetFolderId: NodeId) {
     return nodeIds.every((nodeId) => {
       if (nodeId === targetFolderId) {
-        return false
+        return false;
       }
 
-      const node = nodesById.value[nodeId]
+      const node = nodesById.value[nodeId];
 
-      if (!node || node.type !== 'folder') {
-        return true
+      if (!node || node.type !== "folder") {
+        return true;
       }
 
-      return !collectFolderDescendantIds(nodeId).has(targetFolderId)
-    })
+      return !collectFolderDescendantIds(nodeId).has(targetFolderId);
+    });
   }
 
-  async function loadFolder(nextProjectId: ProjectId, folderId?: NodeId | null, force = false) {
-    const isNewProject = projectId.value !== nextProjectId
-    projectId.value = nextProjectId
+  async function loadFolder(
+    nextProjectId: ProjectId,
+    folderId?: NodeId | null,
+    force = false,
+  ) {
+    const isNewProject = projectId.value !== nextProjectId;
+    projectId.value = nextProjectId;
 
     if (isNewProject) {
       // Clear project-specific state when switching projects
-      currentProject.value = null
-      nodesById.value = {}
-      childrenByFolderId.value = {}
-      breadcrumbsByFolderId.value = {}
-      tagsById.value = {}
-      foldersTree.value = []
-      loadedFolderIds.value = {}
-      errorByFolderId.value = {}
+      currentProject.value = null;
+      nodesById.value = {};
+      childrenByFolderId.value = {};
+      breadcrumbsByFolderId.value = {};
+      tagsById.value = {};
+      foldersTree.value = [];
+      loadedFolderIds.value = {};
+      errorByFolderId.value = {};
     }
 
-    if (folderId && folderId !== 'root' && loadedFolderIds.value[folderId] && !force) {
-      currentFolderId.value = folderId
-      selectedNodeIds.value = []
-      selectionAnchorId.value = null
-      return
+    if (
+      folderId &&
+      folderId !== "root" &&
+      loadedFolderIds.value[folderId] &&
+      !force
+    ) {
+      currentFolderId.value = folderId;
+      selectedNodeIds.value = [];
+      selectionAnchorId.value = null;
+      return;
     }
 
-    const loadingKey = folderId && folderId !== 'root' ? folderId : 'root'
-    isLoading.value = true
-    loadingByFolderId.value[loadingKey] = true
-    errorByFolderId.value[loadingKey] = null
+    const loadingKey = folderId && folderId !== "root" ? folderId : "root";
+    isLoading.value = true;
+    loadingByFolderId.value[loadingKey] = true;
+    errorByFolderId.value[loadingKey] = null;
 
     try {
-      const data = await getFolderContent(nextProjectId, folderId)
-      const resolvedFolderId = data.currentFolder.id
+      const data = await getFolderContent(nextProjectId, folderId);
+      const resolvedFolderId = data.currentFolder.id;
 
-      currentProject.value = data.project
-      currentFolderId.value = resolvedFolderId
+      currentProject.value = data.project;
+      currentFolderId.value = resolvedFolderId;
 
-      cacheNodes([data.currentFolder, ...data.nodes])
-      cacheTags(data.tags)
+      cacheNodes([data.currentFolder, ...data.nodes]);
+      cacheTags(data.tags);
 
-      childrenByFolderId.value[resolvedFolderId] = data.nodes.map((node) => node.id)
-      breadcrumbsByFolderId.value[resolvedFolderId] = data.breadcrumbs
-      foldersTree.value = data.foldersTree
-      loadedFolderIds.value[resolvedFolderId] = true
-      loadingByFolderId.value[resolvedFolderId] = false
-      errorByFolderId.value[resolvedFolderId] = null
-      selectedNodeIds.value = []
-      selectionAnchorId.value = null
+      childrenByFolderId.value[resolvedFolderId] = data.nodes.map(
+        (node) => node.id,
+      );
+      breadcrumbsByFolderId.value[resolvedFolderId] = data.breadcrumbs;
+      foldersTree.value = data.foldersTree;
+      loadedFolderIds.value[resolvedFolderId] = true;
+      loadingByFolderId.value[resolvedFolderId] = false;
+      errorByFolderId.value[resolvedFolderId] = null;
+      selectedNodeIds.value = [];
+      selectionAnchorId.value = null;
     } catch {
-      errorByFolderId.value[loadingKey] = 'Не удалось загрузить папку'
+      errorByFolderId.value[loadingKey] = "Не удалось загрузить папку";
     } finally {
-      isLoading.value = false
-      loadingByFolderId.value[loadingKey] = false
+      isLoading.value = false;
+      loadingByFolderId.value[loadingKey] = false;
     }
   }
 
   async function reloadCurrentFolder() {
     if (!projectId.value || !currentFolderId.value) {
-      return
+      return;
     }
 
-    await loadFolder(projectId.value, currentFolderId.value, true)
+    await loadFolder(projectId.value, currentFolderId.value, true);
   }
 
   function setSelection(nodeIds: NodeId[], anchorId?: NodeId | null) {
-    selectedNodeIds.value = normalizeSelectedNodeIds(nodeIds)
-    const fallbackAnchorId = selectedNodeIds.value[selectedNodeIds.value.length - 1] ?? null
+    selectedNodeIds.value = normalizeSelectedNodeIds(nodeIds);
+    const fallbackAnchorId =
+      selectedNodeIds.value[selectedNodeIds.value.length - 1] ?? null;
 
     selectionAnchorId.value =
-      selectedNodeIds.value.length > 0 ? (anchorId ?? selectionAnchorId.value ?? fallbackAnchorId) : null
+      selectedNodeIds.value.length > 0
+        ? (anchorId ?? selectionAnchorId.value ?? fallbackAnchorId)
+        : null;
   }
 
   function selectOne(nodeId: NodeId) {
-    selectedNodeIds.value = [nodeId]
-    selectionAnchorId.value = nodeId
+    selectedNodeIds.value = [nodeId];
+    selectionAnchorId.value = nodeId;
   }
 
   function toggleSelection(nodeId: NodeId) {
     if (selectedNodeIds.value.includes(nodeId)) {
-      const remainingIds = selectedNodeIds.value.filter((id) => id !== nodeId)
+      const remainingIds = selectedNodeIds.value.filter((id) => id !== nodeId);
 
       setSelection(
         remainingIds,
@@ -387,212 +417,227 @@ export const useWorkspaceStore = defineStore('workspace', () => {
             ? remainingIds[remainingIds.length - 1]
             : selectionAnchorId.value
           : null,
-      )
-      return
+      );
+      return;
     }
 
-    setSelection([...selectedNodeIds.value, nodeId], nodeId)
+    setSelection([...selectedNodeIds.value, nodeId], nodeId);
   }
 
-  function selectRange(nodeIdsInOrder: NodeId[], targetNodeId: NodeId, additive = false) {
-    const anchorId = selectionAnchorId.value
-    const targetIndex = nodeIdsInOrder.indexOf(targetNodeId)
+  function selectRange(
+    nodeIdsInOrder: NodeId[],
+    targetNodeId: NodeId,
+    additive = false,
+  ) {
+    const anchorId = selectionAnchorId.value;
+    const targetIndex = nodeIdsInOrder.indexOf(targetNodeId);
 
     if (targetIndex === -1) {
-      return
+      return;
     }
 
-    const anchorIndex = anchorId ? nodeIdsInOrder.indexOf(anchorId) : -1
+    const anchorIndex = anchorId ? nodeIdsInOrder.indexOf(anchorId) : -1;
 
     if (anchorIndex === -1) {
-      selectOne(targetNodeId)
-      return
+      selectOne(targetNodeId);
+      return;
     }
 
     const [startIndex, endIndex] =
-      anchorIndex <= targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex]
-    const rangeIds = nodeIdsInOrder.slice(startIndex, endIndex + 1)
+      anchorIndex <= targetIndex
+        ? [anchorIndex, targetIndex]
+        : [targetIndex, anchorIndex];
+    const rangeIds = nodeIdsInOrder.slice(startIndex, endIndex + 1);
 
-    setSelection(additive ? [...selectedNodeIds.value, ...rangeIds] : rangeIds, anchorId)
+    setSelection(
+      additive ? [...selectedNodeIds.value, ...rangeIds] : rangeIds,
+      anchorId,
+    );
   }
 
   function clearSelection() {
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
   }
 
   function copySelected() {
     if (!selectedNodeIds.value.length) {
-      return
+      return;
     }
 
-    clipboard.value = { type: 'copy', nodeIds: [...selectedNodeIds.value] }
+    clipboard.value = { type: "copy", nodeIds: [...selectedNodeIds.value] };
   }
 
   function cutSelected() {
     if (!selectedNodeIds.value.length) {
-      return
+      return;
     }
 
-    clipboard.value = { type: 'cut', nodeIds: [...selectedNodeIds.value] }
+    clipboard.value = { type: "cut", nodeIds: [...selectedNodeIds.value] };
   }
 
-  async function createNode(payload: Omit<CreateNodePayload, 'projectId'>) {
+  async function createNode(payload: Omit<CreateNodePayload, "projectId">) {
     if (!projectId.value) {
-      return null
+      return null;
     }
 
     const node = await apiCreateNode({
       ...payload,
       projectId: projectId.value,
-    })
+    });
 
-    cacheNodes([node])
+    cacheNodes([node]);
     childrenByFolderId.value[payload.parentId] = [
       ...(childrenByFolderId.value[payload.parentId] ?? []),
       node.id,
-    ]
-    rebuildFoldersTree()
+    ];
+    rebuildFoldersTree();
 
     if (currentProject.value) {
       currentProject.value = {
         ...currentProject.value,
         filesCount: currentProject.value.filesCount + 1,
         updatedAt: node.updatedAt,
-      }
+      };
     }
 
-    return node
+    return node;
   }
 
   async function renameSelected(title: string) {
-    const nodeId = selectedNodeIds.value[0]
+    const nodeId = selectedNodeIds.value[0];
 
     if (!nodeId || selectedNodeIds.value.length !== 1) {
-      return null
+      return null;
     }
 
-    const node = await apiRenameNode(nodeId, title)
-    cacheNodes([node])
-    rebuildFoldersTree()
+    const node = await apiRenameNode(nodeId, title);
+    cacheNodes([node]);
+    rebuildFoldersTree();
 
-    return node
+    return node;
   }
 
   async function toggleFavorite(nodeId: NodeId, isFavorite: boolean) {
-    const node = await apiToggleFavorite(nodeId, isFavorite)
-    cacheNodes([node])
-    return node
+    const node = await apiToggleFavorite(nodeId, isFavorite);
+    cacheNodes([node]);
+    return node;
   }
 
   async function moveSelected(parentId: NodeId) {
     if (!selectedNodeIds.value.length) {
-      return []
+      return [];
     }
 
     if (!canMoveNodeIdsToFolder(selectedNodeIds.value, parentId)) {
-      return []
+      return [];
     }
 
-    const movedNodes = await apiMoveNodes(selectedNodeIds.value, parentId)
-    cacheNodes(movedNodes)
-    removeFromParentChildren(movedNodes.map((node) => node.id))
+    const movedNodes = await apiMoveNodes(selectedNodeIds.value, parentId);
+    cacheNodes(movedNodes);
+    removeFromParentChildren(movedNodes.map((node) => node.id));
 
     childrenByFolderId.value[parentId] = [
       ...(childrenByFolderId.value[parentId] ?? []),
       ...movedNodes.map((node) => node.id),
-    ]
-    rebuildFoldersTree()
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    ];
+    rebuildFoldersTree();
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
 
-    return movedNodes
+    return movedNodes;
   }
 
   async function pasteClipboard() {
     if (!clipboard.value || !currentFolderId.value) {
-      return []
+      return [];
     }
 
-    const targetFolderId = currentFolderId.value
+    const targetFolderId = currentFolderId.value;
 
-    if (clipboard.value.type === 'copy') {
-      const copiedNodes = await apiCopyNodes(clipboard.value.nodeIds, targetFolderId)
-      cacheNodes(copiedNodes)
+    if (clipboard.value.type === "copy") {
+      const copiedNodes = await apiCopyNodes(
+        clipboard.value.nodeIds,
+        targetFolderId,
+      );
+      cacheNodes(copiedNodes);
       childrenByFolderId.value[targetFolderId] = [
         ...(childrenByFolderId.value[targetFolderId] ?? []),
         ...copiedNodes.map((node) => node.id),
-      ]
-      rebuildFoldersTree()
+      ];
+      rebuildFoldersTree();
 
-      return copiedNodes
+      return copiedNodes;
     }
 
     if (!canMoveNodeIdsToFolder(clipboard.value.nodeIds, targetFolderId)) {
-      return []
+      return [];
     }
 
-    const movedNodes = await apiMoveNodes(clipboard.value.nodeIds, targetFolderId)
-    cacheNodes(movedNodes)
-    removeFromParentChildren(movedNodes.map((node) => node.id))
+    const movedNodes = await apiMoveNodes(
+      clipboard.value.nodeIds,
+      targetFolderId,
+    );
+    cacheNodes(movedNodes);
+    removeFromParentChildren(movedNodes.map((node) => node.id));
     childrenByFolderId.value[targetFolderId] = [
       ...(childrenByFolderId.value[targetFolderId] ?? []),
       ...movedNodes.map((node) => node.id),
-    ]
-    rebuildFoldersTree()
-    clipboard.value = null
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    ];
+    rebuildFoldersTree();
+    clipboard.value = null;
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
 
-    return movedNodes
+    return movedNodes;
   }
 
   async function deleteSelected() {
     if (!selectedNodeIds.value.length) {
-      return []
+      return [];
     }
 
-    const deletedIds = await apiDeleteNodes(selectedNodeIds.value)
+    const deletedIds = await apiDeleteNodes(selectedNodeIds.value);
 
     for (const nodeId of deletedIds) {
-      const node = nodesById.value[nodeId]
+      const node = nodesById.value[nodeId];
 
       if (node) {
-        nodesById.value[nodeId] = { ...node, isDeleted: true }
+        nodesById.value[nodeId] = { ...node, isDeleted: true };
       }
     }
 
-    removeFromParentChildren(deletedIds)
-    rebuildFoldersTree()
-    selectedNodeIds.value = []
-    selectionAnchorId.value = null
+    removeFromParentChildren(deletedIds);
+    rebuildFoldersTree();
+    selectedNodeIds.value = [];
+    selectionAnchorId.value = null;
 
-    return deletedIds
+    return deletedIds;
   }
 
   async function createProjectTag(name: string, color: string) {
-    if (!projectId.value) return null
-    const tag = await apiCreateTag({ projectId: projectId.value, name, color })
-    tagsById.value[tag.id] = tag
-    return tag
+    if (!projectId.value) return null;
+    const tag = await apiCreateTag({ projectId: projectId.value, name, color });
+    tagsById.value[tag.id] = tag;
+    return tag;
   }
 
   async function updateProjectTag(tagId: string, name: string, color: string) {
-    const tag = await apiUpdateTag(tagId, { name, color })
-    tagsById.value[tag.id] = tag
-    return tag
+    const tag = await apiUpdateTag(tagId, { name, color });
+    tagsById.value[tag.id] = tag;
+    return tag;
   }
 
   async function deleteProjectTag(tagId: string) {
-    await apiDeleteTag(tagId)
-    delete tagsById.value[tagId]
+    await apiDeleteTag(tagId);
+    delete tagsById.value[tagId];
     // Remove tag from all nodes that reference it
     for (const node of Object.values(nodesById.value)) {
-      if (node.tags.some(t => t.id === tagId)) {
+      if (node.tags.some((t) => t.id === tagId)) {
         nodesById.value[node.id] = {
           ...node,
-          tags: node.tags.filter(t => t.id !== tagId),
-        }
+          tags: node.tags.filter((t) => t.id !== tagId),
+        };
       }
     }
   }
@@ -647,5 +692,5 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     createProjectTag,
     updateProjectTag,
     deleteProjectTag,
-  }
-})
+  };
+});

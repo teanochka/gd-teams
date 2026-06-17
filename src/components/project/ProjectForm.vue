@@ -1,133 +1,143 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import IconImage from '~icons/carbon/image'
-import IconUpload from '~icons/carbon/upload'
-import type { CreateProjectPayload, Team } from '@/types/domain'
+import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import IconImage from "~icons/carbon/image";
+import IconUpload from "~icons/carbon/upload";
+import type { CreateProjectPayload, Team } from "@/types/domain";
 
-type TeamMode = 'existing' | 'new'
+type TeamMode = "existing" | "new";
 
 type ProjectFormValues = {
-  title: string
-  description: string
-  imageUrl?: string
-  teamId?: string
-  newTeamName?: string
-}
+  title: string;
+  description: string;
+  imageUrl?: string;
+  teamId?: string;
+  newTeamName?: string;
+};
 
 const props = withDefaults(
   defineProps<{
-    teams: Team[]
-    initialValues?: ProjectFormValues | null
-    submitLabel: string
-    submittingLabel: string
-    isSubmitting?: boolean
+    teams: Team[];
+    initialValues?: ProjectFormValues | null;
+    submitLabel: string;
+    submittingLabel: string;
+    isSubmitting?: boolean;
   }>(),
   {
     initialValues: null,
     isSubmitting: false,
   },
-)
+);
 
 const emit = defineEmits<{
-  submit: [payload: CreateProjectPayload]
-}>()
+  submit: [payload: CreateProjectPayload];
+}>();
 
-const router = useRouter()
-const title = ref('')
-const description = ref('')
-const selectedTeamId = ref('')
-const teamMode = ref<TeamMode>('existing')
-const newTeamName = ref('')
-const coverDataUrl = ref('')
-const fileName = ref('')
-const localError = ref('')
+const router = useRouter();
+const title = ref("");
+const description = ref("");
+const selectedTeamId = ref("");
+const teamMode = ref<TeamMode>("existing");
+const newTeamName = ref("");
+const coverDataUrl = ref("");
+const fileName = ref("");
+const localError = ref("");
 
-const hasTeams = computed(() => props.teams.length > 0)
+const hasTeams = computed(() => props.teams.length > 0);
 const previewImage = computed(
-  () => coverDataUrl.value || 'https://picsum.photos/seed/new-project/900/520',
-)
+  () => coverDataUrl.value || "https://picsum.photos/seed/new-project/900/520",
+);
 
 const canSubmit = computed(() => {
-  const hasTeam = teamMode.value === 'new' ? newTeamName.value.trim() : selectedTeamId.value
+  const hasTeam =
+    teamMode.value === "new" ? newTeamName.value.trim() : selectedTeamId.value;
 
-  return Boolean(title.value.trim() && description.value.trim() && hasTeam && !props.isSubmitting)
-})
+  return Boolean(
+    title.value.trim() &&
+    description.value.trim() &&
+    hasTeam &&
+    !props.isSubmitting,
+  );
+});
 
 const applyInitialValues = () => {
-  title.value = props.initialValues?.title ?? ''
-  description.value = props.initialValues?.description ?? ''
-  coverDataUrl.value = props.initialValues?.imageUrl ?? ''
-  fileName.value = ''
-  newTeamName.value = props.initialValues?.newTeamName ?? ''
+  title.value = props.initialValues?.title ?? "";
+  description.value = props.initialValues?.description ?? "";
+  coverDataUrl.value = props.initialValues?.imageUrl ?? "";
+  fileName.value = "";
+  newTeamName.value = props.initialValues?.newTeamName ?? "";
 
-  const initialTeamId = props.initialValues?.teamId ?? props.teams[0]?.id ?? ''
-  selectedTeamId.value = initialTeamId
+  const initialTeamId = props.initialValues?.teamId ?? props.teams[0]?.id ?? "";
+  selectedTeamId.value = initialTeamId;
   teamMode.value =
-    props.initialValues?.newTeamName?.trim() || !selectedTeamId.value ? 'new' : 'existing'
-  localError.value = ''
-}
+    props.initialValues?.newTeamName?.trim() || !selectedTeamId.value
+      ? "new"
+      : "existing";
+  localError.value = "";
+};
 
 watch(
   () => [props.initialValues, props.teams],
   () => {
-    applyInitialValues()
+    applyInitialValues();
   },
   { immediate: true },
-)
+);
 
 const readFileAsDataUrl = (file: File) => {
   return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
 
-    reader.addEventListener('load', () => resolve(String(reader.result ?? '')))
-    reader.addEventListener('error', () => reject(new Error('Не удалось прочитать файл')))
-    reader.readAsDataURL(file)
-  })
-}
+    reader.addEventListener("load", () => resolve(String(reader.result ?? "")));
+    reader.addEventListener("error", () =>
+      reject(new Error("Не удалось прочитать файл")),
+    );
+    reader.readAsDataURL(file);
+  });
+};
 
 const handleCoverChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
 
   if (!file) {
-    return
+    return;
   }
 
-  if (!file.type.startsWith('image/')) {
-    localError.value = 'Выберите файл изображения для обложки.'
-    input.value = ''
-    return
+  if (!file.type.startsWith("image/")) {
+    localError.value = "Выберите файл изображения для обложки.";
+    input.value = "";
+    return;
   }
 
   try {
-    coverDataUrl.value = await readFileAsDataUrl(file)
-    fileName.value = file.name
-    localError.value = ''
+    coverDataUrl.value = await readFileAsDataUrl(file);
+    fileName.value = file.name;
+    localError.value = "";
   } catch {
-    localError.value = 'Не удалось загрузить обложку.'
+    localError.value = "Не удалось загрузить обложку.";
   }
-}
+};
 
 const submitProject = () => {
   if (!canSubmit.value) {
-    localError.value = 'Заполните название, описание и команду.'
-    return
+    localError.value = "Заполните название, описание и команду.";
+    return;
   }
 
-  localError.value = ''
-  emit('submit', {
+  localError.value = "";
+  emit("submit", {
     title: title.value,
     description: description.value,
     imageUrl: coverDataUrl.value,
-    teamId: teamMode.value === 'existing' ? selectedTeamId.value : undefined,
-    newTeamName: teamMode.value === 'new' ? newTeamName.value : undefined,
-  })
-}
+    teamId: teamMode.value === "existing" ? selectedTeamId.value : undefined,
+    newTeamName: teamMode.value === "new" ? newTeamName.value : undefined,
+  });
+};
 
 const cancelProject = () => {
-  void router.push({ name: 'projects' })
-}
+  void router.push({ name: "projects" });
+};
 </script>
 
 <template>
@@ -141,14 +151,16 @@ const cancelProject = () => {
         <img :src="previewImage" alt="Обложка проекта" />
         <div class="cover-overlay">
           <IconImage aria-hidden="true" />
-          <span>{{ fileName || 'Обложка проекта' }}</span>
+          <span>{{ fileName || "Обложка проекта" }}</span>
         </div>
       </div>
 
       <div class="cover-copy">
         <span class="section-eyebrow">Обложка</span>
         <h2 id="cover-title">Добавьте изображение проекта</h2>
-        <p>Загрузите картинку, которая поможет отличать проект в общей сетке.</p>
+        <p>
+          Загрузите картинку, которая поможет отличать проект в общей сетке.
+        </p>
 
         <label class="upload-button">
           <IconUpload aria-hidden="true" />
@@ -185,8 +197,16 @@ const cancelProject = () => {
         <legend>Команда</legend>
 
         <div class="team-switch">
-          <label class="team-choice" :class="{ active: teamMode === 'existing' && hasTeams }">
-            <input v-model="teamMode" type="radio" value="existing" :disabled="!hasTeams" />
+          <label
+            class="team-choice"
+            :class="{ active: teamMode === 'existing' && hasTeams }"
+          >
+            <input
+              v-model="teamMode"
+              type="radio"
+              value="existing"
+              :disabled="!hasTeams"
+            />
             <span>Выбрать из списка</span>
           </label>
 
@@ -198,7 +218,11 @@ const cancelProject = () => {
 
         <div v-if="teamMode === 'existing' && hasTeams" class="form-field">
           <label for="project-team">Список команд</label>
-          <select id="project-team" v-model="selectedTeamId" class="form-select">
+          <select
+            id="project-team"
+            v-model="selectedTeamId"
+            class="form-select"
+          >
             <option v-for="team in teams" :key="team.id" :value="team.id">
               {{ team.name }}
             </option>
@@ -217,10 +241,20 @@ const cancelProject = () => {
       </fieldset>
 
       <div class="form-actions span-full">
-        <BButton type="button" variant="light" class="cancel-button" @click="cancelProject">
+        <BButton
+          type="button"
+          variant="light"
+          class="cancel-button"
+          @click="cancelProject"
+        >
           Отмена
         </BButton>
-        <BButton type="submit" variant="dark" class="submit-button" :disabled="!canSubmit">
+        <BButton
+          type="submit"
+          variant="dark"
+          class="submit-button"
+          :disabled="!canSubmit"
+        >
           {{ isSubmitting ? submittingLabel : submitLabel }}
         </BButton>
       </div>

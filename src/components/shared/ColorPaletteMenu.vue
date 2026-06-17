@@ -1,17 +1,17 @@
 <script setup lang="ts">
 type PaletteColor = {
-  name: string
-  value: string
-}
+  name: string;
+  value: string;
+};
 
 defineProps<{
-  colors: PaletteColor[]
-  selectedColor?: string
-}>()
+  colors: PaletteColor[];
+  selectedColor?: string;
+}>();
 
 const emit = defineEmits<{
-  select: [color: string]
-}>()
+  select: [color: string];
+}>();
 </script>
 
 <template>

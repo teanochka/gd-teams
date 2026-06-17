@@ -1,43 +1,52 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { getSvgDropShadow, getTextStyle } from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+import { computed, ref } from "vue";
+import {
+  getSvgDropShadow,
+  getTextStyle,
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:element', element: CanvasElement): void
-}>()
+  (event: "update:element", element: CanvasElement): void;
+}>();
 
-const contentInput = ref<HTMLInputElement | null>(null)
-const fillColor = computed(() => props.element.backgroundColor ?? '#ffffff')
-const strokeColor = computed(() => props.element.borderColor ?? '#6b7280')
-const strokeWidth = computed(() => (props.element.borderWidth ?? 1) * 0.8)
+const contentInput = ref<HTMLInputElement | null>(null);
+const fillColor = computed(() => props.element.backgroundColor ?? "#ffffff");
+const strokeColor = computed(() => props.element.borderColor ?? "#6b7280");
+const strokeWidth = computed(() => (props.element.borderWidth ?? 1) * 0.8);
 const sideFillColor = computed(() => {
-  if (props.element.backgroundColor && props.element.backgroundColor !== '#ffffff') {
-    return props.element.backgroundColor
+  if (
+    props.element.backgroundColor &&
+    props.element.backgroundColor !== "#ffffff"
+  ) {
+    return props.element.backgroundColor;
   }
 
-  return '#e5e7eb'
-})
+  return "#e5e7eb";
+});
 const topFillColor = computed(() => {
-  if (props.element.backgroundColor && props.element.backgroundColor !== '#ffffff') {
-    return props.element.backgroundColor
+  if (
+    props.element.backgroundColor &&
+    props.element.backgroundColor !== "#ffffff"
+  ) {
+    return props.element.backgroundColor;
   }
 
-  return '#f3f4f6'
-})
-const svgStyle = computed(() => getSvgDropShadow(props.element))
-const textStyle = computed(() => getTextStyle(props.element))
+  return "#f3f4f6";
+});
+const svgStyle = computed(() => getSvgDropShadow(props.element));
+const textStyle = computed(() => getTextStyle(props.element));
 
 const onInput = (event: Event) => {
-  emit('update:element', {
+  emit("update:element", {
     ...props.element,
     content: (event.target as HTMLInputElement).value,
-  })
-}
+  });
+};
 </script>
 
 <template>
@@ -78,7 +87,7 @@ const onInput = (event: Event) => {
         :style="textStyle"
         :value="element.content"
         @input="onInput"
-      >
+      />
     </div>
   </div>
 </template>

@@ -41,6 +41,33 @@ const title = computed(
   () => sourcePage.value?.name || props.element.title || "Документ",
 );
 
+const stripHtml = (value: string) => {
+  return value
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+};
+
+const isBlockEmpty = (block: LotionBlock) => {
+  if (block.type === "IMAGE") {
+    return (
+      typeof block.details.imageUrl !== "string" ||
+      block.details.imageUrl.length === 0
+    );
+  }
+
+  if (block.type === "TABLE" && block.details.table) {
+    return block.details.table.rows.every((row) =>
+      row.every((cell) => stripHtml(cell).length === 0),
+    );
+  }
+
+  const value = block.details.value;
+
+  return typeof value !== "string" || stripHtml(value).length === 0;
+};
+
 const cardBlocks = computed(() => {
   const page = sourcePage.value;
 
@@ -48,9 +75,15 @@ const cardBlocks = computed(() => {
     return [];
   }
 
-  return (page.card?.blockIds ?? [])
+  const selectedCardBlocks = (page.card?.blockIds ?? [])
     .map((blockId) => page.blocks.find((block) => block.id === blockId) ?? null)
     .filter((block): block is LotionBlock => block !== null);
+
+  if (selectedCardBlocks.length) {
+    return selectedCardBlocks;
+  }
+
+  return page.blocks.filter((block) => !isBlockEmpty(block));
 });
 
 watch(

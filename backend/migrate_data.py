@@ -11,7 +11,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 # --- Шаг 2: Импорт моделей ---
-from api.models import User, Project, Team, Node, Tag, DocumentPage, CanvasDraft, ProjectMember
+from api.models import User, Project, Team, Node, Tag, DocumentPage, CanvasPage, CanvasDraft, ProjectMember
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 
@@ -146,14 +146,24 @@ def migrate():
             }
         )
 
-    for c_data in data.get('canvases', []):
+    for c_data in data.get('canvasPages', []):
         node = node_map.get(c_data['nodeId'])
         if not node: continue
-        CanvasDraft.objects.get_or_create(
+        CanvasPage.objects.get_or_create(
             node=node,
             defaults={
                 'id': c_data['id'],
-                'elements': c_data.get('elements', [])
+                'project_id': c_data.get('projectId'),
+                'data': c_data.get('data', {}),
+                'created_at': parse_date(c_data.get('createdAt')) or timezone.now(),
+                'updated_at': parse_date(c_data.get('updatedAt')) or timezone.now()
+            }
+        )
+        CanvasDraft.objects.get_or_create(
+            node=node,
+            defaults={
+                'id': c_data['id'] + '-draft',
+                'elements': c_data.get('data', {}).get('elements', [])
             }
         )
     

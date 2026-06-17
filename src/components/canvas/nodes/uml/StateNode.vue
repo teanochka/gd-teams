@@ -1,28 +1,31 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { getBlockStyle, getTextStyle } from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+import { computed, ref } from "vue";
+import {
+  getBlockStyle,
+  getTextStyle,
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:element', element: CanvasElement): void
-}>()
+  (event: "update:element", element: CanvasElement): void;
+}>();
 
-const contentInput = ref<HTMLInputElement | null>(null)
+const contentInput = ref<HTMLInputElement | null>(null);
 const blockStyle = computed(() =>
   getBlockStyle(props.element, { borderRadius: 20 }),
-)
-const textStyle = computed(() => getTextStyle(props.element))
+);
+const textStyle = computed(() => getTextStyle(props.element));
 
 const onInput = (event: Event) => {
-  emit('update:element', {
+  emit("update:element", {
     ...props.element,
     content: (event.target as HTMLInputElement).value,
-  })
-}
+  });
+};
 </script>
 
 <template>
@@ -34,7 +37,7 @@ const onInput = (event: Event) => {
       :style="textStyle"
       :value="element.content"
       @input="onInput"
-    >
+    />
   </div>
 </template>
 

@@ -1,29 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { getSvgDropShadow, getTextStyle } from '@/components/canvas/nodes/canvasNodeStyle'
-import type { CanvasElement } from '@/types/canvas'
+import { computed } from "vue";
+import {
+  getSvgDropShadow,
+  getTextStyle,
+} from "@/components/canvas/nodes/canvasNodeStyle";
+import type { CanvasElement } from "@/types/canvas";
 
 const props = defineProps<{
-  element: CanvasElement
-}>()
+  element: CanvasElement;
+}>();
 
 const emit = defineEmits<{
-  (event: 'update:element', element: CanvasElement): void
-}>()
+  (event: "update:element", element: CanvasElement): void;
+}>();
 
-const parallelogramPoints = '15,0 100,0 85,100 0,100'
-const fillColor = computed(() => props.element.backgroundColor ?? '#ffffff')
-const strokeColor = computed(() => props.element.borderColor ?? '#6b7280')
-const strokeWidth = computed(() => (props.element.borderWidth ?? 1) * 0.5)
-const svgStyle = computed(() => getSvgDropShadow(props.element))
-const textStyle = computed(() => getTextStyle(props.element))
+const parallelogramPoints = "15,0 100,0 85,100 0,100";
+const fillColor = computed(() => props.element.backgroundColor ?? "#ffffff");
+const strokeColor = computed(() => props.element.borderColor ?? "#6b7280");
+const strokeWidth = computed(() => (props.element.borderWidth ?? 1) * 0.5);
+const svgStyle = computed(() => getSvgDropShadow(props.element));
+const textStyle = computed(() => getTextStyle(props.element));
 
 const onInput = (event: Event) => {
-  emit('update:element', {
+  emit("update:element", {
     ...props.element,
     content: (event.target as HTMLInputElement).value,
-  })
-}
+  });
+};
 </script>
 
 <template>
@@ -48,7 +51,7 @@ const onInput = (event: Event) => {
         :style="textStyle"
         :value="element.content"
         @input="onInput"
-      >
+      />
     </div>
   </div>
 </template>

@@ -6,6 +6,7 @@ import IconChevronRight from "~icons/carbon/chevron-right";
 import IconFolder from "~icons/carbon/folder";
 import IconGrid from "~icons/carbon/grid";
 import IconList from "~icons/carbon/list";
+import IconTrashCan from "~icons/carbon/trash-can";
 import ProjectCard from "@/components/project/ProjectCard.vue";
 import ProjectListItem from "@/components/project/ProjectListItem.vue";
 import ProjectsSidebar from "@/components/project/ProjectsSidebar.vue";
@@ -21,9 +22,18 @@ const {
   isLoading,
   setActiveItem,
   teams,
+  clearTrash,
 } = useProjectsPage();
 
 const viewMode = ref<ProjectsViewMode>("grid");
+
+const handleClearTrash = async () => {
+  if (
+    confirm("Вы уверены, что хотите навсегда удалить все проекты из корзины?")
+  ) {
+    await clearTrash();
+  }
+};
 const viewModeLabel = computed(() =>
   viewMode.value === "grid" ? "Сетка" : "Список",
 );
@@ -54,6 +64,16 @@ const setViewMode = (mode: ProjectsViewMode) => {
           </div>
 
           <div class="toolbar-meta">
+            <BButton
+              v-if="activeItem === 'trash' && filteredProjects.length > 0"
+              variant="outline-danger"
+              class="clear-trash-btn"
+              @click="handleClearTrash"
+            >
+              <IconTrashCan aria-hidden="true" />
+              Очистить корзину
+            </BButton>
+
             <span>{{ filteredProjects.length }} проектов</span>
             <BDropdown variant="outline-dark" class="view-dropdown">
               <template #button-content>

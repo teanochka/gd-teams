@@ -21,13 +21,13 @@ const routes: RouteRecordRaw[] = [
     path: "/auth/login",
     name: "login",
     component: login,
-    meta: { public: true }
+    meta: { public: true },
   },
   {
     path: "/auth/register",
     name: "register",
     component: register,
-    meta: { public: true }
+    meta: { public: true },
   },
   {
     path: "/projects/new",
@@ -94,9 +94,9 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
-  
+
   if (!to.meta.public && !auth.isAuthenticated) {
-    return next('/auth/login');
+    return next("/auth/login");
   }
 
   if (auth.isAuthenticated && !auth.user) {

@@ -1,5 +1,5 @@
-import { apiRequest } from '@/api/http'
-import { copyDocumentPage, createDocumentPage } from '@/api/documents'
+import { apiRequest } from "@/api/http";
+import { copyDocumentPage, createDocumentPage } from "@/api/documents";
 import type {
   Breadcrumb,
   CreateNodePayload,
@@ -11,85 +11,101 @@ import type {
   Project,
   ProjectId,
   Tag,
-} from '@/types/domain'
+} from "@/types/domain";
 
-type RawNode = Omit<Node, 'tags'> & {
-  tagIds: string[]
-  icon?: string | null
-}
+type RawNode = Omit<Node, "tags"> & {
+  tagIds: string[];
+  icon?: string | null;
+};
 
 const mapNode = (node: RawNode, tags: Tag[]): Node => ({
   ...node,
   icon: node.icon ?? undefined,
   tags: tags.filter((tag) => node.tagIds.includes(tag.id)),
-})
+});
 
-const buildFolderTree = (nodes: Node[], parentId: NodeId | null): FolderTreeNode[] => {
+const buildFolderTree = (
+  nodes: Node[],
+  parentId: NodeId | null,
+): FolderTreeNode[] => {
   return nodes
-    .filter((node) => node.parentId === parentId && node.type === 'folder' && !node.isDeleted)
+    .filter(
+      (node) =>
+        node.parentId === parentId && node.type === "folder" && !node.isDeleted,
+    )
     .map((node) => {
-      const children = buildFolderTree(nodes, node.id)
+      const children = buildFolderTree(nodes, node.id);
 
       return {
         id: node.id,
         name: node.title,
         ...(children.length ? { children } : {}),
-      }
-    })
-}
+      };
+    });
+};
 
 const buildBreadcrumbs = (folder: Node, nodes: Node[]): Breadcrumb[] => {
-  const breadcrumbs: Breadcrumb[] = []
-  let current: Node | undefined = folder
+  const breadcrumbs: Breadcrumb[] = [];
+  let current: Node | undefined = folder;
 
   while (current) {
-    breadcrumbs.unshift({ id: current.id, title: current.title })
-    current = current.parentId ? nodes.find((node) => node.id === current?.parentId) : undefined
+    breadcrumbs.unshift({ id: current.id, title: current.title });
+    current = current.parentId
+      ? nodes.find((node) => node.id === current?.parentId)
+      : undefined;
   }
 
-  return breadcrumbs
-}
+  return breadcrumbs;
+};
 
 const resolveFolderId = (project: Project, folderId?: NodeId | null) => {
-  return folderId && folderId !== 'root' ? folderId : project.rootFolderId
-}
+  return folderId && folderId !== "root" ? folderId : project.rootFolderId;
+};
 
-const createNodeId = (type: NodeType) => `${type}-${Date.now()}`
+const createNodeId = (type: NodeType) => `${type}-${Date.now()}`;
 
-const getCurrentDate = () => new Date().toISOString()
+const getCurrentDate = () => new Date().toISOString();
 
-const updateProjectNodeCount = async (projectId: ProjectId, delta: number, updatedAt: string) => {
-  const project = await apiRequest<Project>(`/projects/${projectId}`)
+const updateProjectNodeCount = async (
+  projectId: ProjectId,
+  delta: number,
+  updatedAt: string,
+) => {
+  const project = await apiRequest<Project>(`/projects/${projectId}`);
 
   await apiRequest<Project>(`/projects/${projectId}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: {
       filesCount: Math.max(0, project.filesCount + delta),
       updatedAt,
     },
-  })
-}
+  });
+};
 
 export const getFolderContent = async (
   projectId: ProjectId,
   folderId?: NodeId | null,
 ): Promise<FolderContentResponse> => {
-  const project = await apiRequest<Project>(`/projects/${projectId}`)
-  const resolvedFolderId = resolveFolderId(project, folderId)
+  const project = await apiRequest<Project>(`/projects/${projectId}`);
+  const resolvedFolderId = resolveFolderId(project, folderId);
 
   const [rawNodes, tags] = await Promise.all([
-    apiRequest<RawNode[]>('/nodes', { query: { projectId } }),
-    apiRequest<Tag[]>('/tags', { query: { projectId } }),
-  ])
+    apiRequest<RawNode[]>("/nodes", { query: { projectId } }),
+    apiRequest<Tag[]>("/tags", { query: { projectId } }),
+  ]);
 
-  const projectNodes = rawNodes.map((node) => mapNode(node, tags))
-  const currentFolder = projectNodes.find((node) => node.id === resolvedFolderId)
+  const projectNodes = rawNodes.map((node) => mapNode(node, tags));
+  const currentFolder = projectNodes.find(
+    (node) => node.id === resolvedFolderId,
+  );
 
-  if (!currentFolder || currentFolder.type !== 'folder') {
-    throw new Error('Folder not found')
+  if (!currentFolder || currentFolder.type !== "folder") {
+    throw new Error("Folder not found");
   }
 
-  const nodes = projectNodes.filter((node) => node.parentId === resolvedFolderId && !node.isDeleted)
+  const nodes = projectNodes.filter(
+    (node) => node.parentId === resolvedFolderId && !node.isDeleted,
+  );
 
   return {
     project,
@@ -98,14 +114,16 @@ export const getFolderContent = async (
     nodes,
     foldersTree: buildFolderTree(projectNodes, project.rootFolderId),
     tags,
-  }
-}
+  };
+};
 
 export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
-  const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: payload.projectId } })
-  const savedAt = getCurrentDate()
-  const node = await apiRequest<RawNode>('/nodes', {
-    method: 'POST',
+  const tags = await apiRequest<Tag[]>("/tags", {
+    query: { projectId: payload.projectId },
+  });
+  const savedAt = getCurrentDate();
+  const node = await apiRequest<RawNode>("/nodes", {
+    method: "POST",
     body: {
       id: createNodeId(payload.type),
       projectId: payload.projectId,
@@ -117,80 +135,98 @@ export const createNode = async (payload: CreateNodePayload): Promise<Node> => {
       isFavorite: false,
       isDeleted: false,
       createdAt: savedAt,
-      createdBy: 'Вы',
+      createdBy: "Вы",
       updatedAt: savedAt,
-      updatedBy: 'Вы',
+      updatedBy: "Вы",
     },
-  })
+  });
 
-  if (node.type === 'document') {
-    await createDocumentPage(mapNode(node, tags))
+  if (node.type === "document") {
+    await createDocumentPage(mapNode(node, tags));
   }
 
-  await updateProjectNodeCount(payload.projectId, 1, savedAt)
+  await updateProjectNodeCount(payload.projectId, 1, savedAt);
 
-  return mapNode(node, tags)
-}
+  return mapNode(node, tags);
+};
 
-export const renameNode = async (nodeId: NodeId, title: string): Promise<Node> => {
-  const savedAt = getCurrentDate()
+export const renameNode = async (
+  nodeId: NodeId,
+  title: string,
+): Promise<Node> => {
+  const savedAt = getCurrentDate();
   const node = await apiRequest<RawNode>(`/nodes/${nodeId}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: {
       title: title.trim(),
       updatedAt: savedAt,
-      updatedBy: 'Вы',
+      updatedBy: "Вы",
     },
-  })
-  const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: node.projectId } })
+  });
+  const tags = await apiRequest<Tag[]>("/tags", {
+    query: { projectId: node.projectId },
+  });
 
-  return mapNode(node, tags)
-}
+  return mapNode(node, tags);
+};
 
-export const toggleFavorite = async (nodeId: NodeId, isFavorite: boolean): Promise<Node> => {
-  const savedAt = getCurrentDate()
+export const toggleFavorite = async (
+  nodeId: NodeId,
+  isFavorite: boolean,
+): Promise<Node> => {
+  const savedAt = getCurrentDate();
   const node = await apiRequest<RawNode>(`/nodes/${nodeId}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: {
       isFavorite,
       updatedAt: savedAt,
-      updatedBy: 'Вы',
+      updatedBy: "Вы",
     },
-  })
-  const tags = await apiRequest<Tag[]>('/tags', { query: { projectId: node.projectId } })
+  });
+  const tags = await apiRequest<Tag[]>("/tags", {
+    query: { projectId: node.projectId },
+  });
 
-  return mapNode(node, tags)
-}
+  return mapNode(node, tags);
+};
 
-export const moveNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
-  const savedAt = getCurrentDate()
+export const moveNodes = async (
+  nodeIds: NodeId[],
+  parentId: NodeId,
+): Promise<Node[]> => {
+  const savedAt = getCurrentDate();
   const movedNodes = await Promise.all(
     nodeIds.map((nodeId) =>
       apiRequest<RawNode>(`/nodes/${nodeId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: {
           parentId,
           updatedAt: savedAt,
-          updatedBy: 'Вы',
+          updatedBy: "Вы",
         },
       }),
     ),
-  )
-  const projectId = movedNodes[0]?.projectId
-  const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
+  );
+  const projectId = movedNodes[0]?.projectId;
+  const tags = projectId
+    ? await apiRequest<Tag[]>("/tags", { query: { projectId } })
+    : [];
 
-  return movedNodes.map((node) => mapNode(node, tags))
-}
+  return movedNodes.map((node) => mapNode(node, tags));
+};
 
-export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<Node[]> => {
+export const copyNodes = async (
+  nodeIds: NodeId[],
+  parentId: NodeId,
+): Promise<Node[]> => {
   const sourceNodes = await Promise.all(
     nodeIds.map((nodeId) => apiRequest<RawNode>(`/nodes/${nodeId}`)),
-  )
-  const savedAt = getCurrentDate()
+  );
+  const savedAt = getCurrentDate();
   const copiedNodes = await Promise.all(
     sourceNodes.map((source, index) =>
-      apiRequest<RawNode>('/nodes', {
-        method: 'POST',
+      apiRequest<RawNode>("/nodes", {
+        method: "POST",
         body: {
           ...source,
           id: `${source.id}-copy-${Date.now()}-${index}`,
@@ -198,97 +234,109 @@ export const copyNodes = async (nodeIds: NodeId[], parentId: NodeId): Promise<No
           title: `${source.title} копия`,
           isFavorite: false,
           createdAt: savedAt,
-          createdBy: 'Вы',
+          createdBy: "Вы",
           updatedAt: savedAt,
-          updatedBy: 'Вы',
+          updatedBy: "Вы",
         },
       }),
     ),
-  )
+  );
 
   await Promise.all(
     copiedNodes.map((copiedNode, index) => {
-      const sourceNode = sourceNodes[index]
+      const sourceNode = sourceNodes[index];
 
-      if (sourceNode?.type !== 'document') {
-        return Promise.resolve(null)
+      if (sourceNode?.type !== "document") {
+        return Promise.resolve(null);
       }
 
-      return copyDocumentPage(sourceNode.id, mapNode(copiedNode, []))
+      return copyDocumentPage(sourceNode.id, mapNode(copiedNode, []));
     }),
-  )
+  );
 
-  const projectId = copiedNodes[0]?.projectId
-  const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
+  const projectId = copiedNodes[0]?.projectId;
+  const tags = projectId
+    ? await apiRequest<Tag[]>("/tags", { query: { projectId } })
+    : [];
 
-  return copiedNodes.map((node) => mapNode(node, tags))
-}
+  return copiedNodes.map((node) => mapNode(node, tags));
+};
 
 export const deleteNodes = async (nodeIds: NodeId[]): Promise<NodeId[]> => {
-  const savedAt = getCurrentDate()
+  const savedAt = getCurrentDate();
   await Promise.all(
     nodeIds.map((nodeId) =>
       apiRequest<RawNode>(`/nodes/${nodeId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: {
           isDeleted: true,
           updatedAt: savedAt,
-          updatedBy: 'Вы',
+          updatedBy: "Вы",
         },
       }),
     ),
-  )
+  );
 
-  return [...nodeIds]
-}
+  return [...nodeIds];
+};
 
 export const restoreNodes = async (nodeIds: NodeId[]): Promise<Node[]> => {
-  const savedAt = getCurrentDate()
+  const savedAt = getCurrentDate();
   const restored = await Promise.all(
     nodeIds.map((nodeId) =>
       apiRequest<RawNode>(`/nodes/${nodeId}`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: {
           isDeleted: false,
           updatedAt: savedAt,
-          updatedBy: 'Вы',
+          updatedBy: "Вы",
         },
       }),
     ),
-  )
-  const projectId = restored[0]?.projectId
-  const tags = projectId ? await apiRequest<Tag[]>('/tags', { query: { projectId } }) : []
+  );
+  const projectId = restored[0]?.projectId;
+  const tags = projectId
+    ? await apiRequest<Tag[]>("/tags", { query: { projectId } })
+    : [];
 
-  return restored.map((node) => mapNode(node, tags))
-}
+  return restored.map((node) => mapNode(node, tags));
+};
 
-export const getDeletedNodes = async (projectId: ProjectId): Promise<Node[]> => {
+export const getDeletedNodes = async (
+  projectId: ProjectId,
+): Promise<Node[]> => {
   const [rawNodes, tags] = await Promise.all([
-    apiRequest<RawNode[]>('/nodes', { query: { projectId, isDeleted: true } }),
-    apiRequest<Tag[]>('/tags', { query: { projectId } }),
-  ])
+    apiRequest<RawNode[]>("/nodes", { query: { projectId, isDeleted: true } }),
+    apiRequest<Tag[]>("/tags", { query: { projectId } }),
+  ]);
 
   return rawNodes
     .map((node) => mapNode(node, tags))
-    .filter((node) => node.isDeleted)
-}
+    .filter((node) => node.isDeleted);
+};
 
-export const getFavoriteNodes = async (projectId: ProjectId): Promise<Node[]> => {
+export const getFavoriteNodes = async (
+  projectId: ProjectId,
+): Promise<Node[]> => {
   const [rawNodes, tags] = await Promise.all([
-    apiRequest<RawNode[]>('/nodes', { query: { projectId, isFavorite: true } }),
-    apiRequest<Tag[]>('/tags', { query: { projectId } }),
-  ])
+    apiRequest<RawNode[]>("/nodes", { query: { projectId, isFavorite: true } }),
+    apiRequest<Tag[]>("/tags", { query: { projectId } }),
+  ]);
 
   return rawNodes
     .map((node) => mapNode(node, tags))
-    .filter((node) => node.isFavorite && !node.isDeleted)
-}
+    .filter((node) => node.isFavorite && !node.isDeleted);
+};
 
-export const permanentDeleteNodes = async (nodeIds: NodeId[]): Promise<void> => {
+export const permanentDeleteNodes = async (
+  nodeIds: NodeId[],
+): Promise<void> => {
   await Promise.all(
     nodeIds.map((nodeId) =>
-      apiRequest(`/nodes/${nodeId}`, { method: 'DELETE' }),
+      apiRequest(`/nodes/${nodeId}`, {
+        method: "DELETE",
+        query: { permanent: true },
+      }),
     ),
-  )
-}
-
+  );
+};

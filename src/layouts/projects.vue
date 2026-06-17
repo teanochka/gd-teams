@@ -8,7 +8,9 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 
-const userName = computed(() => auth.user?.display_name || auth.user?.username || 'Гость');
+const userName = computed(
+  () => auth.user?.display_name || auth.user?.username || "Гость",
+);
 
 const searchQuery = computed({
   get: () => {
@@ -40,7 +42,11 @@ const handleCreateProject = () => {
 
 <template>
   <div class="projects-layout">
-    <ProjectsHeader v-model="searchQuery" :user-name="userName" @create="handleCreateProject" />
+    <ProjectsHeader
+      v-model="searchQuery"
+      :user-name="userName"
+      @create="handleCreateProject"
+    />
 
     <RouterView />
   </div>

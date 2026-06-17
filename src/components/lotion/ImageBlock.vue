@@ -1,36 +1,36 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, type PropType } from 'vue'
-import { types } from '@dashibase/lotion'
-import { useAppToast } from '@/composables/useAppToast'
+import { computed, nextTick, ref, type PropType } from "vue";
+import { types } from "@dashibase/lotion";
+import { useAppToast } from "@/composables/useAppToast";
 
 defineOptions({
   inheritAttrs: false,
-})
+});
 
 type ImageDetails = types.Details & {
-  imageUrl?: string
-  imageWidthPercent?: number
-}
+  imageUrl?: string;
+  imageWidthPercent?: number;
+};
 
 type ImageBlock = types.Block & {
-  details: ImageDetails
-}
+  details: ImageDetails;
+};
 
-type MenuTab = 'upload' | 'link'
+type MenuTab = "upload" | "link";
 
 type ResizeState = {
-  side: 'left' | 'right'
-  startX: number
-  startWidthPercent: number
-  containerWidth: number
-}
+  side: "left" | "right";
+  startX: number;
+  startWidthPercent: number;
+  containerWidth: number;
+};
 
-const maxImageFileSizeBytes = 45_000
-const maxDataUrlLength = 65_000
-const maxLinkedImageUrlLength = 4096
-const defaultImageWidthPercent = 60
-const minImageWidthPercent = 20
-const maxImageWidthPercent = 100
+const maxImageFileSizeBytes = 45_000;
+const maxDataUrlLength = 65_000;
+const maxLinkedImageUrlLength = 4096;
+const defaultImageWidthPercent = 60;
+const minImageWidthPercent = 20;
+const maxImageWidthPercent = 100;
 
 const props = defineProps({
   block: {
@@ -41,19 +41,19 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-})
+});
 
-const { showToast } = useAppToast()
+const { showToast } = useAppToast();
 
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const imageFrameRef = ref<HTMLDivElement | null>(null)
-const isMenuOpen = ref(false)
-const activeTab = ref<MenuTab>('upload')
-const linkedImageUrl = ref('')
-const resizeState = ref<ResizeState | null>(null)
-let previousBodyUserSelect = ''
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const imageFrameRef = ref<HTMLDivElement | null>(null);
+const isMenuOpen = ref(false);
+const activeTab = ref<MenuTab>("upload");
+const linkedImageUrl = ref("");
+const resizeState = ref<ResizeState | null>(null);
+let previousBodyUserSelect = "";
 
-const imageUrl = computed(() => props.block.details.imageUrl ?? '')
+const imageUrl = computed(() => props.block.details.imageUrl ?? "");
 const imageWidthPercent = computed({
   get: () => props.block.details.imageWidthPercent ?? defaultImageWidthPercent,
   set: (value: number) => {
@@ -61,157 +61,169 @@ const imageWidthPercent = computed({
       value,
       minImageWidthPercent,
       maxImageWidthPercent,
-    )
+    );
   },
-})
-const trimmedLinkedImageUrl = computed(() => linkedImageUrl.value.trim())
-const isLinkedImageUrlValid = computed(() => isImageUrl(trimmedLinkedImageUrl.value))
+});
+const trimmedLinkedImageUrl = computed(() => linkedImageUrl.value.trim());
+const isLinkedImageUrlValid = computed(() =>
+  isImageUrl(trimmedLinkedImageUrl.value),
+);
 
 function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value))
+  return Math.min(max, Math.max(min, value));
 }
 
 function formatMegabytes(bytes: number) {
-  return `${(bytes / 1_000_000).toFixed(1)} MB`
+  return `${(bytes / 1_000_000).toFixed(1)} MB`;
 }
 
 function isImageUrl(value: string) {
   if (!value) {
-    return false
+    return false;
   }
 
-  if (value.startsWith('data:image/')) {
-    return value.length <= maxDataUrlLength
+  if (value.startsWith("data:image/")) {
+    return value.length <= maxDataUrlLength;
   }
 
-  let url: URL
+  let url: URL;
 
   try {
-    url = new URL(value)
+    url = new URL(value);
   } catch {
-    return false
+    return false;
   }
 
-  if (!['http:', 'https:'].includes(url.protocol)) {
-    return false
+  if (!["http:", "https:"].includes(url.protocol)) {
+    return false;
   }
 
-  return /\.(apng|avif|gif|jpe?g|png|svg|webp)$/i.test(url.pathname)
+  return /\.(apng|avif|gif|jpe?g|png|svg|webp)$/i.test(url.pathname);
 }
 
 function ensureDetails() {
-  props.block.details.value = props.block.details.value ?? ''
+  props.block.details.value = props.block.details.value ?? "";
   props.block.details.imageWidthPercent =
-    props.block.details.imageWidthPercent ?? defaultImageWidthPercent
+    props.block.details.imageWidthPercent ?? defaultImageWidthPercent;
 }
 
 function openMenu() {
   if (props.readonly) {
-    return
+    return;
   }
 
-  isMenuOpen.value = true
+  isMenuOpen.value = true;
 }
 
 function closeMenu() {
-  isMenuOpen.value = false
+  isMenuOpen.value = false;
 }
 
 function triggerUpload() {
-  fileInputRef.value?.click()
+  fileInputRef.value?.click();
 }
 
 function showImageSizeError() {
   showToast(
     `Image is too large for mock db. json-server accepts about 100 KB per save; use a file under ${formatMegabytes(maxImageFileSizeBytes)} or paste an external image link.`,
-  )
+  );
 }
 
 function setImage(nextImageUrl: string) {
-  props.block.details.imageUrl = nextImageUrl
-  props.block.details.value = nextImageUrl
+  props.block.details.imageUrl = nextImageUrl;
+  props.block.details.value = nextImageUrl;
   props.block.details.imageWidthPercent =
-    props.block.details.imageWidthPercent ?? defaultImageWidthPercent
-  closeMenu()
+    props.block.details.imageWidthPercent ?? defaultImageWidthPercent;
+  closeMenu();
 }
 
 function handleFileChange(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
 
-  input.value = ''
+  input.value = "";
 
   if (!file) {
-    return
+    return;
   }
 
-  if (!file.type.startsWith('image/')) {
-    showToast('Please upload an image file.')
-    return
+  if (!file.type.startsWith("image/")) {
+    showToast("Please upload an image file.");
+    return;
   }
 
   if (file.size > maxImageFileSizeBytes) {
-    showImageSizeError()
-    return
+    showImageSizeError();
+    return;
   }
 
-  const reader = new FileReader()
+  const reader = new FileReader();
 
-  reader.addEventListener('load', () => {
-    const result = String(reader.result ?? '')
+  reader.addEventListener("load", () => {
+    const result = String(reader.result ?? "");
 
     if (result.length > maxDataUrlLength) {
-      showImageSizeError()
-      return
+      showImageSizeError();
+      return;
     }
 
-    setImage(result)
-  })
-  reader.addEventListener('error', () => {
-    showToast('Could not read this image file.')
-  })
-  reader.readAsDataURL(file)
+    setImage(result);
+  });
+  reader.addEventListener("error", () => {
+    showToast("Could not read this image file.");
+  });
+  reader.readAsDataURL(file);
 }
 
 function confirmLinkedImage() {
-  const nextImageUrl = trimmedLinkedImageUrl.value
+  const nextImageUrl = trimmedLinkedImageUrl.value;
 
   if (!nextImageUrl) {
-    showToast('Add an image URL first.')
-    return
+    showToast("Add an image URL first.");
+    return;
   }
 
   if (!isImageUrl(nextImageUrl)) {
-    showToast('Use a direct image link ending in .png, .jpg, .jpeg, .gif, .webp, .avif, .apng, or .svg.')
-    return
+    showToast(
+      "Use a direct image link ending in .png, .jpg, .jpeg, .gif, .webp, .avif, .apng, or .svg.",
+    );
+    return;
   }
 
-  if (nextImageUrl.startsWith('data:image/') && nextImageUrl.length > maxDataUrlLength) {
-    showImageSizeError()
-    return
+  if (
+    nextImageUrl.startsWith("data:image/") &&
+    nextImageUrl.length > maxDataUrlLength
+  ) {
+    showImageSizeError();
+    return;
   }
 
-  if (!nextImageUrl.startsWith('data:image/') && nextImageUrl.length > maxLinkedImageUrlLength) {
-    showToast(`Image URL is too long. Maximum link length is ${maxLinkedImageUrlLength} characters.`)
-    return
+  if (
+    !nextImageUrl.startsWith("data:image/") &&
+    nextImageUrl.length > maxLinkedImageUrlLength
+  ) {
+    showToast(
+      `Image URL is too long. Maximum link length is ${maxLinkedImageUrlLength} characters.`,
+    );
+    return;
   }
 
-  setImage(nextImageUrl)
+  setImage(nextImageUrl);
 }
 
-function startResize(side: 'left' | 'right', event: PointerEvent) {
+function startResize(side: "left" | "right", event: PointerEvent) {
   if (props.readonly || !imageFrameRef.value) {
-    return
+    return;
   }
 
-  event.preventDefault()
-  event.stopPropagation()
+  event.preventDefault();
+  event.stopPropagation();
 
-  const container = imageFrameRef.value.parentElement
-  const containerWidth = container?.getBoundingClientRect().width ?? 0
+  const container = imageFrameRef.value.parentElement;
+  const containerWidth = container?.getBoundingClientRect().width ?? 0;
 
   if (containerWidth <= 0) {
-    return
+    return;
   }
 
   resizeState.value = {
@@ -219,59 +231,60 @@ function startResize(side: 'left' | 'right', event: PointerEvent) {
     startX: event.clientX,
     startWidthPercent: imageWidthPercent.value,
     containerWidth,
-  }
-  previousBodyUserSelect = document.body.style.userSelect
-  document.body.style.userSelect = 'none'
-  window.addEventListener('pointermove', handleResizeMove)
-  window.addEventListener('pointerup', stopResize, { once: true })
+  };
+  previousBodyUserSelect = document.body.style.userSelect;
+  document.body.style.userSelect = "none";
+  window.addEventListener("pointermove", handleResizeMove);
+  window.addEventListener("pointerup", stopResize, { once: true });
 }
 
 function handleResizeMove(event: PointerEvent) {
-  const state = resizeState.value
+  const state = resizeState.value;
 
   if (!state) {
-    return
+    return;
   }
 
-  const delta = event.clientX - state.startX
-  const direction = state.side === 'right' ? 1 : -1
-  const nextWidth = state.startWidthPercent + (delta * direction * 200) / state.containerWidth
+  const delta = event.clientX - state.startX;
+  const direction = state.side === "right" ? 1 : -1;
+  const nextWidth =
+    state.startWidthPercent + (delta * direction * 200) / state.containerWidth;
 
-  imageWidthPercent.value = nextWidth
+  imageWidthPercent.value = nextWidth;
 }
 
 function stopResize() {
-  resizeState.value = null
-  document.body.style.userSelect = previousBodyUserSelect
-  window.removeEventListener('pointermove', handleResizeMove)
+  resizeState.value = null;
+  document.body.style.userSelect = previousBodyUserSelect;
+  window.removeEventListener("pointermove", handleResizeMove);
 }
 
 function onSet() {
-  ensureDetails()
-  void nextTick(openMenu)
+  ensureDetails();
+  void nextTick(openMenu);
 }
 
 function onUnset() {
-  props.block.details.value = imageUrl.value
+  props.block.details.value = imageUrl.value;
 }
 
 function getTextContent() {
-  return imageUrl.value
+  return imageUrl.value;
 }
 
 function getHtmlContent() {
-  return imageUrl.value
+  return imageUrl.value;
 }
 
 function moveToStart() {
-  openMenu()
+  openMenu();
 }
 
 function moveToEnd() {
-  openMenu()
+  openMenu();
 }
 
-ensureDetails()
+ensureDetails();
 
 defineExpose({
   onSet,
@@ -280,7 +293,7 @@ defineExpose({
   getHtmlContent,
   moveToStart,
   moveToEnd,
-})
+});
 </script>
 
 <template>
@@ -297,7 +310,7 @@ defineExpose({
       type="file"
       accept="image/*"
       @change="handleFileChange"
-    >
+    />
 
     <div v-if="imageUrl" class="image-content">
       <div
@@ -305,7 +318,7 @@ defineExpose({
         class="image-frame"
         :style="{ width: `${imageWidthPercent}%` }"
       >
-        <img class="image-preview" :src="imageUrl" alt="">
+        <img class="image-preview" :src="imageUrl" alt="" />
         <button
           class="image-resize-handle left"
           type="button"
@@ -370,7 +383,7 @@ defineExpose({
           @click.stop
           @input.stop
           @keydown.enter.prevent="confirmLinkedImage"
-        >
+        />
         <button
           class="image-menu-primary"
           type="button"

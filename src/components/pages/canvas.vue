@@ -1,100 +1,100 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import IconArrowDown from '~icons/carbon/arrow-down'
-import IconArrowLeft from '~icons/carbon/arrow-left'
-import IconArrowUp from '~icons/carbon/arrow-up'
-import CanvasProjectExplorer from '@/components/canvas/CanvasProjectExplorer.vue'
-import CanvasWorkspace from '@/components/canvas/CanvasWorkspace.vue'
-import { cloneCanvasData, createDefaultCanvasData } from '@/api/canvas'
-import { useCanvasesStore } from '@/stores/canvases'
-import type { CanvasData, Node, NodeType } from '@/types/domain'
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import IconArrowDown from "~icons/carbon/arrow-down";
+import IconArrowLeft from "~icons/carbon/arrow-left";
+import IconArrowUp from "~icons/carbon/arrow-up";
+import CanvasProjectExplorer from "@/components/canvas/CanvasProjectExplorer.vue";
+import CanvasWorkspace from "@/components/canvas/CanvasWorkspace.vue";
+import { cloneCanvasData, createDefaultCanvasData } from "@/api/canvas";
+import { useCanvasesStore } from "@/stores/canvases";
+import type { CanvasData, Node, NodeType } from "@/types/domain";
 
-const route = useRoute()
-const router = useRouter()
-const canvasesStore = useCanvasesStore()
+const route = useRoute();
+const router = useRouter();
+const canvasesStore = useCanvasesStore();
 
-const currentCanvasData = ref<CanvasData>(createDefaultCanvasData())
-const canScheduleSave = ref(false)
-const isExplorerOpen = ref(false)
+const currentCanvasData = ref<CanvasData>(createDefaultCanvasData());
+const canScheduleSave = ref(false);
+const isExplorerOpen = ref(false);
 
 const projectId = computed(() => {
-  const value = route.params.projectId
+  const value = route.params.projectId;
 
-  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
-})
+  return Array.isArray(value) ? String(value[0] ?? "") : String(value ?? "");
+});
 
 const canvasId = computed(() => {
-  const value = route.params.canvasId
+  const value = route.params.canvasId;
 
-  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
-})
+  return Array.isArray(value) ? String(value[0] ?? "") : String(value ?? "");
+});
 
 const isLoading = computed(() => {
   return canvasId.value
     ? Boolean(canvasesStore.isLoadingById[canvasId.value])
-    : false
-})
+    : false;
+});
 
 const isSaving = computed(() => {
   return canvasId.value
     ? Boolean(canvasesStore.isSavingById[canvasId.value])
-    : false
-})
+    : false;
+});
 
 const isDirty = computed(() => {
   return canvasId.value
     ? Boolean(canvasesStore.isDirtyById[canvasId.value])
-    : false
-})
+    : false;
+});
 
 const error = computed(() => {
-  return canvasId.value ? canvasesStore.errorById[canvasId.value] : null
-})
+  return canvasId.value ? canvasesStore.errorById[canvasId.value] : null;
+});
 
 const saveStatusLabel = computed(() => {
   if (isSaving.value) {
-    return 'Сохранение...'
+    return "Сохранение...";
   }
 
   if (isDirty.value) {
-    return 'Есть несохраненные изменения'
+    return "Есть несохраненные изменения";
   }
 
-  return 'Сохранено'
-})
+  return "Сохранено";
+});
 
 const nodeRouteParams: Partial<Record<NodeType, string>> = {
-  document: 'documentId',
-  canvas: 'canvasId',
-  template: 'templateId',
-}
+  document: "documentId",
+  canvas: "canvasId",
+  template: "templateId",
+};
 
 const goBack = () => {
   if (window.history.length > 1) {
-    router.back()
-    return
+    router.back();
+    return;
   }
 
   void router.push({
-    name: 'project',
+    name: "project",
     params: { projectId: projectId.value },
-  })
-}
+  });
+};
 
 const toggleExplorer = () => {
-  isExplorerOpen.value = !isExplorerOpen.value
-}
+  isExplorerOpen.value = !isExplorerOpen.value;
+};
 
 const openExplorerNode = (node: Node) => {
-  if (node.type === 'folder') {
-    return
+  if (node.type === "folder") {
+    return;
   }
 
-  const paramName = nodeRouteParams[node.type]
+  const paramName = nodeRouteParams[node.type];
 
   if (!paramName) {
-    return
+    return;
   }
 
   void router.push({
@@ -103,57 +103,57 @@ const openExplorerNode = (node: Node) => {
       projectId: projectId.value,
       [paramName]: node.id,
     },
-  })
-}
+  });
+};
 
 const setCurrentCanvasData = (data: CanvasData | null | undefined) => {
-  currentCanvasData.value = cloneCanvasData(data ?? createDefaultCanvasData())
-}
+  currentCanvasData.value = cloneCanvasData(data ?? createDefaultCanvasData());
+};
 
 const handleCanvasDataUpdate = (data: CanvasData) => {
-  const nextData = cloneCanvasData(data)
+  const nextData = cloneCanvasData(data);
 
-  currentCanvasData.value = nextData
+  currentCanvasData.value = nextData;
 
   if (!canScheduleSave.value || !canvasId.value) {
-    return
+    return;
   }
 
-  canvasesStore.scheduleSave(canvasId.value, nextData)
-}
+  canvasesStore.scheduleSave(canvasId.value, nextData);
+};
 
 watch(
   [projectId, canvasId],
   async ([nextProjectId, nextCanvasId], previousValues) => {
-    const previousCanvasId = previousValues?.[1]
+    const previousCanvasId = previousValues?.[1];
 
-    canScheduleSave.value = false
+    canScheduleSave.value = false;
 
     if (previousCanvasId && previousCanvasId !== nextCanvasId) {
-      await canvasesStore.flushCanvas(previousCanvasId)
+      await canvasesStore.flushCanvas(previousCanvasId);
     }
 
     if (!nextProjectId || !nextCanvasId) {
-      setCurrentCanvasData(null)
-      canScheduleSave.value = true
-      return
+      setCurrentCanvasData(null);
+      canScheduleSave.value = true;
+      return;
     }
 
-    const data = await canvasesStore.loadCanvas(nextCanvasId, nextProjectId)
+    const data = await canvasesStore.loadCanvas(nextCanvasId, nextProjectId);
 
-    setCurrentCanvasData(data)
-    canScheduleSave.value = true
+    setCurrentCanvasData(data);
+    canScheduleSave.value = true;
   },
   { immediate: true },
-)
+);
 
 onBeforeUnmount(() => {
-  canScheduleSave.value = false
+  canScheduleSave.value = false;
 
   if (canvasId.value) {
-    void canvasesStore.flushCanvas(canvasId.value)
+    void canvasesStore.flushCanvas(canvasId.value);
   }
-})
+});
 </script>
 
 <template>
@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
       @click="toggleExplorer"
     >
       <span class="handle-content">
-        <span>{{ isExplorerOpen ? 'Спрятать' : 'Проводник' }}</span>
+        <span>{{ isExplorerOpen ? "Спрятать" : "Проводник" }}</span>
         <IconArrowDown v-if="isExplorerOpen" aria-hidden="true" />
         <IconArrowUp v-else aria-hidden="true" />
       </span>
