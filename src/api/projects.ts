@@ -1,5 +1,13 @@
 import { apiRequest } from '@/api/http'
-import type { CreateProjectPayload, Project, Team, UpdateProjectPayload } from '@/types/domain'
+import type {
+  CreateProjectPayload,
+  Project,
+  ProjectMember,
+  ProjectRole,
+  Team,
+  UpdateProjectPayload,
+  User,
+} from '@/types/domain'
 
 type ProjectsResponse = {
   projects: Project[]
@@ -200,4 +208,69 @@ export const renameProject = async (projectId: string, title: string): Promise<P
       updatedAt: new Date().toISOString(),
     },
   })
+}
+
+// Members
+export const getProjectMembers = async (projectId: string): Promise<ProjectMember[]> => {
+  return apiRequest<ProjectMember[]>(`/projects/${projectId}/members`)
+}
+
+export const addProjectMember = async (projectId: string, userId: string): Promise<ProjectMember> => {
+  return apiRequest<ProjectMember>(`/projects/${projectId}/members`, {
+    method: 'POST',
+    body: { user_id: userId },
+  })
+}
+
+export const updateProjectMember = async (
+  projectId: string,
+  memberId: string,
+  payload: { roleIds?: string[]; accessLevel?: string },
+): Promise<ProjectMember> => {
+  return apiRequest<ProjectMember>(`/projects/${projectId}/members/${memberId}`, {
+    method: 'PATCH',
+    body: payload,
+  })
+}
+
+export const removeProjectMember = async (projectId: string, memberId: string): Promise<void> => {
+  await apiRequest(`/projects/${projectId}/members/${memberId}`, {
+    method: 'DELETE',
+  })
+}
+
+// Roles
+export const getProjectRoles = async (projectId: string): Promise<ProjectRole[]> => {
+  return apiRequest<ProjectRole[]>(`/projects/${projectId}/roles`)
+}
+
+export const createProjectRole = async (
+  projectId: string,
+  payload: Partial<ProjectRole>,
+): Promise<ProjectRole> => {
+  return apiRequest<ProjectRole>(`/projects/${projectId}/roles`, {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+export const updateProjectRole = async (
+  projectId: string,
+  roleId: string,
+  payload: Partial<ProjectRole>,
+): Promise<ProjectRole> => {
+  return apiRequest<ProjectRole>(`/projects/${projectId}/roles/${roleId}`, {
+    method: 'PATCH',
+    body: payload,
+  })
+}
+
+export const deleteProjectRole = async (projectId: string, roleId: string): Promise<void> => {
+  await apiRequest(`/projects/${projectId}/roles/${roleId}`, {
+    method: 'DELETE',
+  })
+}
+
+export const searchUsers = async (query: string): Promise<User[]> => {
+  return apiRequest<User[]>(`/users/search?query=${encodeURIComponent(query)}`)
 }

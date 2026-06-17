@@ -44,11 +44,23 @@ class ProjectRole(models.Model):
         db_table = 'project_roles'
 
 class ProjectMember(models.Model):
+    ACCESS_LEVEL_CHOICES = [
+        ('admin', 'Администратор'),
+        ('moderator', 'Модератор'),
+        ('user', 'Пользователь'),
+    ]
     id = models.CharField(primary_key=True, max_length=50, default=generate_id)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='members', null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_memberships', null=True)
     roles = models.ManyToManyField(ProjectRole, blank=True)
     is_owner = models.BooleanField(default=False)
+    access_level = models.CharField(max_length=20, choices=ACCESS_LEVEL_CHOICES, default='user')
+
+    def save(self, *args, **kwargs):
+        if self.is_owner or (self.project and self.project.created_by == self.user):
+            self.is_owner = True
+            self.access_level = 'admin'
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'project_members'
@@ -134,3 +146,28 @@ class KanbanBoard(models.Model):
 
     class Meta:
         db_table = 'kanban_boards'
+
+class Channel(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='channels')
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    is_private = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_channels')
+
+    class Meta:
+        db_table = 'channels'
+
+class ChatMessage(models.Model):
+    id = models.CharField(primary_key=True, max_length=50, default=generate_id)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='chat_messages')
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages', null=True, blank=True)
+    content = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'chat_messages'
+        ordering = ['created_at']

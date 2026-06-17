@@ -3,15 +3,16 @@ from django.utils import timezone
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, viewsets, permissions
+from rest_framework import status, viewsets, permissions, exceptions
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User, Project, Team, Node, Tag, DocumentPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard
+from .models import User, Project, Team, Node, Tag, DocumentPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard, Channel, ChatMessage
 from .serializers import (
     UserSerializer, ProjectSerializer, TeamSerializer, NodeSerializer, 
     TagSerializer, DocumentPageSerializer, CanvasDraftSerializer,
-    ProjectRoleSerializer, ProjectMemberSerializer, KanbanBoardSerializer
+    ProjectRoleSerializer, ProjectMemberSerializer, KanbanBoardSerializer,
+    ChannelSerializer, ChatMessageSerializer
 )
 from .permissions import check_permission, IsProjectMember
 
@@ -190,6 +191,35 @@ class ProjectMemberListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ProjectMemberDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def patch(self, request, project_id, pk):
+        try:
+            member = ProjectMember.objects.get(id=pk, project_id=project_id)
+            if request.user.is_authenticated and not check_permission(request.user, member.project, 'manage_members'):
+                return Response(status=status.HTTP_403_FORBIDDEN)
+        except ProjectMember.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProjectMemberSerializer(member, data=request.data, partial=True, context={'project_id': project_id})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, project_id, pk):
+        try:
+            member = ProjectMember.objects.get(id=pk, project_id=project_id)
+            if request.user.is_authenticated and not check_permission(request.user, member.project, 'manage_members'):
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            if member.is_owner:
+                return Response({'error': 'Cannot remove the project owner'}, status=status.HTTP_400_BAD_REQUEST)
+            member.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProjectMember.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
 class ProjectRoleViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectRoleSerializer
     permission_classes = [permissions.AllowAny] # Временно
@@ -200,8 +230,20 @@ class ProjectRoleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         project = Project.objects.get(id=self.kwargs['project_id'])
         if self.request.user.is_authenticated and not check_permission(self.request.user, project, 'manage_roles'):
-            raise permissions.PermissionDenied()
+            raise exceptions.PermissionDenied()
         serializer.save(project=project)
+
+    def perform_update(self, serializer):
+        project = Project.objects.get(id=self.kwargs['project_id'])
+        if self.request.user.is_authenticated and not check_permission(self.request.user, project, 'manage_roles'):
+            raise exceptions.PermissionDenied()
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        project = Project.objects.get(id=self.kwargs['project_id'])
+        if self.request.user.is_authenticated and not check_permission(self.request.user, project, 'manage_roles'):
+            raise exceptions.PermissionDenied()
+        instance.delete()
 
 # ----------------- Nodes -----------------
 
@@ -439,4 +481,52 @@ class KanbanBoardDetailView(APIView):
         if serializer.is_valid():
             serializer.save(updated_at=timezone.now())
             return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# ----------------- Chat Views -----------------
+
+class ChannelListCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        project_id = request.query_params.get('projectId')
+        if not project_id:
+            return Response({'error': 'projectId is required'}, status=status.HTTP_400_BAD_REQUEST)
+        channels = Channel.objects.filter(project_id=project_id)
+        return Response(ChannelSerializer(channels, many=True).data)
+
+    def post(self, request):
+        serializer = ChannelSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user if request.user.is_authenticated else None)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChatMessageListCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        project_id = request.query_params.get('projectId')
+        channel_id = request.query_params.get('channelId')
+        recipient_id = request.query_params.get('recipientId')
+        
+        query = Q(project_id=project_id)
+        
+        if channel_id:
+            query &= Q(channel_id=channel_id)
+        elif recipient_id and request.user.is_authenticated:
+            # Личные сообщения: от меня к получателю ИЛИ от получателя ко мне
+            query &= (Q(sender=request.user, recipient_id=recipient_id) | 
+                      Q(sender_id=recipient_id, recipient=request.user))
+        else:
+            return Response([])
+
+        messages = ChatMessage.objects.filter(query).order_by('created_at')
+        return Response(ChatMessageSerializer(messages, many=True).data)
+
+    def post(self, request):
+        serializer = ChatMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(sender=request.user if request.user.is_authenticated else User.objects.first())
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

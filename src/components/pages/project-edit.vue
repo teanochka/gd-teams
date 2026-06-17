@@ -5,6 +5,9 @@ import { useRoute, useRouter } from "vue-router";
 import IconChevronRight from "~icons/carbon/chevron-right";
 import ProjectForm from "@/components/project/ProjectForm.vue";
 import ProjectsSidebar from "@/components/project/ProjectsSidebar.vue";
+import ProjectSettingsTabs from "@/components/project/ProjectSettingsTabs.vue";
+import ProjectMembersList from "@/components/project/ProjectMembersList.vue";
+import ProjectRolesList from "@/components/project/ProjectRolesList.vue";
 import { useProjectsStore } from "@/stores/projects";
 import type { UpdateProjectPayload } from "@/types/domain";
 
@@ -16,6 +19,7 @@ const { activeSection, teamsWithCounts } = storeToRefs(projectsStore);
 const isLoadingProject = ref(true);
 const isSubmitting = ref(false);
 const error = ref("");
+const activeTab = ref<"general" | "members" | "roles">("general");
 
 const projectId = computed(() => String(route.params.projectId ?? ""));
 const teams = computed(() => teamsWithCounts.value);
@@ -118,16 +122,32 @@ const submitProject = async (payload: UpdateProjectPayload) => {
 
         <BSpinner v-if="isLoadingProject" label="Загрузка проекта" />
 
-        <ProjectForm
-          v-else-if="project"
-          :teams="teams"
-          :initial-values="initialValues"
-          :is-submitting="isSubmitting"
-          submit-label="Сохранить изменения"
-          submitting-label="Сохраняем..."
-          @submit="submitProject"
-          @cancel="router.push({ name: 'project', params: { projectId } })"
-        />
+        <template v-else-if="project">
+          <ProjectSettingsTabs v-model:active-tab="activeTab" />
+
+          <ProjectForm
+            v-if="activeTab === 'general'"
+            :teams="teams"
+            :initial-values="initialValues"
+            :is-submitting="isSubmitting"
+            submit-label="Сохранить изменения"
+            submitting-label="Сохраняем..."
+            @submit="submitProject"
+            @cancel="router.push({ name: 'project', params: { projectId } })"
+          />
+
+          <ProjectMembersList
+            v-else-if="activeTab === 'members'"
+            :key="`members-${project.id}`"
+            :project-id="project.id"
+          />
+
+          <ProjectRolesList
+            v-else-if="activeTab === 'roles'"
+            :key="`roles-${project.id}`"
+            :project-id="project.id"
+          />
+        </template>
       </main>
     </div>
   </div>

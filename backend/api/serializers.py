@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Project, Team, Tag, Node, DocumentPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard
+from .models import User, Project, Team, Tag, Node, DocumentPage, CanvasDraft, ProjectRole, ProjectMember, KanbanBoard, Channel, ChatMessage
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,9 +8,11 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'date_joined']
 
 class ProjectRoleSerializer(serializers.ModelSerializer):
+    isUserSpecific = serializers.BooleanField(source='is_user_specific', required=False, default=False)
+    
     class Meta:
         model = ProjectRole
-        fields = ['id', 'name', 'color', 'permissions', 'is_user_specific']
+        fields = ['id', 'name', 'color', 'permissions', 'isUserSpecific']
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -18,13 +20,21 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(), source='user', write_only=True
     )
     roles = ProjectRoleSerializer(many=True, read_only=True)
-    role_ids = serializers.PrimaryKeyRelatedField(
+    roleIds = serializers.PrimaryKeyRelatedField(
         queryset=ProjectRole.objects.all(), source='roles', many=True, write_only=True, required=False
     )
+    isOwner = serializers.BooleanField(source='is_owner', read_only=True)
+    accessLevel = serializers.CharField(source='access_level', required=False)
 
     class Meta:
         model = ProjectMember
-        fields = ['id', 'user', 'user_id', 'roles', 'role_ids', 'is_owner']
+        fields = ['id', 'user', 'user_id', 'roles', 'roleIds', 'isOwner', 'accessLevel']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.is_owner:
+            data['accessLevel'] = 'admin'
+        return data
 
 class ProjectSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
@@ -123,3 +133,34 @@ class KanbanBoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = KanbanBoard
         fields = ['id', 'projectId', 'members', 'roles', 'taskTypes', 'priorities', 'statuses', 'tags', 'columns', 'createdAt', 'updatedAt']
+
+class ChannelSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(required=False)
+    projectId = serializers.PrimaryKeyRelatedField(source='project', queryset=Project.objects.all())
+    createdBy = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = Channel
+        fields = ['id', 'projectId', 'name', 'description', 'is_private', 'createdBy', 'createdAt']
+
+    def get_createdBy(self, obj):
+        if obj.created_by:
+            return obj.created_by.display_name or obj.created_by.username
+        return "System"
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(required=False)
+    projectId = serializers.PrimaryKeyRelatedField(source='project', queryset=Project.objects.all())
+    channelId = serializers.PrimaryKeyRelatedField(source='channel', queryset=Channel.objects.all(), required=False, allow_null=True)
+    senderName = serializers.SerializerMethodField()
+    senderId = serializers.PrimaryKeyRelatedField(source='sender', read_only=True)
+    recipientId = serializers.PrimaryKeyRelatedField(source='recipient', queryset=User.objects.all(), required=False, allow_null=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'projectId', 'channelId', 'senderId', 'senderName', 'recipientId', 'content', 'createdAt']
+
+    def get_senderName(self, obj):
+        return obj.sender.display_name or obj.sender.username

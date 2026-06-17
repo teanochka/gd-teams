@@ -4,7 +4,7 @@ import { RouterLink } from "vue-router";
 import IconChevronRight from "~icons/carbon/chevron-right";
 import IconFolder from "~icons/carbon/folder";
 import IconStar from "~icons/carbon/star";
-import IconTrashCan from "~icons/carbon/trash-can";
+import IconChat from "~icons/carbon/chat";
 import TagManager from "@/components/TagManager.vue";
 
 type FolderNode = {
@@ -53,10 +53,13 @@ const rootExpanded = ref(true);
       <IconStar aria-hidden="true" />
       <span>Agile Board</span>
     </RouterLink>
-    <button class="sidebar-button" type="button">
-      <IconTrashCan aria-hidden="true" />
+    <RouterLink
+      class="sidebar-button"
+      :to="{ name: 'project-chat', params: { projectId } }"
+    >
+      <IconChat aria-hidden="true" />
       <span>Чат</span>
-    </button>
+    </RouterLink>
     <button
       class="project-root"
       type="button"

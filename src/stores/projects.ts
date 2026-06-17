@@ -9,8 +9,23 @@ import {
   permanentlyDeleteProject as apiPermanentlyDeleteProject,
   renameProject as apiRenameProject,
   updateProject as apiUpdateProject,
+  getProjectMembers,
+  addProjectMember,
+  updateProjectMember,
+  removeProjectMember,
+  getProjectRoles,
+  createProjectRole,
+  updateProjectRole,
+  deleteProjectRole,
 } from '@/api/projects'
-import type { CreateProjectPayload, Project, Team, UpdateProjectPayload } from '@/types/domain'
+import type {
+  CreateProjectPayload,
+  Project,
+  ProjectMember,
+  ProjectRole,
+  Team,
+  UpdateProjectPayload,
+} from '@/types/domain'
 
 export type ProjectsSection = 'all' | 'favorites' | 'trash' | string
 
@@ -20,6 +35,9 @@ export const useProjectsStore = defineStore('projects', () => {
   const activeSection = ref<ProjectsSection>('all')
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  const currentProjectMembers = ref<ProjectMember[]>([])
+  const currentProjectRoles = ref<ProjectRole[]>([])
 
   const teamsWithCounts = computed(() => {
     return teams.value.map((team) => ({
@@ -158,6 +176,88 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
+  // Members & Roles Actions
+  async function loadProjectMembers(projectId: string) {
+    try {
+      currentProjectMembers.value = await getProjectMembers(projectId)
+    } catch {
+      error.value = 'Не удалось загрузить участников проекта'
+    }
+  }
+
+  async function addMember(projectId: string, userId: string) {
+    try {
+      const member = await addProjectMember(projectId, userId)
+      currentProjectMembers.value.push(member)
+    } catch {
+      error.value = 'Не удалось добавить участника'
+    }
+  }
+
+  async function updateMember(
+    projectId: string,
+    memberId: string,
+    payload: { roleIds?: string[]; accessLevel?: string },
+  ) {
+    try {
+      const updated = await updateProjectMember(projectId, memberId, payload)
+      const index = currentProjectMembers.value.findIndex((m) => m.id === memberId)
+      if (index !== -1) {
+        currentProjectMembers.value[index] = updated
+      }
+    } catch {
+      error.value = 'Не удалось обновить участника'
+    }
+  }
+
+  async function removeMember(projectId: string, memberId: string) {
+    try {
+      await removeProjectMember(projectId, memberId)
+      currentProjectMembers.value = currentProjectMembers.value.filter((m) => m.id !== memberId)
+    } catch {
+      error.value = 'Не удалось удалить участника'
+    }
+  }
+
+  async function loadProjectRoles(projectId: string) {
+    try {
+      currentProjectRoles.value = await getProjectRoles(projectId)
+    } catch {
+      error.value = 'Не удалось загрузить роли проекта'
+    }
+  }
+
+  async function createRole(projectId: string, role: Partial<ProjectRole>) {
+    try {
+      const newRole = await createProjectRole(projectId, role)
+      currentProjectRoles.value.push(newRole)
+      return newRole
+    } catch {
+      error.value = 'Не удалось создать роль'
+    }
+  }
+
+  async function updateRole(projectId: string, roleId: string, role: Partial<ProjectRole>) {
+    try {
+      const updated = await updateProjectRole(projectId, roleId, role)
+      const index = currentProjectRoles.value.findIndex((r) => r.id === roleId)
+      if (index !== -1) {
+        currentProjectRoles.value[index] = updated
+      }
+    } catch {
+      error.value = 'Не удалось обновить роль'
+    }
+  }
+
+  async function deleteRole(projectId: string, roleId: string) {
+    try {
+      await deleteProjectRole(projectId, roleId)
+      currentProjectRoles.value = currentProjectRoles.value.filter((r) => r.id !== roleId)
+    } catch {
+      error.value = 'Не удалось удалить роль'
+    }
+  }
+
   return {
     projects,
     teams,
@@ -165,6 +265,8 @@ export const useProjectsStore = defineStore('projects', () => {
     activeSection,
     isLoading,
     error,
+    currentProjectMembers,
+    currentProjectRoles,
     loadProjects,
     createProject,
     renameProject,
@@ -175,5 +277,13 @@ export const useProjectsStore = defineStore('projects', () => {
     permanentlyDeleteProject,
     setActiveSection,
     getProjectById,
+    loadProjectMembers,
+    addMember,
+    updateMember,
+    removeMember,
+    loadProjectRoles,
+    createRole,
+    updateRole,
+    deleteRole,
   }
 })

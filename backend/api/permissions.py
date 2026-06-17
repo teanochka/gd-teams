@@ -17,33 +17,21 @@ def check_permission(user, project, action, node_id=None):
         return False
     
     # Владелец может всё
-    if member.is_owner:
+    if member.is_owner or member.access_level == 'admin':
         return True
     
-    # 2. Собираем все роли
-    roles = member.roles.all()
-    
-    # 3. Если есть node_id, проверяем иерархию (рекурсивно вверх)
-    if node_id:
-        current_node_id = node_id
-        while current_node_id:
-            try:
-                node = Node.objects.get(id=current_node_id)
-            except Node.DoesNotExist:
-                break
-                
-            for role in roles:
-                perms = role.permissions
-                if node.id in perms.get(f'allow_{action}', []):
-                    return True
-            
-            current_node_id = node.parent_id
-    
-    # 4. Проверяем глобальные права ролей проекта
-    for role in roles:
-        if role.permissions.get(f'can_{action}', False):
+    # Модератор может управлять участниками и контентом, но не ролями (для примера)
+    if member.access_level == 'moderator':
+        if action in ['create', 'edit', 'delete', 'manage_members']:
             return True
-            
+        return False
+    
+    # Пользователь может только создавать и редактировать контент
+    if member.access_level == 'user':
+        if action in ['create', 'edit']:
+            return True
+        return False
+    
     return False
 
 class IsProjectMember(permissions.BasePermission):

@@ -3,10 +3,10 @@ from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from .views import (
     RegisterView, LoginView, CurrentUserView, PasswordResetView, UserSearchView,
-    ProjectListCreateView, ProjectDetailView, ProjectMemberListView, ProjectRoleViewSet,
+    ProjectListCreateView, ProjectDetailView, ProjectMemberListView, ProjectMemberDetailView, ProjectRoleViewSet,
     NodeListCreateView, NodeDetailView, DocumentDetailView, CanvasDetailView,
     DocumentPageListCreateView, DocumentPageDetailView, GlobalTagListCreateView, TreeView,
-    KanbanBoardListCreateView, KanbanBoardDetailView
+    KanbanBoardListCreateView, KanbanBoardDetailView, ChannelListCreateView, ChatMessageListCreateView
 )
 
 router = DefaultRouter()
@@ -35,11 +35,14 @@ urlpatterns = [
     path('tags', GlobalTagListCreateView.as_view(), name='global-tag-list-create'),
     path('kanbanBoards', KanbanBoardListCreateView.as_view(), name='kanban-board-list-create'),
     path('kanbanBoards/<str:pk>', KanbanBoardDetailView.as_view(), name='kanban-board-detail'),
+    path('channels', ChannelListCreateView.as_view(), name='channel-list-create'),
+    path('chatMessages', ChatMessageListCreateView.as_view(), name='chat-message-list-create'),
 
     # Projects
     path('projects', ProjectListCreateView.as_view(), name='project-list-create'),
     path('projects/<str:project_id>', ProjectDetailView.as_view(), name='project-detail'),
     path('projects/<str:project_id>/members', ProjectMemberListView.as_view(), name='project-members'),
+    path('projects/<str:project_id>/members/<str:pk>', ProjectMemberDetailView.as_view(), name='project-member-detail'),
     path('projects/<str:project_id>/tree', TreeView.as_view(), name='tree'),
     
     # Roles (viewset)

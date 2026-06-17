@@ -69,6 +69,31 @@ export type Project = {
   rootFolderId: NodeId
 }
 
+export type ProjectRole = {
+  id: string
+  name: string
+  color: string | Record<string, any>
+  permissions: Record<string, any>
+  isUserSpecific: boolean
+}
+
+export type User = {
+  id: UserId
+  username: string
+  display_name: string
+  email: string
+}
+
+export type AccessLevel = 'admin' | 'moderator' | 'user'
+
+export type ProjectMember = {
+  id: string
+  user: User
+  roles: ProjectRole[]
+  isOwner: boolean
+  accessLevel: AccessLevel
+}
+
 export type Tag = {
   id: string
   projectId: ProjectId

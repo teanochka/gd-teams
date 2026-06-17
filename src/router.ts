@@ -11,6 +11,7 @@ import workspace from "./components/pages/workspace.vue";
 import document from "./components/pages/document.vue";
 import kanban from "./components/pages/kanban.vue";
 import canvas from "./components/pages/canvas.vue";
+import chat from "./components/pages/chat.vue";
 import login from "./components/pages/login.vue";
 import register from "./components/pages/register.vue";
 
@@ -73,6 +74,11 @@ const routes: RouteRecordRaw[] = [
     path: "/project/:projectId/canvas/:canvasId",
     name: "project-canvas",
     component: canvas,
+  },
+  {
+    path: "/project/:projectId/chat/:type?/:id?",
+    name: "project-chat",
+    component: chat,
   },
   {
     path: "/project/:projectId/template/:templateId",

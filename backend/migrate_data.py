@@ -82,7 +82,11 @@ def migrate():
         project_map[project.id] = project
         
         if created and owner:
-            ProjectMember.objects.get_or_create(user=owner, project=project, defaults={'is_owner': True})
+            ProjectMember.objects.get_or_create(
+                user=owner, 
+                project=project, 
+                defaults={'is_owner': True, 'access_level': 'admin'}
+            )
             print(f"  [OK] Project migrated: {project.title}")
 
     # --- 3. Миграция тегов ---
