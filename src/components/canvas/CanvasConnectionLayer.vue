@@ -2,6 +2,8 @@
 import { computed } from "vue";
 import {
   buildSvgPath,
+  connectionSegmentHitWidth,
+  getConnectionSegments,
   routeOrthogonalConnection,
 } from "@/components/canvas/connectionRouting";
 import type {
@@ -20,10 +22,34 @@ export type DraftCanvasConnection = {
   targetHandle?: CanvasHandlePosition | null;
 };
 
+export type ConnectionSnapGuide = {
+  orientation: "horizontal" | "vertical";
+  coordinate: number;
+  from: number;
+  to: number;
+};
+
 const props = defineProps<{
   elements: CanvasElement[];
   connections: CanvasConnection[];
   draftConnection?: DraftCanvasConnection | null;
+  selectedConnectionIds?: Set<CanvasElementId>;
+  snapGuide?: ConnectionSnapGuide | null;
+}>();
+
+const emit = defineEmits<{
+  (
+    event: "select-connection",
+    payload: { connectionId: CanvasElementId; event: MouseEvent },
+  ): void;
+  (
+    event: "segment-drag-start",
+    payload: {
+      connectionId: CanvasElementId;
+      segmentIndex: number;
+      event: MouseEvent;
+    },
+  ): void;
 }>();
 
 type ConnectionPath = {
@@ -31,6 +57,8 @@ type ConnectionPath = {
   d: string;
   stroke: string;
   markerEnd: boolean;
+  points: CanvasPoint[];
+  segments: ReturnType<typeof getConnectionSegments>;
   draft?: boolean;
 };
 
@@ -69,6 +97,8 @@ const toConnectionPath = (
     d: buildSvgPath(points),
     stroke: connection.style?.stroke ?? "#202020",
     markerEnd: connection.markerEnd !== "none",
+    points,
+    segments: getConnectionSegments(connection.id, points),
   };
 };
 
@@ -106,6 +136,8 @@ const draftPath = computed<ConnectionPath | null>(() => {
     d: buildSvgPath(points),
     stroke: "#202020",
     markerEnd: true,
+    points,
+    segments: [],
     draft: true,
   };
 });
@@ -121,6 +153,56 @@ const connectionPaths = computed(() => {
 
   return paths;
 });
+
+const selectedConnectionPaths = computed(() =>
+  connectionPaths.value.filter(
+    (path) => !path.draft && props.selectedConnectionIds?.has(path.id),
+  ),
+);
+
+const selectedConnectionSegments = computed(() =>
+  selectedConnectionPaths.value.flatMap((path) => {
+    const lastSegmentIndex = path.points.length - 2;
+
+    return path.segments
+      .filter((segment) => segment.index > 0 && segment.index < lastSegmentIndex)
+      .map((segment) => ({
+        ...segment,
+        d: buildSvgPath([segment.start, segment.end]),
+      }));
+  }),
+);
+
+const isSelected = (path: ConnectionPath) => {
+  return !path.draft && Boolean(props.selectedConnectionIds?.has(path.id));
+};
+
+const onConnectionMouseDown = (path: ConnectionPath, event: MouseEvent) => {
+  if (path.draft || event.button !== 0) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  emit("select-connection", { connectionId: path.id, event });
+};
+
+const onSegmentMouseDown = (
+  segment: { connectionId: CanvasElementId; index: number },
+  event: MouseEvent,
+) => {
+  if (event.button !== 0) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  emit("segment-drag-start", {
+    connectionId: segment.connectionId,
+    segmentIndex: segment.index,
+    event,
+  });
+};
 </script>
 
 <template>
@@ -142,10 +224,41 @@ const connectionPaths = computed(() => {
       v-for="path in connectionPaths"
       :key="path.id"
       class="connection-path"
-      :class="{ draft: path.draft }"
+      :class="{ draft: path.draft, selected: isSelected(path) }"
       :d="path.d"
       :stroke="path.stroke"
       :marker-end="path.markerEnd ? 'url(#canvas-connection-arrow)' : undefined"
+    />
+    <path
+      v-for="path in selectedConnectionPaths"
+      :key="`selected-${path.id}`"
+      class="connection-selected-path"
+      :d="path.d"
+    />
+    <path
+      v-for="path in connectionPaths.filter((item) => !item.draft)"
+      :key="`hit-${path.id}`"
+      class="connection-hit-path"
+      :d="path.d"
+      :stroke-width="connectionSegmentHitWidth"
+      @mousedown="onConnectionMouseDown(path, $event)"
+    />
+    <path
+      v-for="segment in selectedConnectionSegments"
+      :key="`segment-${segment.connectionId}-${segment.index}`"
+      class="connection-segment-hit-path"
+      :class="segment.orientation"
+      :d="segment.d"
+      :stroke-width="connectionSegmentHitWidth + 4"
+      @mousedown="onSegmentMouseDown(segment, $event)"
+    />
+    <line
+      v-if="snapGuide"
+      class="connection-snap-guide"
+      :x1="snapGuide.orientation === 'horizontal' ? snapGuide.from : snapGuide.coordinate"
+      :y1="snapGuide.orientation === 'horizontal' ? snapGuide.coordinate : snapGuide.from"
+      :x2="snapGuide.orientation === 'horizontal' ? snapGuide.to : snapGuide.coordinate"
+      :y2="snapGuide.orientation === 'horizontal' ? snapGuide.coordinate : snapGuide.to"
     />
   </svg>
 </template>
@@ -166,9 +279,57 @@ const connectionPaths = computed(() => {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+  pointer-events: none;
+}
+
+.connection-path.selected {
+  stroke-width: 2.5;
 }
 
 .connection-path.draft {
   stroke-dasharray: 6 5;
+}
+
+.connection-selected-path {
+  fill: none;
+  pointer-events: none;
+  stroke: #0f62fe;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 6;
+  stroke-opacity: 0.16;
+}
+
+.connection-hit-path,
+.connection-segment-hit-path {
+  fill: none;
+  pointer-events: stroke;
+  stroke: transparent;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.connection-hit-path {
+  cursor: pointer;
+}
+
+.connection-segment-hit-path {
+  cursor: grab;
+}
+
+.connection-segment-hit-path.horizontal {
+  cursor: ns-resize;
+}
+
+.connection-segment-hit-path.vertical {
+  cursor: ew-resize;
+}
+
+.connection-snap-guide {
+  pointer-events: none;
+  stroke: #0f62fe;
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  stroke-width: 1.5;
 }
 </style>

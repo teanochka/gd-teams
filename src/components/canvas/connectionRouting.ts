@@ -1,11 +1,15 @@
 import type {
   CanvasConnection,
   CanvasElement,
+  CanvasElementId,
   CanvasHandlePosition,
   CanvasPoint,
 } from "@/types/canvas";
 
-export const connectorLeadLength = 20;
+export const connectorLeadLength = 50;
+export const connectionSnapThreshold = 8;
+export const connectionSegmentHitWidth = 12;
+export const connectionSnapMinOverlap = 12;
 
 export const handlePositions: CanvasHandlePosition[] = [
   "top",
@@ -27,6 +31,14 @@ type RouteConnectionOptions = {
   targetPoint?: CanvasPoint;
   waypoints?: CanvasPoint[];
   type?: CanvasConnection["type"];
+};
+
+export type CanvasConnectionSegment = {
+  connectionId: CanvasElementId;
+  index: number;
+  orientation: "horizontal" | "vertical";
+  start: CanvasPoint;
+  end: CanvasPoint;
 };
 
 export const getHandleVector = (handle: CanvasHandlePosition): CanvasVector => {
@@ -147,6 +159,224 @@ export const simplifyOrthogonalPoints = (points: CanvasPoint[]) => {
   return simplified;
 };
 
+const orthogonalizePointChain = (points: CanvasPoint[]) => {
+  const [firstPoint, ...restPoints] = points;
+
+  if (!firstPoint) {
+    return [];
+  }
+
+  const orthogonalPoints: CanvasPoint[] = [firstPoint];
+
+  for (const nextPoint of restPoints) {
+    const previousPoint = orthogonalPoints[orthogonalPoints.length - 1];
+
+    if (!previousPoint) {
+      orthogonalPoints.push(nextPoint);
+      continue;
+    }
+
+    if (
+      previousPoint.x !== nextPoint.x &&
+      previousPoint.y !== nextPoint.y
+    ) {
+      orthogonalPoints.push({ x: nextPoint.x, y: previousPoint.y });
+    }
+
+    orthogonalPoints.push(nextPoint);
+  }
+
+  return simplifyOrthogonalPoints(orthogonalPoints);
+};
+
+export const getConnectionSegments = (
+  connectionId: CanvasElementId,
+  points: CanvasPoint[],
+): CanvasConnectionSegment[] => {
+  const segments: CanvasConnectionSegment[] = [];
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+
+    if (!start || !end || isSamePoint(start, end)) {
+      continue;
+    }
+
+    if (start.y === end.y) {
+      segments.push({
+        connectionId,
+        index,
+        orientation: "horizontal",
+        start,
+        end,
+      });
+      continue;
+    }
+
+    if (start.x === end.x) {
+      segments.push({
+        connectionId,
+        index,
+        orientation: "vertical",
+        start,
+        end,
+      });
+    }
+  }
+
+  return segments;
+};
+
+const setPointAxis = (
+  point: CanvasPoint,
+  orientation: CanvasConnectionSegment["orientation"],
+  coordinate: number,
+): CanvasPoint => {
+  return orientation === "horizontal"
+    ? { ...point, y: coordinate }
+    : { ...point, x: coordinate };
+};
+
+const createEndpointCorner = (
+  point: CanvasPoint,
+  orientation: CanvasConnectionSegment["orientation"],
+  coordinate: number,
+): CanvasPoint => {
+  return orientation === "horizontal"
+    ? { x: point.x, y: coordinate }
+    : { x: coordinate, y: point.y };
+};
+
+export const moveOrthogonalSegment = (
+  points: CanvasPoint[],
+  segmentIndex: number,
+  coordinate: number,
+) => {
+  const start = points[segmentIndex];
+  const end = points[segmentIndex + 1];
+
+  if (!start || !end || isSamePoint(start, end)) {
+    return points;
+  }
+
+  const orientation =
+    start.y === end.y ? "horizontal" : start.x === end.x ? "vertical" : null;
+
+  if (!orientation) {
+    return points;
+  }
+
+  const lastIndex = points.length - 1;
+  const firstPoint = points[0];
+  const lastPoint = points[lastIndex];
+  const roundedCoordinate = Math.round(coordinate);
+
+  if (!firstPoint || !lastPoint) {
+    return points;
+  }
+
+  if (segmentIndex === 0) {
+    return simplifyOrthogonalPoints([
+      firstPoint,
+      createEndpointCorner(start, orientation, roundedCoordinate),
+      setPointAxis(end, orientation, roundedCoordinate),
+      ...points.slice(2),
+    ]);
+  }
+
+  if (segmentIndex + 1 === lastIndex) {
+    return simplifyOrthogonalPoints([
+      ...points.slice(0, segmentIndex),
+      setPointAxis(start, orientation, roundedCoordinate),
+      createEndpointCorner(end, orientation, roundedCoordinate),
+      lastPoint,
+    ]);
+  }
+
+  return simplifyOrthogonalPoints(
+    points.map((point, index) => {
+      if (index !== segmentIndex && index !== segmentIndex + 1) {
+        return point;
+      }
+
+      return setPointAxis(point, orientation, roundedCoordinate);
+    }),
+  );
+};
+
+export const getWaypointsFromRoutePoints = (points: CanvasPoint[]) => {
+  return simplifyOrthogonalPoints(points).slice(1, -1);
+};
+
+const getSegmentCoordinate = (segment: CanvasConnectionSegment) => {
+  return segment.orientation === "horizontal"
+    ? segment.start.y
+    : segment.start.x;
+};
+
+const getSegmentProjection = (segment: CanvasConnectionSegment) => {
+  const start =
+    segment.orientation === "horizontal" ? segment.start.x : segment.start.y;
+  const end =
+    segment.orientation === "horizontal" ? segment.end.x : segment.end.y;
+
+  return {
+    min: Math.min(start, end),
+    max: Math.max(start, end),
+  };
+};
+
+const getProjectionOverlap = (
+  left: CanvasConnectionSegment,
+  right: CanvasConnectionSegment,
+) => {
+  const leftProjection = getSegmentProjection(left);
+  const rightProjection = getSegmentProjection(right);
+
+  return (
+    Math.min(leftProjection.max, rightProjection.max) -
+    Math.max(leftProjection.min, rightProjection.min)
+  );
+};
+
+export const findParallelSegmentSnap = ({
+  segment,
+  coordinate,
+  segments,
+  threshold = connectionSnapThreshold,
+}: {
+  segment: CanvasConnectionSegment;
+  coordinate: number;
+  segments: CanvasConnectionSegment[];
+  threshold?: number;
+}) => {
+  let bestSnap: { coordinate: number; distance: number } | null = null;
+
+  for (const candidate of segments) {
+    if (
+      candidate.connectionId === segment.connectionId ||
+      candidate.orientation !== segment.orientation ||
+      getProjectionOverlap(segment, candidate) < connectionSnapMinOverlap
+    ) {
+      continue;
+    }
+
+    const candidateCoordinate = getSegmentCoordinate(candidate);
+    const distance = Math.abs(candidateCoordinate - coordinate);
+
+    if (distance > threshold) {
+      continue;
+    }
+
+    if (!bestSnap || distance < bestSnap.distance) {
+      bestSnap = { coordinate: candidateCoordinate, distance };
+    }
+  }
+
+  return bestSnap;
+};
+
 const routeBetweenLeads = (
   sourceLead: CanvasPoint,
   sourceHandle: CanvasHandlePosition,
@@ -213,11 +443,9 @@ export const routeOrthogonalConnection = ({
     const targetLead = offsetPoint(resolvedTargetPoint, targetHandle);
 
     if (waypoints.length) {
-      return simplifyOrthogonalPoints([
+      return orthogonalizePointChain([
         sourcePoint,
-        sourceLead,
         ...waypoints,
-        targetLead,
         resolvedTargetPoint,
       ]);
     }
@@ -232,9 +460,8 @@ export const routeOrthogonalConnection = ({
   }
 
   if (waypoints.length) {
-    return simplifyOrthogonalPoints([
+    return orthogonalizePointChain([
       sourcePoint,
-      sourceLead,
       ...waypoints,
       resolvedTargetPoint,
     ]);

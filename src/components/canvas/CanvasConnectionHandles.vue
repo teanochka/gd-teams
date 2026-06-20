@@ -11,7 +11,11 @@ defineEmits<{
     handle: CanvasHandlePosition,
     pointerEvent: MouseEvent,
   ): void;
-  (event: "connect-end", handle: CanvasHandlePosition): void;
+  (
+    event: "connect-end",
+    handle: CanvasHandlePosition,
+    pointerEvent: MouseEvent,
+  ): void;
 }>();
 
 const handles: CanvasHandlePosition[] = ["top", "right", "bottom", "left"];
@@ -36,7 +40,7 @@ const handles: CanvasHandlePosition[] = ["top", "right", "bottom", "left"];
       type="button"
       tabindex="-1"
       @mousedown.stop="$emit('connect-start', handle, $event)"
-      @mouseup.stop="$emit('connect-end', handle)"
+      @mouseup.stop="$emit('connect-end', handle, $event)"
     />
   </div>
 </template>

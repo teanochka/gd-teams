@@ -6,8 +6,13 @@ import CanvasElementFrame from "@/components/canvas/CanvasElementFrame.vue";
 import CanvasElementPropertiesPanel from "@/components/canvas/panels/CanvasElementPropertiesPanel.vue";
 import { canvasComponentRegistry } from "@/components/canvas/componentRegistry";
 import {
+  findParallelSegmentSnap,
   getElementHandlePoints,
   getHandlePoint,
+  getConnectionSegments,
+  getWaypointsFromRoutePoints,
+  moveOrthogonalSegment,
+  routeOrthogonalConnection,
 } from "@/components/canvas/connectionRouting";
 import CanvasLayersPanel from "@/components/canvas/workspace/CanvasLayersPanel.vue";
 import CanvasPalettePanel from "@/components/canvas/workspace/CanvasPalettePanel.vue";
@@ -26,7 +31,7 @@ import {
 } from "@/utils/canvasDocumentDrag";
 
 const canvasElementDragType = "application/x-gdteams-canvas-element";
-const connectionSnapDistance = 28;
+const connectionTargetSnapPadding = 40;
 const pasteOffset = 24;
 
 type DraftCanvasConnection = {
@@ -49,6 +54,13 @@ type SnapTarget = {
   distance: number;
 };
 
+type ConnectionSnapGuide = {
+  orientation: "horizontal" | "vertical";
+  coordinate: number;
+  from: number;
+  to: number;
+};
+
 const props = defineProps<{
   data: CanvasData;
   projectId: string;
@@ -60,13 +72,18 @@ const emit = defineEmits<{
 
 const workspaceRef = ref<HTMLElement | null>(null);
 const selectedElementIds = ref<Set<CanvasElementId>>(new Set());
+const selectedConnectionIds = ref<Set<CanvasElementId>>(new Set());
 const isDocumentDropActive = ref(false);
 const draftConnection = ref<DraftCanvasConnection | null>(null);
 const selectionBox = ref<SelectionBox | null>(null);
 const clipboardElements = ref<CanvasElement[]>([]);
+const connectionSnapGuide = ref<ConnectionSnapGuide | null>(null);
 
 const elements = computed(() => props.data.elements);
 const connections = computed(() => props.data.connections);
+const elementById = computed(() => {
+  return new Map(elements.value.map((element) => [element.id, element]));
+});
 const visibleElements = computed(() =>
   elements.value.filter((element) => !element.isHidden),
 );
@@ -88,6 +105,34 @@ const selectedElement = computed(() =>
   selectedElements.value.length === 1 ? selectedElements.value[0] : null,
 );
 const layerElements = computed(() => [...elements.value].reverse());
+
+const getConnectionRoutePoints = (connection: CanvasConnection) => {
+  const source = elementById.value.get(connection.sourceId);
+
+  if (!source) {
+    return [];
+  }
+
+  const target =
+    connection.targetId !== null && connection.targetId !== undefined
+      ? elementById.value.get(connection.targetId)
+      : null;
+
+  return routeOrthogonalConnection({
+    source,
+    sourceHandle: connection.sourceHandle,
+    target,
+    targetHandle: connection.targetHandle,
+    targetPoint: connection.targetPoint,
+    waypoints: connection.data?.waypoints,
+  });
+};
+
+const getVisibleConnectionSegments = () => {
+  return visibleConnections.value.flatMap((connection) =>
+    getConnectionSegments(connection.id, getConnectionRoutePoints(connection)),
+  );
+};
 
 const selectionBoxStyle = computed(() => {
   const box = selectionBox.value;
@@ -133,6 +178,13 @@ const setElements = (nextElements: CanvasElement[]) => {
   emitData({
     ...props.data,
     elements: nextElements,
+  });
+};
+
+const setConnections = (nextConnections: CanvasConnection[]) => {
+  emitData({
+    ...props.data,
+    connections: nextConnections,
   });
 };
 
@@ -186,6 +238,7 @@ const addElement = (element: CanvasElement) => {
   const nextElement = withLayerName(element);
   setElements([...elements.value, nextElement]);
   selectedElementIds.value = new Set([nextElement.id]);
+  selectedConnectionIds.value = new Set();
 };
 
 const addConnection = (connection: CanvasConnection) => {
@@ -193,6 +246,29 @@ const addConnection = (connection: CanvasConnection) => {
     ...props.data,
     connections: [...connections.value, connection],
   });
+};
+
+const updateConnectionWaypoints = (
+  connectionId: CanvasElementId,
+  points: CanvasPoint[],
+) => {
+  const waypoints = getWaypointsFromRoutePoints(points);
+
+  setConnections(
+    connections.value.map((connection) => {
+      if (connection.id !== connectionId) {
+        return connection;
+      }
+
+      return {
+        ...connection,
+        data: {
+          ...connection.data,
+          waypoints,
+        },
+      };
+    }),
+  );
 };
 
 const updateElement = (nextElement: CanvasElement) => {
@@ -230,7 +306,7 @@ const moveSelectedElements = ({ dx, dy }: { dx: number; dy: number }) => {
 };
 
 const deleteSelectedElements = () => {
-  if (!selectedElementIds.value.size) {
+  if (!selectedElementIds.value.size && !selectedConnectionIds.value.size) {
     return;
   }
 
@@ -246,11 +322,13 @@ const deleteSelectedElements = () => {
     ),
     connections: connections.value.filter(
       (connection) =>
+        !selectedConnectionIds.value.has(connection.id) &&
         nextElementIds.has(connection.sourceId) &&
         (!connection.targetId || nextElementIds.has(connection.targetId)),
     ),
   });
   selectedElementIds.value = new Set();
+  selectedConnectionIds.value = new Set();
 };
 
 const selectElement = ({
@@ -276,6 +354,117 @@ const selectElement = ({
   }
 
   selectedElementIds.value = new Set([element.id]);
+  selectedConnectionIds.value = new Set();
+};
+
+const selectConnection = ({
+  connectionId,
+  event,
+}: {
+  connectionId: CanvasElementId;
+  event: MouseEvent;
+}) => {
+  const isAdditive = event.ctrlKey || event.metaKey;
+
+  if (isAdditive) {
+    const nextSelection = new Set(selectedConnectionIds.value);
+
+    if (nextSelection.has(connectionId)) {
+      nextSelection.delete(connectionId);
+    } else {
+      nextSelection.add(connectionId);
+    }
+
+    selectedConnectionIds.value = nextSelection;
+    return;
+  }
+
+  selectedElementIds.value = new Set();
+  selectedConnectionIds.value = new Set([connectionId]);
+};
+
+const createSegmentGuide = (
+  segment: ReturnType<typeof getConnectionSegments>[number],
+  coordinate: number,
+): ConnectionSnapGuide => {
+  const from =
+    segment.orientation === "horizontal"
+      ? Math.min(segment.start.x, segment.end.x)
+      : Math.min(segment.start.y, segment.end.y);
+  const to =
+    segment.orientation === "horizontal"
+      ? Math.max(segment.start.x, segment.end.x)
+      : Math.max(segment.start.y, segment.end.y);
+
+  return {
+    orientation: segment.orientation,
+    coordinate,
+    from,
+    to,
+  };
+};
+
+const startConnectionSegmentDrag = ({
+  connectionId,
+  segmentIndex,
+  event,
+}: {
+  connectionId: CanvasElementId;
+  segmentIndex: number;
+  event: MouseEvent;
+}) => {
+  selectConnection({ connectionId, event });
+
+  const connection = connections.value.find((item) => item.id === connectionId);
+
+  if (!connection) {
+    return;
+  }
+
+  const originalPoints = getConnectionRoutePoints(connection);
+  const lastSegmentIndex = originalPoints.length - 2;
+
+  if (segmentIndex <= 0 || segmentIndex >= lastSegmentIndex) {
+    return;
+  }
+
+  const segment = getConnectionSegments(connection.id, originalPoints).find(
+    (item) => item.index === segmentIndex,
+  );
+
+  if (!segment) {
+    return;
+  }
+
+  const onMove = (moveEvent: MouseEvent) => {
+    moveEvent.preventDefault();
+    const point = getWorkspacePoint(moveEvent);
+    const rawCoordinate =
+      segment.orientation === "horizontal" ? point.y : point.x;
+    const snap = findParallelSegmentSnap({
+      segment,
+      coordinate: rawCoordinate,
+      segments: getVisibleConnectionSegments(),
+    });
+    const nextCoordinate = snap?.coordinate ?? rawCoordinate;
+
+    connectionSnapGuide.value = snap
+      ? createSegmentGuide(segment, nextCoordinate)
+      : null;
+    updateConnectionWaypoints(
+      connectionId,
+      moveOrthogonalSegment(originalPoints, segment.index, nextCoordinate),
+    );
+  };
+
+  const onUp = () => {
+    connectionSnapGuide.value = null;
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+  };
+
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
 };
 
 const selectLayerElement = ({
@@ -304,6 +493,7 @@ const selectLayerElement = ({
       selectedElementIds.value = new Set(
         layerElements.value.slice(from, to + 1).map((element) => element.id),
       );
+      selectedConnectionIds.value = new Set();
       return;
     }
   }
@@ -322,6 +512,7 @@ const selectLayerElement = ({
   }
 
   selectedElementIds.value = new Set([elementId]);
+  selectedConnectionIds.value = new Set();
 };
 
 const reorderSelectedLayers = ({
@@ -539,6 +730,7 @@ const startAreaSelection = (event: MouseEvent) => {
 
     if (width < 4 && height < 4) {
       selectedElementIds.value = new Set();
+      selectedConnectionIds.value = new Set();
       return;
     }
 
@@ -547,6 +739,7 @@ const startAreaSelection = (event: MouseEvent) => {
         .filter((element) => intersectsSelectionBox(element, box))
         .map((element) => element.id),
     );
+    selectedConnectionIds.value = new Set();
   };
 
   window.addEventListener("mousemove", onMove);
@@ -582,6 +775,7 @@ const pasteElements = () => {
   selectedElementIds.value = new Set(
     pastedElements.map((element) => element.id),
   );
+  selectedConnectionIds.value = new Set();
 };
 
 const cutSelectedElements = () => {
@@ -591,6 +785,15 @@ const cutSelectedElements = () => {
 
 const getPointDistance = (left: CanvasPoint, right: CanvasPoint) => {
   return Math.hypot(left.x - right.x, left.y - right.y);
+};
+
+const isPointNearElement = (point: CanvasPoint, element: CanvasElement) => {
+  return (
+    point.x >= element.x - connectionTargetSnapPadding &&
+    point.x <= element.x + element.width + connectionTargetSnapPadding &&
+    point.y >= element.y - connectionTargetSnapPadding &&
+    point.y <= element.y + element.height + connectionTargetSnapPadding
+  );
 };
 
 const getNearestConnectionHandle = (
@@ -604,12 +807,12 @@ const getNearestConnectionHandle = (
       continue;
     }
 
+    if (!isPointNearElement(point, element)) {
+      continue;
+    }
+
     for (const handleTarget of getElementHandlePoints(element)) {
       const distance = getPointDistance(point, handleTarget.point);
-
-      if (distance > connectionSnapDistance) {
-        continue;
-      }
 
       if (!nearest || distance < nearest.distance) {
         nearest = {
@@ -715,6 +918,7 @@ const startConnection = ({
   event.stopPropagation();
 
   selectedElementIds.value = new Set([element.id]);
+  selectedConnectionIds.value = new Set();
   draftConnection.value = {
     sourceId: element.id,
     sourceHandle: handle,
@@ -730,9 +934,11 @@ const startConnection = ({
 const endConnection = ({
   element,
   handle,
+  event,
 }: {
   element: CanvasElement;
   handle: CanvasHandlePosition;
+  event: MouseEvent;
 }) => {
   const draft = draftConnection.value;
 
@@ -745,12 +951,19 @@ const endConnection = ({
     return;
   }
 
+  const target = resolveConnectionTarget(
+    getWorkspacePoint(event),
+    draft.sourceId,
+  );
+  const targetElementId = target.targetElementId ?? element.id;
+  const targetHandle = target.targetHandle ?? handle;
+
   const hasSameConnection = connections.value.some((connection) => {
     return (
       connection.sourceId === draft.sourceId &&
       connection.sourceHandle === draft.sourceHandle &&
-      connection.targetId === element.id &&
-      connection.targetHandle === handle
+      connection.targetId === targetElementId &&
+      connection.targetHandle === targetHandle
     );
   });
 
@@ -758,9 +971,9 @@ const endConnection = ({
     addConnection({
       id: createId("connection"),
       sourceId: draft.sourceId,
-      targetId: element.id,
+      targetId: targetElementId,
       sourceHandle: draft.sourceHandle,
-      targetHandle: handle,
+      targetHandle,
       type: "orthogonal",
       markerEnd: "arrow",
     });
@@ -783,6 +996,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
     event.preventDefault();
     selectedElementIds.value = new Set(
       visibleElements.value.map((element) => element.id),
+    );
+    selectedConnectionIds.value = new Set(
+      visibleConnections.value.map((connection) => connection.id),
     );
     return;
   }
@@ -852,6 +1068,10 @@ onBeforeUnmount(() => {
         :elements="visibleElements"
         :connections="visibleConnections"
         :draft-connection="draftConnection"
+        :selected-connection-ids="selectedConnectionIds"
+        :snap-guide="connectionSnapGuide"
+        @select-connection="selectConnection"
+        @segment-drag-start="startConnectionSegmentDrag"
       />
 
       <CanvasElementFrame
@@ -880,7 +1100,9 @@ onBeforeUnmount(() => {
         @connect-start="
           (handle, event) => startConnection({ element, handle, event })
         "
-        @connect-end="(handle) => endConnection({ element, handle })"
+        @connect-end="
+          (handle, event) => endConnection({ element, handle, event })
+        "
       />
 
       <CanvasElementPropertiesPanel
