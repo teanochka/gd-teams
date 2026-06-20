@@ -210,6 +210,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .canvas-page {
   --explorer-width: clamp(420px, 48vw, 760px);
+  --canvas-left-sidebar-width: 260px;
 
   position: relative;
   width: 100%;
@@ -228,7 +229,7 @@ onBeforeUnmount(() => {
 .canvas-back-button {
   position: fixed;
   top: 18px;
-  left: 18px;
+  left: calc(var(--canvas-left-sidebar-width) + 18px);
   z-index: 38;
   display: inline-flex;
   align-items: center;
@@ -349,6 +350,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1100px) {
+  .canvas-page {
+    --canvas-left-sidebar-width: 220px;
+  }
+
   .canvas-save-state,
   .explorer-open .canvas-save-state {
     right: 24px;
@@ -362,7 +367,7 @@ onBeforeUnmount(() => {
 
   .canvas-back-button {
     top: 12px;
-    left: 12px;
+    left: calc(var(--canvas-left-sidebar-width) + 12px);
   }
 
   .explorer-handle {
