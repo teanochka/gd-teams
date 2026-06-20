@@ -4,7 +4,7 @@ import type {
   CanvasData,
   CanvasElement,
 } from "@/types/canvas";
-import type { CanvasPage, NodeId, ProjectId } from "@/types/domain";
+import type { CanvasPage, Node, NodeId, ProjectId } from "@/types/domain";
 
 type RawCanvasNode = {
   id: NodeId;
@@ -288,6 +288,37 @@ export const getCanvasPage = async (
   );
 
   return normalizeCanvasPage(record, canvasId, projectId);
+};
+
+export const copyCanvasPage = async (
+  sourceNodeId: NodeId,
+  targetNode: Pick<Node, "id" | "projectId">,
+) => {
+  const [sourcePages, targetPages] = await Promise.all([
+    getCanvasPages(sourceNodeId),
+    getCanvasPages(targetNode.id),
+  ]);
+  const sourcePage = sourcePages[0];
+  const targetPageId = targetPages[0]?.id;
+  const savedAt = getCurrentDate();
+  const data = cloneCanvasData(getRawCanvasData(sourcePage ?? {}));
+
+  if (targetPageId) {
+    return apiRequest<RawCanvasPage>(`/canvasPages/${targetPageId}`, {
+      method: "PATCH",
+      body: {
+        data,
+        updatedAt: savedAt,
+      },
+    });
+  }
+
+  return createCanvasPageRecord(
+    targetNode.id,
+    targetNode.projectId,
+    data,
+    savedAt,
+  );
 };
 
 export const saveCanvasPage = async (

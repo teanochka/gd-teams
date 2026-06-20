@@ -107,28 +107,6 @@ const compareText = (left: string, right: string) =>
   left.localeCompare(right, "ru");
 const createDraftId = (type: NodeType) => `draft-${type}-${Date.now()}`;
 
-const createUniqueDraftTitle = (
-  baseTitle: string,
-  items: Array<Pick<WorkspaceItem, "name">>,
-) => {
-  const normalizedBase = baseTitle.trim().toLowerCase();
-  const takenTitles = new Set(
-    items.map((item) => item.name.trim().toLowerCase()),
-  );
-
-  if (!takenTitles.has(normalizedBase)) {
-    return baseTitle;
-  }
-
-  let suffix = 1;
-
-  while (takenTitles.has(`${baseTitle} (${suffix})`.toLowerCase())) {
-    suffix += 1;
-  }
-
-  return `${baseTitle} (${suffix})`;
-};
-
 export function useWorkspacePage() {
   const route = useRoute();
   const router = useRouter();
@@ -627,8 +605,7 @@ export function useWorkspacePage() {
       return;
     }
 
-    const siblingItems = currentItems.value.map(toWorkspaceItem);
-    const title = createUniqueDraftTitle(defaultNodeTitles[type], siblingItems);
+    const title = defaultNodeTitles[type];
     const savedAt = new Date().toISOString();
 
     creatingNodeDraft.value = {

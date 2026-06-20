@@ -1,4 +1,5 @@
 import { apiRequest } from "@/api/http";
+import { copyCanvasPage } from "@/api/canvas";
 import { copyDocumentPage, createDocumentPage } from "@/api/documents";
 import type {
   Breadcrumb,
@@ -62,7 +63,8 @@ const resolveFolderId = (project: Project, folderId?: NodeId | null) => {
   return folderId && folderId !== "root" ? folderId : project.rootFolderId;
 };
 
-const createNodeId = (type: NodeType) => `${type}-${Date.now()}`;
+const createNodeId = (type: NodeType) =>
+  `${type}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const getCurrentDate = () => new Date().toISOString();
 
@@ -223,40 +225,66 @@ export const copyNodes = async (
     nodeIds.map((nodeId) => apiRequest<RawNode>(`/nodes/${nodeId}`)),
   );
   const savedAt = getCurrentDate();
-  const copiedNodes = await Promise.all(
-    sourceNodes.map((source, index) =>
-      apiRequest<RawNode>("/nodes", {
-        method: "POST",
-        body: {
-          ...source,
-          id: `${source.id}-copy-${Date.now()}-${index}`,
-          parentId,
-          title: `${source.title} копия`,
-          isFavorite: false,
-          createdAt: savedAt,
-          createdBy: "Вы",
-          updatedAt: savedAt,
-          updatedBy: "Вы",
-        },
-      }),
-    ),
-  );
+  const copiedNodes: RawNode[] = [];
 
-  await Promise.all(
-    copiedNodes.map((copiedNode, index) => {
-      const sourceNode = sourceNodes[index];
+  const copyRelatedData = async (source: RawNode, copiedNode: RawNode) => {
+    const mappedCopiedNode = mapNode(copiedNode, []);
 
-      if (sourceNode?.type !== "document") {
-        return Promise.resolve(null);
-      }
+    if (source.type === "document") {
+      await copyDocumentPage(source.id, mappedCopiedNode);
+      return;
+    }
 
-      return copyDocumentPage(sourceNode.id, mapNode(copiedNode, []));
-    }),
-  );
+    if (source.type === "canvas") {
+      await copyCanvasPage(source.id, mappedCopiedNode);
+    }
+  };
 
-  const projectId = copiedNodes[0]?.projectId;
-  const tags = projectId
-    ? await apiRequest<Tag[]>("/tags", { query: { projectId } })
+  const copyNodeTree = async (source: RawNode, nextParentId: NodeId) => {
+    const copiedNode = await apiRequest<RawNode>("/nodes", {
+      method: "POST",
+      body: {
+        ...source,
+        id: createNodeId(source.type),
+        parentId: nextParentId,
+        title: source.title,
+        isFavorite: false,
+        isDeleted: false,
+        createdAt: savedAt,
+        createdBy: "Вы",
+        updatedAt: savedAt,
+        updatedBy: "Вы",
+      },
+    });
+
+    copiedNodes.push(copiedNode);
+    await copyRelatedData(source, copiedNode);
+
+    if (source.type !== "folder") {
+      return;
+    }
+
+    const children = await apiRequest<RawNode[]>("/nodes", {
+      query: { projectId: source.projectId, parentId: source.id },
+    });
+
+    for (const child of children) {
+      await copyNodeTree(child, copiedNode.id);
+    }
+  };
+
+  for (const source of sourceNodes) {
+    await copyNodeTree(source, parentId);
+  }
+
+  const sourceProjectId = sourceNodes[0]?.projectId;
+
+  if (copiedNodes.length > 0 && sourceProjectId) {
+    await updateProjectNodeCount(sourceProjectId, copiedNodes.length, savedAt);
+  }
+
+  const tags = sourceProjectId
+    ? await apiRequest<Tag[]>("/tags", { query: { projectId: sourceProjectId } })
     : [];
 
   return copiedNodes.map((node) => mapNode(node, tags));

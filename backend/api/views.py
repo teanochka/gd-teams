@@ -1,6 +1,7 @@
 import uuid
 from django.utils import timezone
 from django.db.models import Q
+from django.db import IntegrityError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, permissions, exceptions
@@ -15,6 +16,7 @@ from .serializers import (
     ChannelSerializer, ChatMessageSerializer
 )
 from .permissions import check_permission, IsProjectMember
+from .node_names import make_unique_node_title
 
 # ----------------- Auth -----------------
 
@@ -293,15 +295,27 @@ class NodeListCreateView(APIView):
 
         data = request.data.copy()
         data['projectId'] = actual_project_id
+        data['title'] = make_unique_node_title(
+            actual_project_id,
+            data.get('parentId'),
+            data.get('title'),
+            data.get('type'),
+        )
         serializer = NodeSerializer(data=data)
         if serializer.is_valid():
             owner = request.user if request.user.is_authenticated else None
             node = serializer.save(created_by=owner, updated_by=owner)
             if node.type == 'document':
-                DocumentPage.objects.create(node=node, project_id=node.project_id, page={'name': node.title, 'blocks':[]})
+                DocumentPage.objects.get_or_create(
+                    node=node,
+                    defaults={'project_id': node.project_id, 'page': {'name': node.title, 'blocks': []}}
+                )
             elif node.type == 'canvas':
-                CanvasPage.objects.create(node=node, project_id=node.project_id, data={'elements': [], 'connections': []})
-                CanvasDraft.objects.create(node=node)
+                CanvasPage.objects.get_or_create(
+                    node=node,
+                    defaults={'project_id': node.project_id, 'data': {'elements': [], 'connections': []}}
+                )
+                CanvasDraft.objects.get_or_create(node=node)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -381,8 +395,18 @@ class CanvasPageListCreateView(APIView):
                 existing.save()
                 return Response(CanvasPageSerializer(existing).data)
 
-            page = serializer.save()
-            return Response(CanvasPageSerializer(page).data, status=status.HTTP_201_CREATED)
+            try:
+                page = serializer.save()
+                return Response(CanvasPageSerializer(page).data, status=status.HTTP_201_CREATED)
+            except IntegrityError:
+                existing = CanvasPage.objects.filter(node=node).first()
+                if existing:
+                    for field_name, value in serializer.validated_data.items():
+                        setattr(existing, field_name, value)
+                    existing.updated_at = timezone.now()
+                    existing.save()
+                    return Response(CanvasPageSerializer(existing).data)
+                raise
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CanvasPageDetailView(APIView):
@@ -488,7 +512,25 @@ class NodeDetailView(APIView):
         except Node.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         
-        serializer = NodeSerializer(node, data=request.data, partial=True)
+        data = request.data.copy()
+        restores_deleted_node = (
+            'isDeleted' in data and
+            node.is_deleted and
+            data.get('isDeleted') in [False, 'false', 'False', 0, '0']
+        )
+
+        if 'title' in data or 'parentId' in data or restores_deleted_node:
+            next_parent_id = data.get('parentId', node.parent_id)
+            next_title = data.get('title', node.title)
+            data['title'] = make_unique_node_title(
+                node.project_id,
+                next_parent_id,
+                next_title,
+                node.type,
+                exclude_node_id=node.id,
+            )
+
+        serializer = NodeSerializer(node, data=data, partial=True)
         if serializer.is_valid():
             owner = request.user if request.user.is_authenticated else None
             serializer.save(updated_at=timezone.now(), updated_by=owner)

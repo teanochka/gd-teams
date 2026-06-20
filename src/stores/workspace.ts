@@ -256,6 +256,36 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     }
   }
 
+  function appendUniqueChildren(folderId: NodeId, nodeIds: NodeId[]) {
+    const children = childrenByFolderId.value[folderId] ?? [];
+    const seenIds = new Set(children);
+
+    childrenByFolderId.value[folderId] = [
+      ...children,
+      ...nodeIds.filter((nodeId) => {
+        if (seenIds.has(nodeId)) {
+          return false;
+        }
+
+        seenIds.add(nodeId);
+        return true;
+      }),
+    ];
+  }
+
+  function cacheCopiedNodeChildren(copiedNodes: Node[]) {
+    const copiedFolders = copiedNodes.filter((node) => node.type === "folder");
+
+    for (const folder of copiedFolders) {
+      const childIds = copiedNodes
+        .filter((node) => node.parentId === folder.id)
+        .map((node) => node.id);
+
+      childrenByFolderId.value[folder.id] = childIds;
+      loadedFolderIds.value[folder.id] = true;
+    }
+  }
+
   function normalizeSelectedNodeIds(nodeIds: NodeId[]) {
     return [...new Set(nodeIds)].filter((nodeId) => {
       const node = nodesById.value[nodeId];
@@ -561,11 +591,22 @@ export const useWorkspaceStore = defineStore("workspace", () => {
         targetFolderId,
       );
       cacheNodes(copiedNodes);
-      childrenByFolderId.value[targetFolderId] = [
-        ...(childrenByFolderId.value[targetFolderId] ?? []),
-        ...copiedNodes.map((node) => node.id),
-      ];
+      appendUniqueChildren(
+        targetFolderId,
+        copiedNodes
+          .filter((node) => node.parentId === targetFolderId)
+          .map((node) => node.id),
+      );
+      cacheCopiedNodeChildren(copiedNodes);
       rebuildFoldersTree();
+
+      if (currentProject.value && copiedNodes.length > 0) {
+        currentProject.value = {
+          ...currentProject.value,
+          filesCount: currentProject.value.filesCount + copiedNodes.length,
+          updatedAt: copiedNodes[0]?.updatedAt ?? currentProject.value.updatedAt,
+        };
+      }
 
       return copiedNodes;
     }
@@ -580,10 +621,10 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     );
     cacheNodes(movedNodes);
     removeFromParentChildren(movedNodes.map((node) => node.id));
-    childrenByFolderId.value[targetFolderId] = [
-      ...(childrenByFolderId.value[targetFolderId] ?? []),
-      ...movedNodes.map((node) => node.id),
-    ];
+    appendUniqueChildren(
+      targetFolderId,
+      movedNodes.map((node) => node.id),
+    );
     rebuildFoldersTree();
     clipboard.value = null;
     selectedNodeIds.value = [];

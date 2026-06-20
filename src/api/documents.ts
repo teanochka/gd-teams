@@ -162,55 +162,43 @@ export const saveDocumentPage = async (
 ): Promise<DocumentPage> => {
   const savedAt = getCurrentDate();
   const nextPage = clonePage(page);
-  const pages = await apiRequest<DocumentPage[]>("/documentPages", {
-    query: { nodeId: documentId },
+  const [pages, node] = await Promise.all([
+    apiRequest<DocumentPage[]>("/documentPages", {
+      query: { nodeId: documentId },
+    }),
+    apiRequest<RawNode>(`/nodes/${documentId}`),
+  ]);
+  const savedNode = await apiRequest<RawNode>(`/nodes/${documentId}`, {
+    method: "PATCH",
+    body: {
+      title: nextPage.name.trim() || "Untitled",
+      updatedAt: savedAt,
+      updatedBy: "Вы",
+    },
   });
+
+  nextPage.name = savedNode.title;
+
   const documentPageId = pages[0]?.id;
 
   if (!documentPageId) {
-    const node = await apiRequest<RawNode>(`/nodes/${documentId}`);
-
-    const [documentPage] = await Promise.all([
-      apiRequest<DocumentPage>("/documentPages", {
-        method: "POST",
-        body: {
-          nodeId: node.id,
-          projectId: node.projectId,
-          page: nextPage,
-          createdAt: savedAt,
-          updatedAt: savedAt,
-        },
-      }),
-      apiRequest<RawNode>(`/nodes/${documentId}`, {
-        method: "PATCH",
-        body: {
-          title: nextPage.name,
-          updatedAt: savedAt,
-          updatedBy: "Р’С‹",
-        },
-      }),
-    ]);
-
-    return documentPage;
+    return apiRequest<DocumentPage>("/documentPages", {
+      method: "POST",
+      body: {
+        nodeId: node.id,
+        projectId: node.projectId,
+        page: nextPage,
+        createdAt: savedAt,
+        updatedAt: savedAt,
+      },
+    });
   }
 
-  const [documentPage] = await Promise.all([
-    apiRequest<DocumentPage>(`/documentPages/${documentPageId}`, {
-      method: "PATCH",
-      body: {
-        page: nextPage,
-        updatedAt: savedAt,
-      },
-    }),
-    apiRequest<RawNode>(`/nodes/${documentId}`, {
-      method: "PATCH",
-      body: {
-        title: nextPage.name.trim() || "Untitled",
-        updatedAt: savedAt,
-        updatedBy: "Р’С‹",
-      },
-    }),
-  ]);
-
-  return documentPage;
+  return apiRequest<DocumentPage>(`/documentPages/${documentPageId}`, {
+    method: "PATCH",
+    body: {
+      page: nextPage,
+      updatedAt: savedAt,
+    },
+  });
 };

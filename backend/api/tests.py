@@ -122,3 +122,122 @@ class TagAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Tag.objects.filter(id=self.tag.id).exists())
 
+
+class NodeTitleAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='nodeuser', password='password123')
+        self.project = Project.objects.create(
+            id='node-title-project',
+            title='Node Title Project',
+            created_by=self.user
+        )
+        self.root = Node.objects.create(
+            id='root-folder',
+            project=self.project,
+            parent_id=None,
+            type='folder',
+            title='Root',
+            created_by=self.user
+        )
+        self.other_folder = Node.objects.create(
+            id='other-folder',
+            project=self.project,
+            parent_id=self.root.id,
+            type='folder',
+            title='Other',
+            created_by=self.user
+        )
+
+    def create_node(self, node_id, node_type, title, parent_id=None, is_deleted=False):
+        return Node.objects.create(
+            id=node_id,
+            project=self.project,
+            parent_id=parent_id if parent_id is not None else self.root.id,
+            type=node_type,
+            title=title,
+            is_deleted=is_deleted,
+            created_by=self.user
+        )
+
+    def post_node(self, node_id, node_type, title, parent_id=None):
+        return self.client.post(
+            reverse('nodes-compat-list'),
+            {
+                'id': node_id,
+                'projectId': self.project.id,
+                'parentId': parent_id if parent_id is not None else self.root.id,
+                'type': node_type,
+                'title': title,
+                'tagIds': [],
+                'isFavorite': False,
+                'isDeleted': False,
+            },
+            format='json'
+        )
+
+    def test_create_uses_next_suffix_across_node_types(self):
+        self.create_node('folder-docs', 'folder', 'Docs')
+        first_response = self.post_node('document-docs', 'document', 'Docs')
+        second_response = self.post_node('canvas-docs', 'canvas', 'Docs (1)')
+
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(first_response.data['title'], 'Docs (1)')
+        self.assertEqual(second_response.data['title'], 'Docs (2)')
+
+    def test_rename_to_own_title_keeps_title(self):
+        node = self.create_node('docs', 'folder', 'Docs')
+        response = self.client.patch(
+            reverse('nodes-compat-detail', kwargs={'node_id': node.id}),
+            {'title': 'Docs'},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], 'Docs')
+
+    def test_rename_to_existing_title_adds_suffix(self):
+        self.create_node('docs', 'folder', 'Docs')
+        node = self.create_node('notes', 'document', 'Notes')
+        response = self.client.patch(
+            reverse('nodes-compat-detail', kwargs={'node_id': node.id}),
+            {'title': 'Docs'},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], 'Docs (1)')
+
+    def test_move_to_folder_with_existing_title_adds_suffix(self):
+        source = self.create_node('source-docs', 'folder', 'Docs')
+        self.create_node('target-docs', 'document', 'Docs', parent_id=self.other_folder.id)
+        response = self.client.patch(
+            reverse('nodes-compat-detail', kwargs={'node_id': source.id}),
+            {'parentId': self.other_folder.id},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['parentId'], self.other_folder.id)
+        self.assertEqual(response.data['title'], 'Docs (1)')
+
+    def test_deleted_node_title_does_not_conflict(self):
+        self.create_node('deleted-docs', 'folder', 'Docs', is_deleted=True)
+        response = self.post_node('active-docs', 'document', 'Docs')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'Docs')
+
+    def test_restore_deleted_node_with_existing_title_adds_suffix(self):
+        self.create_node('active-docs', 'folder', 'Docs')
+        deleted_node = self.create_node('deleted-docs', 'document', 'Docs', is_deleted=True)
+        response = self.client.patch(
+            reverse('nodes-compat-detail', kwargs={'node_id': deleted_node.id}),
+            {'isDeleted': False},
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], 'Docs (1)')
+        self.assertFalse(response.data['isDeleted'])
+
