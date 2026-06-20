@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from .views import (
     RegisterView, LoginView, CurrentUserView, PasswordResetView, UserSearchView,
@@ -15,6 +16,7 @@ urlpatterns = [
     # Auth & Identity Aliases for compatibility
     path('auth/register', RegisterView.as_view(), name='register'),
     path('auth/login', LoginView.as_view(), name='login'),
+    path('auth/refresh', TokenRefreshView.as_view(), name='token-refresh'),
     path('auth/password-reset', PasswordResetView.as_view(), name='password-reset'),
     path('auth/me', CurrentUserView.as_view(), name='me-auth'),
     path('me', CurrentUserView.as_view(), name='me'),

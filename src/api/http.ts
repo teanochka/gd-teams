@@ -29,6 +29,10 @@ type RequestOptions = {
   query?: Record<string, string | number | boolean | null | undefined>;
 };
 
+type RefreshTokenResponse = {
+  access: string;
+};
+
 const buildUrl = (path: string, query?: RequestOptions["query"]) => {
   const url = new URL(path.replace(/^\//, ""), apiBaseUrl);
 
@@ -41,26 +45,70 @@ const buildUrl = (path: string, query?: RequestOptions["query"]) => {
   return url.toString();
 };
 
-export const apiRequest = async <T>(
+const refreshAccessToken = async () => {
+  const refresh = localStorage.getItem("refreshToken");
+
+  if (!refresh) {
+    return null;
+  }
+
+  const response = await fetch(buildUrl("/auth/refresh"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ refresh }),
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = (await response.json()) as RefreshTokenResponse;
+
+  if (!data.access) {
+    return null;
+  }
+
+  localStorage.setItem("token", data.access);
+  return data.access;
+};
+
+const sendRequest = async (
   path: string,
-  options: RequestOptions = {},
-): Promise<T> => {
-  const token = localStorage.getItem("token");
+  options: RequestOptions,
+  accessToken = localStorage.getItem("token"),
+) => {
   const headers: Record<string, string> = {};
 
   if (options.body) {
     headers["Content-Type"] = "application/json";
   }
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(buildUrl(path, options.query), {
+  return fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
+};
+
+export const apiRequest = async <T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> => {
+  let response = await sendRequest(path, options);
+
+  if (response.status === 401) {
+    const refreshedToken = await refreshAccessToken();
+
+    if (refreshedToken) {
+      response = await sendRequest(path, options, refreshedToken);
+    }
+  }
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
