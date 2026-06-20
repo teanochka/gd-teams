@@ -65,7 +65,7 @@ const rootExpanded = ref(true);
       type="button"
       @click="rootExpanded = !rootExpanded"
     >
-      <IconChevronRight
+    <IconChevronRight
         :class="{ expanded: rootExpanded }"
         aria-hidden="true"
       />
@@ -158,19 +158,36 @@ const rootExpanded = ref(true);
 
 .sidebar-button {
   display: flex;
-  gap: 8px;
-  margin-bottom: 2px;
-  padding: 8px 10px;
+  gap: 10px;
+  margin-bottom: 4px;
+  padding: 10px 12px;
   align-items: center;
   width: 100%;
-  min-height: 38px;
-  border: 1px solid transparent;
-  border-radius: 0px 18px 18px 0px;
-  background: #242424;
-  color: white;
+  min-height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8f9fb;
+  color: #1f2937;
   font: inherit;
+  font-weight: 600;
   text-align: left;
   text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.sidebar-button:hover {
+  background: #eef2f7;
+  border-color: #d3d9e3;
+  color: #111827;
+}
+
+.sidebar-button svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
 }
 
 .project-root {

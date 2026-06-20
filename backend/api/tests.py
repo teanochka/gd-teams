@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .models import User, Project, Node, CanvasPage
+from .models import User, Project, Node, CanvasPage, Tag
 
 class CanvasPageAPITests(APITestCase):
     def setUp(self):
@@ -90,4 +90,35 @@ class CanvasPageAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.canvas_node.id)
         self.assertEqual(response.data['title'], self.canvas_node.title)
+
+
+class TagAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='taguser', password='password123')
+        self.project = Project.objects.create(
+            id='tag-project',
+            title='Tag Project',
+            created_by=self.user
+        )
+        self.tag = Tag.objects.create(
+            id='tag-1781960878066',
+            project=self.project,
+            name='Old tag',
+            color={'background': '#ffffff', 'text': '#000000'}
+        )
+
+    def test_patch_tag(self):
+        url = reverse('global-tag-detail', kwargs={'tag_id': self.tag.id})
+        response = self.client.patch(url, {'name': 'New tag'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.tag.refresh_from_db()
+        self.assertEqual(self.tag.name, 'New tag')
+        self.assertEqual(response.data['id'], self.tag.id)
+        self.assertEqual(response.data['projectId'], self.project.id)
+
+    def test_delete_tag(self):
+        url = reverse('global-tag-detail', kwargs={'tag_id': self.tag.id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Tag.objects.filter(id=self.tag.id).exists())
 

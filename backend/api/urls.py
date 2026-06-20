@@ -5,7 +5,7 @@ from .views import (
     RegisterView, LoginView, CurrentUserView, PasswordResetView, UserSearchView,
     ProjectListCreateView, ProjectDetailView, ProjectClearTrashView, ProjectMemberListView, ProjectMemberDetailView, ProjectRoleViewSet,
     NodeListCreateView, NodeDetailView, DocumentDetailView, CanvasDetailView,
-    DocumentPageListCreateView, DocumentPageDetailView, CanvasPageListCreateView, CanvasPageDetailView, GlobalTagListCreateView, TreeView,
+    DocumentPageListCreateView, DocumentPageDetailView, CanvasPageListCreateView, CanvasPageDetailView, GlobalTagListCreateView, GlobalTagDetailView, TreeView,
     KanbanBoardListCreateView, KanbanBoardDetailView, ChannelListCreateView, ChatMessageListCreateView
 )
 
@@ -35,6 +35,7 @@ urlpatterns = [
     path('canvasPages', CanvasPageListCreateView.as_view(), name='canvas-page-list-create'),
     path('canvasPages/<str:page_id>', CanvasPageDetailView.as_view(), name='canvas-page-detail'),
     path('tags', GlobalTagListCreateView.as_view(), name='global-tag-list-create'),
+    path('tags/<str:tag_id>', GlobalTagDetailView.as_view(), name='global-tag-detail'),
     path('kanbanBoards', KanbanBoardListCreateView.as_view(), name='kanban-board-list-create'),
     path('kanbanBoards/<str:pk>', KanbanBoardDetailView.as_view(), name='kanban-board-detail'),
     path('channels', ChannelListCreateView.as_view(), name='channel-list-create'),

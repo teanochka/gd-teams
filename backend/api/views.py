@@ -428,6 +428,32 @@ class GlobalTagListCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class GlobalTagDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, tag_id):
+        try:
+            tag = Tag.objects.get(id=tag_id)
+            return Response(TagSerializer(tag).data)
+        except Tag.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, tag_id):
+        try:
+            tag = Tag.objects.get(id=tag_id)
+        except Tag.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TagSerializer(tag, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, tag_id):
+        Tag.objects.filter(id=tag_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class TreeView(APIView):
     permission_classes = [permissions.AllowAny]
 
