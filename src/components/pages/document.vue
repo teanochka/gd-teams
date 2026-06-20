@@ -344,13 +344,22 @@ onBeforeUnmount(() => {
 }
 
 .document-workspace.card-visible {
-  grid-template-columns: repeat(2, minmax(0, 900px));
-  width: min(1832px, calc(100% - 64px));
+  grid-template-columns: minmax(0, 900px) minmax(320px, 380px);
+  width: min(1312px, calc(100% - 64px));
   justify-content: center;
 }
 
 .document-editor-shell {
   min-width: 0;
+}
+
+.document-editor-shell :deep(.lotion) {
+  width: min(65ch, 100%);
+}
+
+.document-editor-shell :deep(.block-menu > div) {
+  right: auto;
+  left: 100%;
 }
 
 .document-card-panel {
@@ -493,7 +502,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1500px) {
   .document-workspace,
   .document-workspace.card-visible {
     grid-template-columns: 1fr;
