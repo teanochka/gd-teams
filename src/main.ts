@@ -9,6 +9,7 @@ import {
   BiHr,
   BiImage,
   BiListCheck,
+  BiListUl,
   BiQuote,
   BiTable,
   BiTextLeft,
@@ -21,6 +22,7 @@ import {
   MdDragindicator,
 } from "oh-vue-icons/icons";
 import TodoBlock from "./components/lotion/TodoBlock.vue";
+import BulletBlock from "./components/lotion/BulletBlock.vue";
 import TableBlock from "./components/lotion/TableBlock.vue";
 import ImageBlock from "./components/lotion/ImageBlock.vue";
 
@@ -33,6 +35,7 @@ addIcons(
   BiHr,
   BiImage,
   BiListCheck,
+  BiListUl,
   BiQuote,
   BiTable,
   BiTextLeft,
@@ -45,6 +48,7 @@ addIcons(
   MdDragindicator,
 );
 
+registerBlock("BULLET", "Bulleted list", BulletBlock, "bi-list-ul");
 registerBlock("TODO", "To-do list", TodoBlock, "bi-list-check");
 registerBlock("TABLE", "Table", TableBlock, "bi-table");
 registerBlock("IMAGE", "Image", ImageBlock, "bi-image");

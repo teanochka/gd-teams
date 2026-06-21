@@ -49,6 +49,8 @@ const headingTag = computed(() => {
 
     <CanvasCardTodoBlock v-else-if="block.type === 'TODO'" :block="block" />
 
+    <p v-else-if="block.type === 'BULLET'" class="card-bullet" v-html="htmlValue" />
+
     <CanvasCardImageBlock v-else-if="block.type === 'IMAGE'" :block="block" />
 
     <CanvasCardTableBlock v-else-if="block.type === 'TABLE'" :block="block" />
@@ -116,6 +118,28 @@ h3.card-heading {
   margin: 4px 0;
   border: 0;
   background: #d9dde3;
+}
+
+.card-bullet {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding-left: 18px;
+  color: #242424;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.card-bullet::before {
+  position: absolute;
+  top: 0.62em;
+  left: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
 }
 
 .card-unknown {

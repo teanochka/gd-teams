@@ -26,6 +26,7 @@ declare module 'vue' {
     BInputGroupText: typeof import('bootstrap-vue-next/components/BInputGroup')['BInputGroupText']
     BModal: typeof import('bootstrap-vue-next/components/BModal')['BModal']
     BSpinner: typeof import('bootstrap-vue-next/components/BSpinner')['BSpinner']
+    BulletBlock: typeof import('./src/components/lotion/BulletBlock.vue')['default']
     Canvas: typeof import('./src/components/pages/canvas.vue')['default']
     CanvasBasicElement: typeof import('./src/components/canvas/CanvasBasicElement.vue')['default']
     CanvasCardBlockRenderer: typeof import('./src/components/canvas/document-card/CanvasCardBlockRenderer.vue')['default']

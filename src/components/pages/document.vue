@@ -19,6 +19,8 @@ const isTemplatePromptDismissed = ref(false);
 const isCardVisible = ref(false);
 const draggedDocumentBlockId = ref<string | null>(null);
 
+let previousBlockSnapshot: Array<Pick<LotionBlock, "id" | "type">> = [];
+
 const projectId = computed(() => String(route.params.projectId ?? ""));
 const documentId = computed(() => {
   const value = route.params.documentId;
@@ -203,6 +205,35 @@ const skipTemplatePrompt = () => {
   isTemplatePromptDismissed.value = true;
 };
 
+const getBlockSnapshot = (blocks: LotionBlock[]) =>
+  blocks.map((block) => ({ id: block.id, type: block.type }));
+
+const continueBulletBlocks = (blocks: LotionBlock[]) => {
+  const knownBlockIds = new Set(previousBlockSnapshot.map((block) => block.id));
+  let changed = false;
+
+  for (let index = 1; index < blocks.length; index += 1) {
+    const block = blocks[index];
+    const previousBlock = blocks[index - 1];
+
+    if (!block || !previousBlock) {
+      continue;
+    }
+
+    if (
+      block.type === "TEXT" &&
+      previousBlock.type === "BULLET" &&
+      !knownBlockIds.has(block.id)
+    ) {
+      block.type = "BULLET";
+      block.details.value = block.details.value ?? "";
+      changed = true;
+    }
+  }
+
+  return changed;
+};
+
 watch(
   [projectId, documentId],
   async ([nextProjectId, nextDocumentId]) => {
@@ -215,6 +246,7 @@ watch(
 
     await documentsStore.loadDocument(nextDocumentId, nextProjectId);
     await nextTick();
+    previousBlockSnapshot = page.value ? getBlockSnapshot(page.value.blocks) : [];
     canScheduleSave = true;
   },
   { immediate: true },
@@ -227,6 +259,8 @@ watch(
       return;
     }
 
+    continueBulletBlocks(page.value.blocks);
+    previousBlockSnapshot = getBlockSnapshot(page.value.blocks);
     documentsStore.scheduleSave(documentId.value);
   },
   { deep: true },
