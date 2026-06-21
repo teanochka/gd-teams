@@ -26,6 +26,26 @@ const hasShadow = computed(() => {
   );
 });
 
+const isTextElement = computed(() => props.element?.type === "text");
+
+const getColorInputValue = (
+  value: string | undefined,
+  fallback: string,
+) => {
+  return /^#[0-9a-f]{6}$/i.test(value ?? "") ? value : fallback;
+};
+
+const backgroundColorInputValue = computed(() =>
+  getColorInputValue(props.element?.backgroundColor, "#fff3a3"),
+);
+
+const isBackgroundTransparent = computed(() => {
+  return (
+    props.element?.backgroundColor === undefined ||
+    props.element.backgroundColor === "transparent"
+  );
+});
+
 const updateElement = (patch: Partial<CanvasElement>) => {
   if (!props.element) {
     return;
@@ -53,12 +73,26 @@ const updateString = (key: keyof CanvasElement, event: Event) => {
   updateElement({ [key]: (event.target as HTMLInputElement).value });
 };
 
+const updateBackgroundColor = (event: Event) => {
+  updateElement({
+    backgroundColor: (event.target as HTMLInputElement).value,
+  });
+};
+
 const updateTextAlign = (event: Event) => {
   const value = (event.target as HTMLSelectElement).value;
 
   if (value === "left" || value === "center" || value === "right") {
     updateElement({ textAlign: value });
   }
+};
+
+const toggleTransparentBackground = (event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked;
+
+  updateElement({
+    backgroundColor: checked ? "transparent" : backgroundColorInputValue.value,
+  });
 };
 
 const toggleShadow = (event: Event) => {
@@ -177,10 +211,11 @@ const toggleShadow = (event: Event) => {
             <span>Заливка</span>
             <input
               type="color"
-              :value="element.backgroundColor ?? '#ffffff'"
-              @input="updateString('backgroundColor', $event)"
+              :value="backgroundColorInputValue"
+              @input="updateBackgroundColor"
             />
           </label>
+          <template v-if="!isTextElement">
           <label>
             <span>Обводка</span>
             <input
@@ -213,7 +248,16 @@ const toggleShadow = (event: Event) => {
               @input="updateNumber('borderRadius', $event)"
             />
           </label>
+          </template>
         </div>
+        <label v-if="isTextElement" class="toggle-row">
+          <span>Прозрачная заливка</span>
+          <input
+            type="checkbox"
+            :checked="isBackgroundTransparent"
+            @change="toggleTransparentBackground"
+          />
+        </label>
         <label class="field">
           <span>Прозрачность</span>
           <input

@@ -1,6 +1,7 @@
 import type { Component } from "vue";
 import CanvasBasicElement from "@/components/canvas/CanvasBasicElement.vue";
 import CanvasDocumentCard from "@/components/canvas/document-card/CanvasDocumentCard.vue";
+import CanvasTextElement from "@/components/canvas/CanvasTextElement.vue";
 import DecisionBlock from "@/components/canvas/nodes/flowchart/DecisionBlock.vue";
 import InputOutputBlock from "@/components/canvas/nodes/flowchart/InputOutputBlock.vue";
 import ProcessBlock from "@/components/canvas/nodes/flowchart/ProcessBlock.vue";
@@ -50,6 +51,24 @@ const categories: CanvasElementCategory[] = [
     id: "base",
     name: "Базовые",
     types: [
+      {
+        id: "text",
+        name: "Текст",
+        component: CanvasTextElement,
+        defaultWidth: 180,
+        defaultHeight: 56,
+        previewBg: "#fff3a3",
+        previewBorder: "#d6b84a",
+        defaultProps: {
+          content: "Текст",
+          backgroundColor: "transparent",
+          borderWidth: 0,
+          textAlign: "left",
+          fontSize: 16,
+          textColor: "#202020",
+          fontWeight: 400,
+        },
+      },
       {
         id: "basic-card",
         name: "Карточка",

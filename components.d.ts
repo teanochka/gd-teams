@@ -41,6 +41,7 @@ declare module 'vue' {
     CanvasLayersPanel: typeof import('./src/components/canvas/workspace/CanvasLayersPanel.vue')['default']
     CanvasPalettePanel: typeof import('./src/components/canvas/workspace/CanvasPalettePanel.vue')['default']
     CanvasProjectExplorer: typeof import('./src/components/canvas/CanvasProjectExplorer.vue')['default']
+    CanvasTextElement: typeof import('./src/components/canvas/CanvasTextElement.vue')['default']
     CanvasWorkspace: typeof import('./src/components/canvas/CanvasWorkspace.vue')['default']
     Card: typeof import('./src/components/shared/Card.vue')['default']
     Chat: typeof import('./src/components/pages/chat.vue')['default']
