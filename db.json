@@ -159,6 +159,21 @@
       "filesCount": 0,
       "imageUrl": "https://picsum.photos/seed/project-1777839365657-1uv2lm/900/520",
       "rootFolderId": "root-folder-1777839365657-xyrk06"
+    },
+    {
+      "id": "dev-game-design",
+      "title": "Dev Game Design",
+      "description": "Мок-проект для аккаунта dev: персонажи, локации и механики игрового прототипа.",
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "owner": "dev",
+      "teamId": "team-gameplay",
+      "teamName": "Команда геймплея",
+      "isFavorite": false,
+      "isDeleted": false,
+      "filesCount": 17,
+      "imageUrl": "https://picsum.photos/seed/dev-game-design/900/520",
+      "rootFolderId": "dev-root"
     }
   ],
   "tags": [
@@ -1101,6 +1116,276 @@
       "createdBy": "Вы",
       "updatedAt": "2026-05-11T23:03:03.060Z",
       "updatedBy": "Вы"
+    },
+    {
+      "id": "dev-root",
+      "projectId": "dev-game-design",
+      "parentId": null,
+      "type": "folder",
+      "title": "Dev Game Design",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-characters",
+      "projectId": "dev-game-design",
+      "parentId": "dev-root",
+      "type": "folder",
+      "title": "персонажи",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-heroes",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-characters",
+      "type": "folder",
+      "title": "герои",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-villains",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-characters",
+      "type": "folder",
+      "title": "злодеи",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-hero-mira",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-heroes",
+      "type": "folder",
+      "title": "Мира Светолист",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-doc-hero-mira",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-hero-mira",
+      "type": "document",
+      "title": "Мира Светолист",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-hero-borin",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-heroes",
+      "type": "folder",
+      "title": "Борин Камнерук",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-doc-hero-borin",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-hero-borin",
+      "type": "document",
+      "title": "Борин Камнерук",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-hero-leya",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-heroes",
+      "type": "folder",
+      "title": "Лея Ветряная",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-doc-hero-leya",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-hero-leya",
+      "type": "document",
+      "title": "Лея Ветряная",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-canvas-hero-interactions",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-characters",
+      "type": "canvas",
+      "title": "взаимодействия героев",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-locations",
+      "projectId": "dev-game-design",
+      "parentId": "dev-root",
+      "type": "folder",
+      "title": "локации",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-canvas-level-design",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-locations",
+      "type": "canvas",
+      "title": "дизайн уровня",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-doc-waterfall",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-locations",
+      "type": "document",
+      "title": "Водопад",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-doc-mine",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-locations",
+      "type": "document",
+      "title": "Шахта",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-doc-forest",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-locations",
+      "type": "document",
+      "title": "Лес",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-folder-mechanics",
+      "projectId": "dev-game-design",
+      "parentId": "dev-root",
+      "type": "folder",
+      "title": "механики",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
+    },
+    {
+      "id": "dev-canvas-prototyping",
+      "projectId": "dev-game-design",
+      "parentId": "dev-folder-mechanics",
+      "type": "canvas",
+      "title": "прототипирование",
+      "icon": null,
+      "tagIds": [],
+      "isFavorite": false,
+      "isDeleted": false,
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "createdBy": "dev",
+      "updatedAt": "2026-06-21T09:00:00.000Z",
+      "updatedBy": "dev"
     }
   ],
   "documentPages": [
@@ -2503,6 +2788,222 @@
       "createdAt": "2026-05-11T23:02:58.395Z",
       "updatedAt": "2026-05-11T23:02:58.395Z",
       "id": "SOVkgZ7tjPM"
+    },
+    {
+      "id": "dev-page-hero-mira",
+      "nodeId": "dev-doc-hero-mira",
+      "projectId": "dev-game-design",
+      "page": {
+        "name": "Мира Светолист",
+        "blocks": [
+          {
+            "id": "dev-page-hero-mira-block-1",
+            "type": "H1",
+            "details": {
+              "value": "Мира Светолист"
+            }
+          },
+          {
+            "id": "dev-page-hero-mira-block-2",
+            "type": "TEXT",
+            "details": {
+              "value": "Быстрая разведчица, которая отмечает безопасные маршруты и вытаскивает команду из засад."
+            }
+          },
+          {
+            "id": "dev-page-hero-mira-block-3",
+            "type": "TEXT",
+            "details": {
+              "value": "Карточку и иллюстрации можно заполнить позже."
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-page-hero-borin",
+      "nodeId": "dev-doc-hero-borin",
+      "projectId": "dev-game-design",
+      "page": {
+        "name": "Борин Камнерук",
+        "blocks": [
+          {
+            "id": "dev-page-hero-borin-block-1",
+            "type": "H1",
+            "details": {
+              "value": "Борин Камнерук"
+            }
+          },
+          {
+            "id": "dev-page-hero-borin-block-2",
+            "type": "TEXT",
+            "details": {
+              "value": "Защитник каравана: держит линию, ломает преграды и принимает на себя тяжелые удары."
+            }
+          },
+          {
+            "id": "dev-page-hero-borin-block-3",
+            "type": "TEXT",
+            "details": {
+              "value": "Карточку и иллюстрации можно заполнить позже."
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-page-hero-leya",
+      "nodeId": "dev-doc-hero-leya",
+      "projectId": "dev-game-design",
+      "page": {
+        "name": "Лея Ветряная",
+        "blocks": [
+          {
+            "id": "dev-page-hero-leya-block-1",
+            "type": "H1",
+            "details": {
+              "value": "Лея Ветряная"
+            }
+          },
+          {
+            "id": "dev-page-hero-leya-block-2",
+            "type": "TEXT",
+            "details": {
+              "value": "Инженер-магица, которая ставит временные мосты, ловушки и ускоряющие потоки."
+            }
+          },
+          {
+            "id": "dev-page-hero-leya-block-3",
+            "type": "TEXT",
+            "details": {
+              "value": "Карточку и иллюстрации можно заполнить позже."
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-page-waterfall",
+      "nodeId": "dev-doc-waterfall",
+      "projectId": "dev-game-design",
+      "page": {
+        "name": "Водопад",
+        "blocks": [
+          {
+            "id": "dev-page-waterfall-block-1",
+            "type": "H1",
+            "details": {
+              "value": "Водопад"
+            }
+          },
+          {
+            "id": "dev-page-waterfall-block-2",
+            "type": "TEXT",
+            "details": {
+              "value": "Вертикальная локация с мокрыми уступами, шумом воды и скрытыми проходами за каскадом."
+            }
+          },
+          {
+            "id": "dev-page-waterfall-block-3",
+            "type": "TEXT",
+            "details": {
+              "value": "Карточку и иллюстрации можно заполнить позже."
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-page-mine",
+      "nodeId": "dev-doc-mine",
+      "projectId": "dev-game-design",
+      "page": {
+        "name": "Шахта",
+        "blocks": [
+          {
+            "id": "dev-page-mine-block-1",
+            "type": "H1",
+            "details": {
+              "value": "Шахта"
+            }
+          },
+          {
+            "id": "dev-page-mine-block-2",
+            "type": "TEXT",
+            "details": {
+              "value": "Темная зона с рельсами, лифтами, обвалами и ресурсными карманами для исследования."
+            }
+          },
+          {
+            "id": "dev-page-mine-block-3",
+            "type": "TEXT",
+            "details": {
+              "value": "Карточку и иллюстрации можно заполнить позже."
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-page-forest",
+      "nodeId": "dev-doc-forest",
+      "projectId": "dev-game-design",
+      "page": {
+        "name": "Лес",
+        "blocks": [
+          {
+            "id": "dev-page-forest-block-1",
+            "type": "H1",
+            "details": {
+              "value": "Лес"
+            }
+          },
+          {
+            "id": "dev-page-forest-block-2",
+            "type": "TEXT",
+            "details": {
+              "value": "Стартовая открытая зона с развилками, живыми ориентирами и мягким обучением базовым механикам."
+            }
+          },
+          {
+            "id": "dev-page-forest-block-3",
+            "type": "TEXT",
+            "details": {
+              "value": "Карточку и иллюстрации можно заполнить позже."
+            }
+          }
+        ],
+        "card": {
+          "blockIds": []
+        }
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
     }
   ],
   "canvasPages": [
@@ -8894,6 +9395,39 @@
       "createdAt": "2026-05-12T00:17:32.458Z",
       "updatedAt": "2026-05-12T01:07:58.587Z",
       "id": "5cr37vjiIC8"
+    },
+    {
+      "id": "dev-canvas-page-hero-interactions",
+      "nodeId": "dev-canvas-hero-interactions",
+      "projectId": "dev-game-design",
+      "data": {
+        "elements": [],
+        "connections": []
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-canvas-page-level-design",
+      "nodeId": "dev-canvas-level-design",
+      "projectId": "dev-game-design",
+      "data": {
+        "elements": [],
+        "connections": []
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
+    },
+    {
+      "id": "dev-canvas-page-prototyping",
+      "nodeId": "dev-canvas-prototyping",
+      "projectId": "dev-game-design",
+      "data": {
+        "elements": [],
+        "connections": []
+      },
+      "createdAt": "2026-06-21T09:00:00.000Z",
+      "updatedAt": "2026-06-21T09:00:00.000Z"
     }
   ],
   "kanbanBoards": [

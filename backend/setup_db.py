@@ -32,6 +32,24 @@ def run_command(command, cwd=None):
         return False
 
 
+def ensure_dev_user(python_executable, backend_dir):
+    code = (
+        "from api.models import User; "
+        "user, _ = User.objects.get_or_create("
+        "username='dev', defaults={'email': 'dev@example.com', 'display_name': 'dev'}"
+        "); "
+        "user.email = user.email or 'dev@example.com'; "
+        "user.display_name = user.display_name or 'dev'; "
+        "user.set_password('dev'); "
+        "user.save(); "
+        "print('Dev user ensured: dev/dev')"
+    )
+    return run_command(
+        [str(python_executable), 'manage.py', 'shell', '-c', code],
+        cwd=str(backend_dir),
+    )
+
+
 def main():
     # 1. Setup paths
     backend_dir = Path(__file__).resolve().parent
@@ -81,7 +99,13 @@ def main():
         print("Failed to apply migrations.")
         return
 
-    # 5. Prepare db.json for migration script
+    # 5. Ensure local development account exists
+    print("\nEnsuring development user 'dev' exists...")
+    if not ensure_dev_user(venv_python, backend_dir):
+        print("Failed to create/update development user.")
+        return
+
+    # 6. Prepare db.json for migration script
     # migrate_data.py expects db.json in backend/ folder
     source_db = project_root / 'db.json'
     target_db = backend_dir / 'db.json'
@@ -92,7 +116,7 @@ def main():
     else:
         print(f"\nWarning: {source_db} not found!")
 
-    # 6. Run migration script
+    # 7. Run migration script
     print("\nRunning data migration...")
     if not run_command([str(venv_python), 'migrate_data.py'], cwd=str(backend_dir)):
         print("Failed to run data migration.")

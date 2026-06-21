@@ -47,14 +47,20 @@ def migrate():
     for uname in usernames:
         if not uname: continue
         clean_uname = uname.replace(' ', '_').lower()
+        default_password = 'dev' if clean_uname == 'dev' else 'password123'
         user, created = User.objects.get_or_create(
             username=clean_uname,
             defaults={
                 'display_name': uname,
-                'password': make_password('password123'),
+                'password': make_password(default_password),
                 'email': f"{clean_uname}@example.com"
             }
         )
+        if clean_uname == 'dev':
+            user.email = user.email or 'dev@example.com'
+            user.display_name = 'dev'
+            user.set_password('dev')
+            user.save(update_fields=['email', 'display_name', 'password'])
         user_map[uname] = user
         if created:
             print(f"  [OK] User created: {uname}")
@@ -81,12 +87,13 @@ def migrate():
         )
         project_map[project.id] = project
         
-        if created and owner:
+        if owner:
             ProjectMember.objects.get_or_create(
                 user=owner, 
                 project=project, 
                 defaults={'is_owner': True, 'access_level': 'admin'}
             )
+        if created:
             print(f"  [OK] Project migrated: {project.title}")
 
     # --- 3. Миграция тегов ---
@@ -134,7 +141,11 @@ def migrate():
 
     # --- 5. Миграция контента ---
     print("Миграция контента...")
-    for d_data in data.get('documents', []):
+    document_pages = data.get('documentPages')
+    if document_pages is None:
+        document_pages = data.get('documents', [])
+
+    for d_data in document_pages:
         node = node_map.get(d_data['nodeId'])
         if not node: continue
         DocumentPage.objects.get_or_create(
